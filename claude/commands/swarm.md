@@ -1,3 +1,7 @@
+---
+description: Distribute and execute tasks across parallel Swarm agents
+---
+
 # /swarm
 
 Distribute and execute tasks across parallel Swarm agents.

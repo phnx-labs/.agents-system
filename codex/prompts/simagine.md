@@ -1,3 +1,7 @@
+---
+description: Generate visual asset prompts using parallel creative exploration
+---
+
 # /simagine — Swarm Visual Asset Prompting
 
 Generate high-quality Nano Banana Pro prompts using parallel creative exploration. Swarm agents brainstorm aesthetic ingredients; you synthesize them into final prompts.
