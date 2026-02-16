@@ -66,15 +66,18 @@ Swarm commands require [agents-mcp](https://www.npmjs.com/package/@swarmify/agen
 # Install agents-cli
 npm install -g @swarmify/agents-cli
 
-# Sync commands to your agents
+# Pull default config (auto-clones on first run)
 agents pull
+
+# Check what's installed
+agents status
 ```
 
-Or manually:
+To use your own config, fork this repo then:
 
 ```bash
-git clone https://github.com/muqsitnawaz/.agents.git ~/.agents
-cd ~/.agents && ./scripts/sync.sh push --confirm
+agents repo add gh:username/.agents
+agents pull
 ```
 
 ## Structure
