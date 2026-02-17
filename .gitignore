@@ -1,24 +1,29 @@
+# Local-only directories (not synced to repo)
+versions/
+shims/
+repos/
+runs/
+jobs/
+drives/
+packages/
+swarm/
+agents/
+
+# Local state files
+*.log
+*.pid
+meta.yaml
+
 # OS files
 .DS_Store
 .AppleDouble
 .LSOverride
-*.zip
-
-# Sensitive data (just in case)
-**/settings.json
-**/settings.local.json
-
-# Only track permissions.json, not full settings
-!.claude/permissions.json
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Logs
-*.log
 
 # Temporary files
 *.tmp
