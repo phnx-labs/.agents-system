@@ -1,0 +1,8 @@
+deny:
+  - "Bash(find:*)"
+  - "Bash(git:*)"
+  - "Bash(sudo:*)"
+  - "Bash(wget:*)"
+  - "Bash(timeout:*)"
+  - "Read(~/.ssh/**)"
+  - "Edit(~/.ssh/**)"

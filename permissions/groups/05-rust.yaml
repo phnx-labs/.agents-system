@@ -1,0 +1,11 @@
+  # Rust ecosystem
+  - "Bash(cargo-audit:*)"
+  - "Bash(cargo-deny:*)"
+  - "Bash(cargo:*)"
+  - "Bash(clippy:*)"
+  - "Bash(rustc:*)"
+  - "Bash(rustfmt:*)"
+  - "Bash(rustup:*)"
+  - "Bash(tauri:*)"
+  - "Bash(wasm-bindgen:*)"
+  - "Bash(wasm-pack:*)"
