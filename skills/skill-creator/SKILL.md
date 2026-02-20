@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Create skills that extend AI coding agents (Claude, Codex, Gemini, Cursor). Use when building new skills or improving existing ones.
+description: Create or improve skills for AI agents. Triggers on: "create a skill", "build a skill", "write SKILL.md", or extending agent capabilities with new knowledge.
 ---
 
 # Skill Creator

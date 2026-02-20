@@ -1,6 +1,6 @@
 ---
 name: openclaw
-description: Manage OpenClaw agents - autonomous AI agents with heartbeats, memory, and tool access. Use when configuring agents, checking activity, or creating new agents.
+description: Manage OpenClaw agents (~/.openclaw/). Triggers on: editing AGENTS.md/SOUL.md/IDENTITY.md, checking HEARTBEAT.md, configuring openclaw.json, or creating new agents.
 ---
 
 # OpenClaw Skill: Agent Management

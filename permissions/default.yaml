@@ -3141,6 +3141,8 @@ allow:
   - "Edit(~/.rush/**)"
   - "Read(~/.rush/*)"
   - "Read(~/.rush/**)"
+  - "Read(~/.agents/*)"
+  - "Read(~/.agents/**)"
 deny:
   - "Bash(find:*)"
   - "Bash(git:*)"

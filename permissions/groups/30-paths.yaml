@@ -21,3 +21,5 @@
   - "Edit(~/.rush/**)"
   - "Read(~/.rush/*)"
   - "Read(~/.rush/**)"
+  - "Read(~/.agents/*)"
+  - "Read(~/.agents/**)"
