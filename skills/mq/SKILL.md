@@ -1,6 +1,6 @@
 ---
 name: mq
-description: Query markdown files with mq CLI. Triggers on: exploring doc structure, extracting sections from large .md files, "use mq", or when reading full markdown wastes tokens.
+description: "Query markdown files with mq CLI. Triggers on: exploring doc structure, extracting sections from large .md files, 'use mq', or when reading full markdown wastes tokens."
 ---
 
 # mq Skill: Efficient Document Querying
