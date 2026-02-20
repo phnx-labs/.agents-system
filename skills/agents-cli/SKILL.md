@@ -1,6 +1,6 @@
 ---
 name: agents-cli
-description: Manage AI coding agent CLIs with agents-cli. Triggers on: "agents add", "agents use", "agents pull", "agents push", installing agent versions, syncing agent config, switching between agent versions, managing MCP servers, or when user mentions the agents-cli tool.
+description: "Manage AI coding agent CLIs with agents-cli. Triggers on: 'agents add', 'agents use', 'agents pull', 'agents push', installing agent versions, syncing agent config, switching between agent versions, managing MCP servers, or when user mentions the agents-cli tool."
 author: muqsitnawaz
 version: 1.0.0
 ---
