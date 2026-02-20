@@ -1,7 +1,7 @@
 ---
 name: higgsfield
 description: Generate images and videos via Higgsfield AI (higgsfield.ai) using agent-browser
-argument-hint: [image|video] [prompt]
+argument-hint: "[image|video] [prompt]"
 allowed-tools: Bash(agent-browser*), Bash(sleep*)
 user-invocable: true
 ---

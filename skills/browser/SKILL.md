@@ -1,7 +1,7 @@
 ---
 name: browser
 description: Drive any website via agent-browser CLI. Use when automating browser interactions, filling forms, clicking buttons, or taking screenshots.
-argument-hint: [url]
+argument-hint: "[url]"
 allowed-tools: Bash(agent-browser*), Bash(sleep*)
 user-invocable: true
 ---

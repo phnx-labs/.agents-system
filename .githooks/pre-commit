@@ -1,0 +1,108 @@
+#!/bin/bash
+# Pre-commit hook: validate YAML in skills and configs
+# Install: git config core.hooksPath .githooks
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+ERRORS=0
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+# Ensure yq is available
+ensure_yq() {
+    if command -v yq &>/dev/null; then
+        return 0
+    fi
+
+    echo -e "${YELLOW}yq not found, installing...${NC}"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        brew install yq
+    elif command -v apt-get &>/dev/null; then
+        sudo apt-get update && sudo apt-get install -y yq
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y yq
+    else
+        echo -e "${RED}Cannot install yq automatically. Please install manually.${NC}"
+        exit 1
+    fi
+}
+
+ensure_yq
+
+# Get staged files
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+validate_yaml_frontmatter() {
+    local file="$1"
+    local frontmatter
+    frontmatter=$(sed -n '/^---$/,/^---$/p' "$file" | sed '1d;$d')
+
+    [[ -z "$frontmatter" ]] && return 0
+
+    if ! echo "$frontmatter" | yq '.' >/dev/null 2>&1; then
+        echo "$frontmatter" | yq '.' 2>&1 | head -3
+        return 1
+    fi
+}
+
+validate_yaml_file() {
+    local file="$1"
+    if ! yq '.' "$file" >/dev/null 2>&1; then
+        yq '.' "$file" 2>&1 | head -3
+        return 1
+    fi
+}
+
+validate_json_file() {
+    local file="$1"
+    if ! yq -p json '.' "$file" >/dev/null 2>&1; then
+        return 1
+    fi
+}
+
+echo "Validating staged files..."
+
+for file in $STAGED; do
+    [[ ! -f "$REPO_ROOT/$file" ]] && continue
+
+    case "$file" in
+        */SKILL.md)
+            if ! result=$(validate_yaml_frontmatter "$REPO_ROOT/$file" 2>&1); then
+                echo -e "${RED}✗ Invalid YAML frontmatter:${NC} $file"
+                echo "  $result"
+                ((ERRORS++))
+            else
+                echo -e "${GREEN}✓${NC} $file"
+            fi
+            ;;
+        *.yaml|*.yml)
+            if ! result=$(validate_yaml_file "$REPO_ROOT/$file" 2>&1); then
+                echo -e "${RED}✗ Invalid YAML:${NC} $file"
+                echo "  $result"
+                ((ERRORS++))
+            else
+                echo -e "${GREEN}✓${NC} $file"
+            fi
+            ;;
+        *.json)
+            if ! result=$(validate_json_file "$REPO_ROOT/$file" 2>&1); then
+                echo -e "${RED}✗ Invalid JSON:${NC} $file"
+                ((ERRORS++))
+            else
+                echo -e "${GREEN}✓${NC} $file"
+            fi
+            ;;
+    esac
+done
+
+if [[ $ERRORS -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}Commit blocked: $ERRORS validation error(s)${NC}"
+    exit 1
+fi
+
+exit 0
