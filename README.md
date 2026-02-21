@@ -80,16 +80,48 @@ agents repo add gh:username/.agents
 agents pull
 ```
 
+## Project-Level Version Pinning
+
+Pin agent CLI versions per-project with `.agents-version`:
+
+```yaml
+# .agents-version
+claude: 2.0.65
+codex: 0.98.0
+```
+
+When you run `claude` in that directory, the shim:
+1. Finds `.agents-version` (walks up to root)
+2. Uses the pinned version
+3. Auto-installs if not present
+
+Falls back to your global default if no `.agents-version` found.
+
+**Multiple versions:**
+```yaml
+claude:
+  - 2.0.65   # default
+  - 2.1.37
+```
+
 ## Structure
 
 ```
 .agents/
-  agents.yaml           # CLI versions, MCP servers, defaults
-  claude/commands/      # Claude-specific (.md)
-  codex/prompts/        # Codex-specific (.md)
-  gemini/commands/      # Gemini-specific (.toml)
-  cursor/commands/      # Cursor-specific (.md)
-  claude/hooks/         # Prompt preprocessing
+  commands/             # Slash commands (.md)
+  skills/               # Reusable agent capabilities
+  hooks/                # Prompt preprocessing
+  memory/               # Agent instructions (CLAUDE.md, etc.)
+  permissions/          # Permission presets
+  .githooks/            # Pre-commit validation
+```
+
+Local-only (gitignored):
+```
+  meta.yaml             # User defaults, installed versions
+  agents.yaml           # Local state
+  versions/             # Installed CLI binaries
+  shims/                # Version-switching shims
 ```
 
 Commands are calibrated per model. Codex needs explicit planning phases. Claude leverages built-in reasoning. Gemini optimized for analysis.
