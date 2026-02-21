@@ -11,6 +11,7 @@ agents/
 
 # Private skills (local only, not version controlled)
 skills/linkedin-writer/
+skills/x-writer/
 
 # Local state files
 *.log
