@@ -17,6 +17,7 @@ skills/x-writer/
 *.log
 *.pid
 meta.yaml
+agents.yaml
 cache.json
 config.json
 prompts.json
