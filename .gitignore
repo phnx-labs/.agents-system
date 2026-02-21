@@ -17,6 +17,12 @@ skills/x-writer/
 *.log
 *.pid
 meta.yaml
+cache.json
+config.json
+prompts.json
+
+# System-generated skills
+skills/.system/
 
 # OS files
 .DS_Store
