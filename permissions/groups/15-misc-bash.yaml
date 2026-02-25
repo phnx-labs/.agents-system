@@ -1,4 +1,7 @@
   # Miscellaneous CLI tools
+  - "Bash(mq:*)"
+  - "Bash(openclaw:*)"
+  - "Bash(fzf:*)"
   - "Bash(../../rush build .)"
   - "Bash(./bax --version:*)"
   - "Bash(./bax help:*)"
