@@ -9,6 +9,7 @@ drives/
 packages/
 swarm/
 agents/
+backups/
 
 # Local-only permissions (machine-specific, not synced)
 permissions/groups/00-local.yaml
