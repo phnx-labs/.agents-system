@@ -3,11 +3,15 @@ versions/
 shims/
 repos/
 runs/
+cron/
 jobs/
 drives/
 packages/
 swarm/
 agents/
+
+# Local-only permissions (machine-specific, not synced)
+permissions/groups/00-local.yaml
 
 # Private skills (local only, not version controlled)
 skills/linkedin-writer/
