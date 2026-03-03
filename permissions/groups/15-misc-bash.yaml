@@ -18,7 +18,7 @@
   - "Bash(./halo/cli/dist/halo fmt ./agents/... --check)"
   - "Bash(./halo/cli/dist/halo fmt ./agents/...)"
   - "Bash(./halo/cli/dist/halo fmt ./agents/deep-researcher --check)"
-  - "Bash(./halo/cli/dist/halo run agents/test-prompt --prompt "Say hello in one sentence" --non-interactive --verbose)"
+  - 'Bash(./halo/cli/dist/halo run agents/test-prompt --prompt "Say hello in one sentence" --non-interactive --verbose)'
   - "Bash(./halo/cli/dist/halo whoami:*)"
   - "Bash(./halo/cli/scripts/build.sh:*)"
   - "Bash(./halo/cli/scripts/install.sh:*)"

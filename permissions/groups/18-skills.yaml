@@ -1,0 +1,14 @@
+  # mq - markdown querying skill
+  - "Bash(mq:*)"
+  # agents-cli skill
+  - "Bash(agents:*)"
+  - "Bash(agents add:*)"
+  - "Bash(agents use:*)"
+  - "Bash(agents pull:*)"
+  - "Bash(agents push:*)"
+  - "Bash(agents view:*)"
+  - "Bash(agents upgrade:*)"
+  - "Bash(agents fork:*)"
+  - "Bash(agents commands:*)"
+  - "Bash(agents skills:*)"
+  - "Bash(agents mcp:*)"

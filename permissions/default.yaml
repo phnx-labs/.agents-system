@@ -1,6 +1,11 @@
 name: default
 description: Default development permissions for Claude Code
 allow:
+  # Local machine-specific permissions
+  - "Bash(ls ~/Downloads:*)"
+  - "Bash(ls ~/Downloads/:*)"
+  - "Read(~/Downloads/*)"
+  - "Read(~/Downloads/**)"
   # Core shell utilities
   - "Bash(cat /tmp:*)"
   - "Bash(cat /tmp/claude:*)"
@@ -380,7 +385,7 @@ allow:
   - "Bash(./halo/cli/dist/halo fmt ./agents/... --check)"
   - "Bash(./halo/cli/dist/halo fmt ./agents/...)"
   - "Bash(./halo/cli/dist/halo fmt ./agents/deep-researcher --check)"
-  - "Bash(./halo/cli/dist/halo run agents/test-prompt --prompt "Say hello in one sentence" --non-interactive --verbose)"
+  - 'Bash(./halo/cli/dist/halo run agents/test-prompt --prompt "Say hello in one sentence" --non-interactive --verbose)'
   - "Bash(./halo/cli/dist/halo whoami:*)"
   - "Bash(./halo/cli/scripts/build.sh:*)"
   - "Bash(./halo/cli/scripts/install.sh:*)"
@@ -1323,6 +1328,47 @@ allow:
   - "Bash(zipalign:*)"
   - "Bash(zipkin:*)"
   - "Bash(zypper:*)"
+  # MCP server tools
+  - "mcp__Swarm__Spawn"
+  - "mcp__Swarm__Status"
+  - "mcp__Swarm__Stop"
+  - "mcp__Swarm__Tasks"
+  # Higgsfield image/video generation
+  - "Bash(~/.claude/skills/higgsfield/generate.sh:*)"
+  - "Bash(/Users/muqsit/.claude/skills/higgsfield/generate.sh:*)"
+  - "Bash(~/.agents/skills/higgsfield/generate.sh:*)"
+  - "Bash(/Users/muqsit/.agents/skills/higgsfield/generate.sh:*)"
+  - "Bash(~/.claude/skills/higgsfield/status.sh:*)"
+  - "Bash(/Users/muqsit/.claude/skills/higgsfield/status.sh:*)"
+  - "Bash(~/.agents/skills/higgsfield/status.sh:*)"
+  - "Bash(/Users/muqsit/.agents/skills/higgsfield/status.sh:*)"
+  - "Bash(~/.claude/skills/higgsfield/download.sh:*)"
+  - "Bash(/Users/muqsit/.claude/skills/higgsfield/download.sh:*)"
+  - "Bash(~/.agents/skills/higgsfield/download.sh:*)"
+  - "Bash(/Users/muqsit/.agents/skills/higgsfield/download.sh:*)"
+  # Image Craft (Higgsfield wrapper with model selection)
+  - "Bash(~/.agents/skills/image-craft/generate.sh:*)"
+  - "Bash(/Users/muqsit/.agents/skills/image-craft/generate.sh:*)"
+  - "Bash(~/.agents/skills/image-craft/status.sh:*)"
+  - "Bash(/Users/muqsit/.agents/skills/image-craft/status.sh:*)"
+  - "Bash(~/.agents/skills/image-craft/download.sh:*)"
+  - "Bash(/Users/muqsit/.agents/skills/image-craft/download.sh:*)"
+  # agent-browser (used by Higgsfield, browser skill)
+  - "Bash(agent-browser:*)"
+  # mq - markdown querying skill
+  - "Bash(mq:*)"
+  # agents-cli skill
+  - "Bash(agents:*)"
+  - "Bash(agents add:*)"
+  - "Bash(agents use:*)"
+  - "Bash(agents pull:*)"
+  - "Bash(agents push:*)"
+  - "Bash(agents view:*)"
+  - "Bash(agents upgrade:*)"
+  - "Bash(agents fork:*)"
+  - "Bash(agents commands:*)"
+  - "Bash(agents skills:*)"
+  - "Bash(agents mcp:*)"
   # WebFetch - Developer documentation and tools
   - "WebSearch"
   - "WebFetch(domain:anthropic.com)"
