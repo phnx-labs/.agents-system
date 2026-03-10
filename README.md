@@ -1,6 +1,6 @@
 # .agents
 
-> You don't need a coding agent. You need a team.
+> Dotfiles for AI coding agents.
 
 <p align="center">
   <img src=".assets/claude.png" height="60" alt="Claude" style="margin: 0 10px;">
@@ -8,30 +8,59 @@
   <img src=".assets/gemini.png" height="60" alt="Gemini" style="margin: 0 10px;">
 </p>
 
-**Dotfiles for AI coding agents.** Version-control your entire agent setup—slash commands, MCP servers, skills, hooks, and settings—across Claude Code, Codex, Gemini, and Cursor.
+**This is a config repo.** It holds slash commands, MCP servers, skills, hooks, memory files, and permissions for your AI coding agents. Fork it, customize it, sync it across machines.
 
-## What Gets Synced
+Two tools consume this repo:
+- **[agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli)** — Syncs this config to Claude, Codex, Gemini, Cursor, OpenCode
+- **[Swarmify](https://github.com/muqsitnawaz/swarmify)** — VS Code extension + MCP server for multi-agent orchestration
 
-| Resource | Description |
-|----------|-------------|
-| Agent CLIs | Which version of each agent to install |
-| Commands | `/debug`, `/plan`, `/swarm`, custom prompts |
-| MCP servers | Tools your agents can use (filesystem, memory, etc.) |
-| Skills | Reusable agent capabilities and best practices |
-| Hooks | Pre/post execution scripts for prompt preprocessing |
+## Quick Start
+
+```bash
+# Install the CLI
+npm install -g @swarmify/agents-cli
+
+# Pull default config (clones this repo to ~/.agents)
+agents pull
+
+# Or use your own fork
+agents pull gh:yourname/.agents
+```
+
+That's it. Your commands, skills, MCP servers, and memory files are now synced to all your agents.
+
+## What's In Here
+
+```
+.agents/
+  commands/        # Slash commands (/debug, /plan, /swarm, etc.)
+  skills/          # Reusable capabilities (image-craft, writer, etc.)
+  mcp/             # MCP server configurations
+  hooks/           # Prompt preprocessing scripts
+  memory/          # Agent instructions (CLAUDE.md, GEMINI.md)
+  permissions/     # Permission presets for sandboxed execution
+```
+
+| Resource | What It Does |
+|----------|--------------|
+| Commands | `/debug` does root cause analysis, `/swarm` spawns parallel agents |
+| Skills | Domain expertise — writing, image generation, codebase exploration |
+| MCP servers | Tools agents can use (filesystem, memory, GitHub, etc.) |
+| Memory | Instructions that shape agent behavior across sessions |
+| Permissions | Pre-approved tool patterns for specific workflows |
 
 ## Why Multiple Agents?
 
-One model can't juggle research, implementation, testing, and debugging in one pass. Different models have different strengths:
+Different models have different strengths:
 
-| Agent | Strengths | Best For |
-|-------|-----------|----------|
-| Claude | Built-in planning, synthesis, multi-step reasoning | Complex exploration, architecture |
-| Codex | Fast, cheap, surgical changes | Self-contained features, rapid iteration |
-| Gemini | Deep analysis, verification | Architectural changes, research |
-| Cursor | Debugging, tracing | Bug fixes, root cause analysis |
+| Agent | Best For |
+|-------|----------|
+| Claude | Planning, synthesis, multi-step reasoning |
+| Codex | Fast implementation, surgical edits |
+| Gemini | Research depth, multi-system analysis |
+| Cursor | Debugging, tracing through codebases |
 
-Running them in parallel means each does what it's best at. Results get synthesized by an orchestrator.
+Running them in parallel means each does what it's best at. The `/swarm` command orchestrates this.
 
 ## Commands
 

@@ -51,6 +51,14 @@ esac
 # Ensure browser is on higgsfield.ai (for Clerk session)
 agent-browser --profile ~/.agent-browser/profiles/higgsfield open "https://higgsfield.ai" >/dev/null 2>&1
 
+# Get fresh token from browser
+TOKEN=$(agent-browser eval "window.Clerk.session.getToken()" 2>&1 | tr -d '"')
+
+if [ -z "$TOKEN" ] || [[ "$TOKEN" == *"Error"* ]] || [[ "$TOKEN" == *"error"* ]]; then
+  echo "Error: Failed to get auth token. Make sure you're logged into higgsfield.ai"
+  exit 1
+fi
+
 # Build JSON body with jq (handles all prompt escaping properly)
 JSON_BODY=$(jq -n \
   --arg prompt "$PROMPT" \
@@ -75,31 +83,18 @@ JSON_BODY=$(jq -n \
     use_unlim: false
   }')
 
-# Base64 encode to safely pass through bash -> JS boundary (no escaping issues)
-B64_BODY=$(echo -n "$JSON_BODY" | base64 | tr -d '\n')
+# Make API call with curl (browser fetch has CORS issues with fnf.higgsfield.ai)
+RESULT=$(curl -s "https://fnf.higgsfield.ai/jobs/$MODEL" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Referer;" \
+  --data-raw "$JSON_BODY")
 
-# Single browser eval: fresh token + API call in one shot
-# Uses browser's fetch to bypass Cloudflare bot protection on fnf.higgsfield.ai
-RESULT=$(agent-browser eval "
-(async () => {
-  const token = await window.Clerk.session.getToken();
-  const body = atob('$B64_BODY');
-  const resp = await fetch('https://fnf.higgsfield.ai/jobs/$MODEL', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: body
-  });
-  const data = await resp.json();
-  if (data.job_sets && data.job_sets[0]) return data.job_sets[0].id;
-  return 'ERROR:' + JSON.stringify(data);
-})()
-" 2>&1)
+# Extract job ID from response
+JOB_ID=$(echo "$RESULT" | jq -r '.job_sets[0].id // empty')
 
-# Clean up output (agent-browser wraps in quotes)
-JOB_ID=$(echo "$RESULT" | tr -d '"')
-
-if [ -z "$JOB_ID" ] || [[ "$JOB_ID" == *"ERROR:"* ]] || [[ "$JOB_ID" == *"error"* ]] || [[ "$JOB_ID" == *"Error"* ]]; then
-  echo "Error: $JOB_ID"
+if [ -z "$JOB_ID" ]; then
+  echo "Error: $RESULT"
   exit 1
 fi
 
