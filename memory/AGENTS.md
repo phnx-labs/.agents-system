@@ -55,7 +55,7 @@ If you are unsure about ANYTHING - architecture, intent, which approach to take,
  9. **NO EMOJIS** - Not in code, comments, commits, UI, any file
  7. **NO MOCKING IN TESTS** - Real services only
  8. **NO ENV VARS FOR USER CREDENTIALS** - Use Keychain, encrypted config
- 9. **NO GIT COMMANDS** - User manages version control
+ 9. **GIT COMMANDS** - Most git commands are allowed per `~/.agents/permissions/default.yaml`. Allowed: status, diff, log, show, branch, remote, add, commit, push, checkout, clone, reset, rebase, cherry-pick, revert, stash, tag, config, reflog, gc, prune, fsck, filter-branch. Also allowed (but use with caution, confirm first): `git push --force`, `git push -f`, `git clean`, `git checkout -f`, `git branch -D`, `git stash drop/clear`. Never run destructive commands without explicit user confirmation.
 10. **NO LOCALLY BUILT CLIS** - Use install scripts then run globally
 11. **NO TESTS IN /TMP** - Tests belong in codebase
 12. **USE** `rush http` **FOR ALL API CALLS** - NEVER curl with manual tokens for api.prix.dev
