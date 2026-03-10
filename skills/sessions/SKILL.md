@@ -90,9 +90,11 @@ Format: `name  short-id  date  project-basename`
 
 Mark the current version. Show session count per version.
 
-### `load <query>`
+### `load <query>` (also: "resume", "read", "open", "continue")
 
-Find a named session by fuzzy matching, then read it using the reader script.
+Find a named session, read its transcript, and be ready to continue the work.
+
+**"Resume" means: read context, scan current state, present a plan. In one shot. No asking.**
 
 **Steps:**
 
@@ -108,34 +110,28 @@ Find a named session by fuzzy matching, then read it using the reader script.
    - Encode the project path (replace `/` with `-`)
    - Build the path: `~/.agents/versions/<agent>/<version>/home/.<agent>/projects/<encoded-path>/<session-id>.jsonl`
 
-4. Read the session using the reader script:
+4. Read the FULL session transcript (read in chunks if needed — don't stop at 200 lines):
    ```bash
-   python3 ~/.agents/skills/sessions/read-session.py <path-to-session.jsonl> --tools
+   python3 ~/.agents/skills/sessions/read-session.py <path-to-session.jsonl> --tools | head -200
+   # If there's more, keep reading:
+   python3 ~/.agents/skills/sessions/read-session.py <path-to-session.jsonl> --tools | tail -n +201 | head -200
+   # Continue until you have the full picture
    ```
 
-   This outputs a clean transcript: user messages, assistant text, and tool call summaries. Pipe through `head -200` if the session is very long, then ask the user if they want more.
+   ALWAYS use `--tools` — it shows tool calls as one-liners which gives context for what files were touched and what work was done.
 
-5. After reading, tell the user:
-   - Session name, version it's from, project
-   - If they want to resume it: `claude -r <session-id> --continue` (same version only)
-   - If cross-version resume is needed: they'd need to symlink the JSONL into the current version's projects dir first
+5. **Immediately after reading** (no waiting for user input):
+   - Scan the relevant files/dirs mentioned in the transcript to see current state
+   - Check for any existing plans, TODOs, or partial implementations
+   - Identify what was completed vs what's left
 
-### `resume <query>` (optional)
+6. Present a single summary to the user:
+   - **Done:** What was completed in that session
+   - **Remaining:** What's unfinished, with specifics (files, features, tests)
+   - **Current state:** Quick scan of whether the completed work is still intact or has been modified since
+   - **Proposed plan:** Concrete next steps to finish the remaining work
 
-If the user explicitly wants to resume (not just read), follow these steps after finding the session:
-
-**Same version as current:** Resume directly.
-```bash
-claude -r <session-id> --continue
-```
-
-**Different version:** Symlink the JSONL into the current version's projects dir, then resume.
-```bash
-mkdir -p ~/.agents/versions/claude/<current>/home/.claude/projects/<encoded-path>/
-ln -s <old-jsonl-path> <current-projects-dir>/<session-id>.jsonl
-# Also symlink session directory if it exists alongside the JSONL
-claude -r <session-id> --continue
-```
+   Then start working. Don't ask "want to proceed?" — the user said resume, so resume.
 
 ## Agent Detection
 
@@ -150,6 +146,5 @@ Codex uses a different history format (`session_id`, `ts`, `text` fields instead
 
 - **No named sessions found:** "No named sessions found across any version."
 - **Session JSONL missing:** The rename entry exists but the file was deleted. Skip it, note "(file missing)".
-- **Symlink already exists:** If target already has the JSONL (same file or existing symlink), skip linking.
 - **Multiple matches for load query:** Show all matches in a numbered list, ask user to pick.
-- **Long sessions:** Pipe reader output through `head -N` and offer to show more.
+- **Long sessions:** Read in chunks until you have the full picture. Don't stop at 200 lines and ask — keep going.
