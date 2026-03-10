@@ -19,34 +19,43 @@ else
   SIZE=1024
 fi
 
-# Escape prompt for JSON
-ESCAPED_PROMPT=$(echo "$PROMPT" | sed 's/"/\\"/g')
+# Build JSON body with jq (handles all escaping properly)
+JSON_BODY=$(jq -n \
+  --arg prompt "$PROMPT" \
+  --argjson size "$SIZE" \
+  --argjson batch "$BATCH_SIZE" \
+  --arg resolution "$RESOLUTION" \
+  '{
+    params: {
+      prompt: $prompt,
+      input_images: [],
+      width: $size,
+      height: $size,
+      batch_size: $batch,
+      aspect_ratio: "1:1",
+      is_storyboard: false,
+      is_zoom_control: false,
+      use_unlim: false,
+      resolution: $resolution
+    },
+    use_unlim: false
+  }')
+
+# Base64 encode to safely pass through bash -> JS boundary
+B64_BODY=$(echo -n "$JSON_BODY" | base64)
 
 # Use browser fetch - gets token and makes request in one call
 RESULT=$(agent-browser eval "
 (async () => {
   const token = await window.Clerk.session.getToken();
+  const body = atob('$B64_BODY');
   const response = await fetch('https://fnf.higgsfield.ai/jobs/nano-banana-2', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + token
     },
-    body: JSON.stringify({
-      params: {
-        prompt: \"$ESCAPED_PROMPT\",
-        input_images: [],
-        width: $SIZE,
-        height: $SIZE,
-        batch_size: $BATCH_SIZE,
-        aspect_ratio: '1:1',
-        is_storyboard: false,
-        is_zoom_control: false,
-        use_unlim: false,
-        resolution: '$RESOLUTION'
-      },
-      use_unlim: false
-    })
+    body: body
   });
   const data = await response.json();
   return data.job_sets[0].id;

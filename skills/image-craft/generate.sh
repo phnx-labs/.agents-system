@@ -2,6 +2,10 @@
 # Higgsfield image generation with model/aspect/resolution control
 # Usage: generate.sh "prompt" [--model nano-banana-pro|nano-banana-2] [--aspect 16:9|4:3|1:1|9:16] [--batch N] [--resolution 1k|2k]
 # Defaults: model=nano-banana-pro, aspect=16:9, batch=4, resolution=1k
+#
+# Requires: agent-browser with a Higgsfield profile (logged into higgsfield.ai)
+# The script opens the browser, grabs a fresh Clerk token, and makes the API call
+# via the browser's fetch (bypasses Cloudflare bot protection on fnf.higgsfield.ai).
 
 PROMPT=""
 MODEL="nano-banana-pro"
@@ -44,45 +48,58 @@ case "$ASPECT" in
   *)      WIDTH=$BASE; HEIGHT=$(( BASE * 9 / 16 )) ;;
 esac
 
-# Escape prompt for JSON
-ESCAPED_PROMPT=$(echo "$PROMPT" | sed 's/\\/\\\\/g; s/"/\\"/g')
+# Ensure browser is on higgsfield.ai (for Clerk session)
+agent-browser --profile ~/.agent-browser/profiles/higgsfield open "https://higgsfield.ai" >/dev/null 2>&1
 
-# Use browser fetch - gets token and makes request in one call
+# Build JSON body with jq (handles all prompt escaping properly)
+JSON_BODY=$(jq -n \
+  --arg prompt "$PROMPT" \
+  --argjson width "$WIDTH" \
+  --argjson height "$HEIGHT" \
+  --argjson batch "$BATCH_SIZE" \
+  --arg aspect "$ASPECT" \
+  --arg resolution "$RESOLUTION" \
+  '{
+    params: {
+      prompt: $prompt,
+      input_images: [],
+      width: $width,
+      height: $height,
+      batch_size: $batch,
+      aspect_ratio: $aspect,
+      is_storyboard: false,
+      is_zoom_control: false,
+      use_unlim: false,
+      resolution: $resolution
+    },
+    use_unlim: false
+  }')
+
+# Base64 encode to safely pass through bash -> JS boundary (no escaping issues)
+B64_BODY=$(echo -n "$JSON_BODY" | base64 | tr -d '\n')
+
+# Single browser eval: fresh token + API call in one shot
+# Uses browser's fetch to bypass Cloudflare bot protection on fnf.higgsfield.ai
 RESULT=$(agent-browser eval "
 (async () => {
   const token = await window.Clerk.session.getToken();
-  const response = await fetch('https://fnf.higgsfield.ai/jobs/$MODEL', {
+  const body = atob('$B64_BODY');
+  const resp = await fetch('https://fnf.higgsfield.ai/jobs/$MODEL', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
-    },
-    body: JSON.stringify({
-      params: {
-        prompt: \"$ESCAPED_PROMPT\",
-        input_images: [],
-        width: $WIDTH,
-        height: $HEIGHT,
-        batch_size: $BATCH_SIZE,
-        aspect_ratio: '$ASPECT',
-        is_storyboard: false,
-        is_zoom_control: false,
-        use_unlim: false,
-        resolution: '$RESOLUTION'
-      },
-      use_unlim: false
-    })
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: body
   });
-  const data = await response.json();
-  return data.job_sets[0].id;
+  const data = await resp.json();
+  if (data.job_sets && data.job_sets[0]) return data.job_sets[0].id;
+  return 'ERROR:' + JSON.stringify(data);
 })()
 " 2>&1)
 
-# Clean up output
+# Clean up output (agent-browser wraps in quotes)
 JOB_ID=$(echo "$RESULT" | tr -d '"')
 
-if [ -z "$JOB_ID" ] || [[ "$JOB_ID" == *"Error"* ]] || [[ "$JOB_ID" == *"error"* ]]; then
-  echo "Error: $RESULT"
+if [ -z "$JOB_ID" ] || [[ "$JOB_ID" == *"ERROR:"* ]] || [[ "$JOB_ID" == *"error"* ]] || [[ "$JOB_ID" == *"Error"* ]]; then
+  echo "Error: $JOB_ID"
   exit 1
 fi
 

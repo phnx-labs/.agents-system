@@ -12,6 +12,94 @@ description: >-
 
 Three modes, one voice: product copy, essays, and social posts. Detect the mode from the task and apply the right techniques. When in doubt, ask.
 
+## Publication-First Protocol
+
+**When writing for a specific publication (magazine, blog, newsletter), ALWAYS research before drafting.**
+
+This is non-negotiable. Generic "good writing" gets rejected. Publications have DNA — structural patterns, argument styles, evidence standards, word limits, governance prescriptions. You must reverse-engineer that DNA before writing a single word.
+
+### The Invariants (Non-Negotiable)
+
+When writing for a specific publication, you MUST do all of the following. No shortcuts.
+
+**1. Read actual published pieces (minimum 3)**
+
+Not the submission guidelines. Not summaries. The actual articles, from different authors if possible. Guidelines tell you table stakes. Published pieces tell you what actually gets accepted.
+
+**2. Build YOUR OWN criteria checklist for THIS publication**
+
+As you read, extract criteria. Ask yourself for each piece:
+- How did they open? What hook pattern?
+- How did they structure the argument?
+- What evidence types did they use? How many per claim?
+- Did they address counterarguments? How?
+- Did they end with prescription or just diagnosis?
+- What's the word count?
+- What register? (academic, conversational, polemic)
+- What's conspicuously absent? (jargon, dated numbers, hedging)
+
+Write down each criterion you discover. This checklist is unique to this publication — don't reuse a generic one.
+
+**3. Show the checklist to the user before assessing**
+
+Present the criteria you extracted with evidence from the pieces you read. The user should see your homework. Format:
+
+```
+CRITERIA FOR [PUBLICATION] (extracted from [Author 1], [Author 2], [Author 3]):
+
+[ ] [Criterion 1] — Evidence: "[quote from published piece showing this]"
+[ ] [Criterion 2] — Evidence: "[quote]"
+[ ] [Criterion 3] — Evidence: "[quote]"
+...
+```
+
+**4. Map the draft against YOUR checklist**
+
+Go criterion by criterion. For each one, quote the specific passage from the draft that passes or fails. If it fails, say what's missing.
+
+```
+DRAFT ASSESSMENT:
+
+[x] [Criterion 1] — PASS: "[quote from draft]"
+[ ] [Criterion 2] — FAIL: Draft does X, but publication requires Y. Missing: [specific gap]
+[x] [Criterion 3] — PASS: "[quote from draft]"
+...
+```
+
+**5. Prioritize fixes by impact**
+
+Structural issues first (missing sections, wrong architecture, over word limit). Sentence-level last. If the structure is wrong, perfect sentences won't save it.
+
+```
+PRIORITY FIXES:
+
+1. [Structural] Cut X section (~600 words) — publication pieces don't do this
+2. [Structural] Add governance prescription — every exemplar ended with one
+3. [Evidence] Add second example for claim Y — publication uses trilogy pattern
+4. [Sentence] Reduce jargon in paragraph Z — publication writes for generalists
+```
+
+### Why This Works
+
+- Forces you to actually read, not skim
+- Creates accountability — user sees your criteria, can challenge them
+- Prevents generic feedback — every critique tied to a specific discovered criterion
+- Prioritizes what matters — architecture before polish
+
+## Probe Before Draft
+
+**Don't draft first. Understand first.**
+
+When asked to write anything:
+
+1. **Ask WHY** — What happened? What frustrated them? What did they learn? What's the real story?
+2. **Get the lived experience** — The best writing comes from specifics: names, dates, numbers, consequences. Not abstract observations.
+3. **Identify the target** — Is this for a specific publication? If yes, trigger the Publication-First Protocol above.
+4. **Suggest audio input** — Tell them to talk through ideas verbally. Easier than typing, captures authentic voice.
+5. **THEN draft** — Only after you understand the real story and the target.
+
+**Anti-pattern:** Guessing angles and writing 10 drafts that don't land because you never asked what the user actually experienced or where they're submitting.
+
 ## The Mindset
 
 **You are not describing things. You are changing how the reader sees.**

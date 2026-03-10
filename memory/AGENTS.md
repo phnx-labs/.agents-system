@@ -100,7 +100,7 @@ NEVER: `./rush/cli/dist/rush`, `go build ./rush/cli/...`
 ### Testing
 
 - Tests in codebase, not /tmp
-- One test file per concern
+- **Test file = source file, 1:1.** Never create a separate test file for a category of tests. Test file name must mirror the source file using the language convention: `read.go` -> `read_test.go`, `parser.ts` -> `parser.test.ts`. If you add truncation tests for `read.go`, they go in `read_test.go`, NOT `read_truncation_test.go`. One source file, one test file. No exceptions.
 - Fixtures in `testdata/` near source
 - Go tests MUST use testify
 - Only write tests that catch real bugs: merge logic, state corruption, edge cases in algorithms
@@ -206,6 +206,88 @@ When touching features used by many components:
 - Single indicator per state
 - No redundant elements
 - **MANDATORY: ASCII diagram BEFORE any UI change**
+
+### Design / UX / UI Work - MANDATORY PROCESS
+
+When the user asks for ANY feature that changes what users see or interact with (UI components, notifications, modals, flows, layout changes, new views, interaction patterns), you MUST follow this order. No exceptions.
+
+**Step 1: BEFORE diagram (current state)**
+
+Draw the full user journey as it exists TODAY. Show what the user sees, what they click, what happens. ASCII art for screens, arrows for flow. This is how the user validates you understand the problem.
+
+```
+BEFORE: User clicks link in modal
+┌─────────────────────────────────┐
+│  Session Detail Modal           │
+│                                 │
+│  "Check out linkedin.com/in/x" │  <-- user clicks
+│                                 │
+└─────────────────────────────────┘
+         │
+         v
+┌─────────────────────────────────┐
+│  Browser view opens ON TOP      │
+│  of modal (native > web layer)  │
+│  ┌───────────────────────────┐  │
+│  │  Loading linkedin.com...  │  │
+│  └───────────────────────────┘  │
+│  Modal hidden underneath        │
+│  User loses reading context     │
+└─────────────────────────────────┘
+```
+
+**Step 2: AFTER diagram (proposed state)**
+
+Draw the full user journey after your change. Same level of detail. Show every screen state, every interaction, every transition.
+
+```
+AFTER: User clicks link in modal
+┌─────────────────────────────────┐
+│  Session Detail Modal           │
+│                                 │
+│  "Check out linkedin.com/in/x" │  <-- user clicks
+│                                 │
+│  (modal stays open, untouched)  │
+└─────────────────────────────────┘
+         │  page loads in background (1-3s)
+         v
+┌─────────────────────────────────┐
+│  Session Detail Modal           │
+│  ┌───────────────────────────┐  │
+│  │ [icon] Kevin M. - Link  3s│  │  <-- notification slides in
+│  │        Ready              │  │
+│  └───────────────────────────┘  │
+│                                 │
+│  User keeps reading, clicks     │
+│  notification when ready        │
+└─────────────────────────────────┘
+         │  user clicks notification
+         v
+┌─────────────────────────────────┐
+│  Browser View (full screen)     │
+│  linkedin.com/in/kevin-m       │
+│  (already loaded, instant)      │
+└─────────────────────────────────┘
+```
+
+**Step 3: THEN implementation plan**
+
+After the diagrams, write the technical plan. The diagrams ARE the spec -- the implementation plan explains how to build what the diagrams show.
+
+**Why this matters:**
+
+A plan that says "add modalCount to useSystemUIStore" tells the user NOTHING about whether the feature is right. A before/after ASCII diagram tells them EVERYTHING in 10 seconds. The diagrams are how the user evaluates the design. The code plan is just execution details.
+
+**Anti-patterns (what Claude keeps doing wrong):**
+
+- Drawing one tiny component mockup and calling it a "design" -- that's not a flow, show full screens with context
+- Jumping straight to "9 files to modify" without showing what the UI looks like
+- Treating UX features as code architecture problems
+- Writing 50 lines of code snippets before showing what the user will actually see
+- Burying a small ASCII box inside a wall of implementation details
+- Showing only the new component in isolation without the surrounding UI context
+
+**The rule:** Show the full UI state, not just the new widget. If a notification appears inside a modal, draw the WHOLE modal with the notification in it. If a sidebar changes, draw the whole sidebar. Context matters -- the user needs to see how things fit together.
 
 ## Tech Stack
 
