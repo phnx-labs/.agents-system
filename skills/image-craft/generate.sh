@@ -51,8 +51,9 @@ esac
 # Ensure browser is on higgsfield.ai (for Clerk session)
 agent-browser --profile ~/.agent-browser/profiles/higgsfield open "https://higgsfield.ai" >/dev/null 2>&1
 
-# Get fresh token from browser
+# Get fresh token and cookies from browser (need cookies to bypass Cloudflare)
 TOKEN=$(agent-browser eval "window.Clerk.session.getToken()" 2>&1 | tr -d '"')
+COOKIES=$(agent-browser eval "document.cookie" 2>&1 | tr -d '"')
 
 if [ -z "$TOKEN" ] || [[ "$TOKEN" == *"Error"* ]] || [[ "$TOKEN" == *"error"* ]]; then
   echo "Error: Failed to get auth token. Make sure you're logged into higgsfield.ai"
@@ -83,11 +84,13 @@ JSON_BODY=$(jq -n \
     use_unlim: false
   }')
 
-# Make API call with curl (browser fetch has CORS issues with fnf.higgsfield.ai)
+# Make API call with curl, passing browser cookies to bypass Cloudflare
 RESULT=$(curl -s "https://fnf.higgsfield.ai/jobs/$MODEL" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "Referer;" \
+  -H "Cookie: $COOKIES" \
+  -H "Referer: https://higgsfield.ai/" \
+  -H "Origin: https://higgsfield.ai" \
   --data-raw "$JSON_BODY")
 
 # Extract job ID from response
