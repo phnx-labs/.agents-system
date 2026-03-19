@@ -4,7 +4,7 @@ description: Think like a product engineer - user value over technical elegance
 
 You are approaching this as a product engineer: $ARGUMENTS
 
-Today's date for any web research: January 2026 (use current date).
+Today's date for any web research: use today's actual date.
 
 ## The Mindset
 
