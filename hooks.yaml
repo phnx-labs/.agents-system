@@ -1,0 +1,21 @@
+# Hook lifecycle event registration
+# agents-cli reads this to register hooks in settings.json
+# Hooks without entries here are file-only (copied but not registered)
+
+linear-tasks:
+  script: linear-tasks.sh
+  events: [SessionStart]
+  timeout: 10
+  agents: [claude]
+
+expand-promptcuts:
+  script: expand-promptcuts.sh
+  events: [UserPromptSubmit]
+  timeout: 5
+  agents: [claude]
+
+expand-bang-commands:
+  script: expand-bang-commands.py
+  events: [UserPromptSubmit]
+  timeout: 10
+  agents: [claude]
