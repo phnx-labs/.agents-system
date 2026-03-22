@@ -82,7 +82,9 @@ The specific vocabulary within each slot changes dramatically by use case. See s
 
 ### Step 5: Generate
 
-Use the Higgsfield API scripts to generate images:
+**Preferred: OpenClaw browser on mac-mini** — load the `/higgsfield` skill for the full workflow. Use `openclaw browser` commands via SSH to navigate, set aspect ratio, type prompt, and click Generate on higgsfield.ai.
+
+**Fallback: API scripts** (requires agent-browser running locally with logged-in Higgsfield session):
 
 ```bash
 # Generate images (returns job ID)
@@ -99,20 +101,20 @@ Use the Higgsfield API scripts to generate images:
 - `nano-banana-pro` (default) — high-quality, professional, client-facing work
 - `nano-banana-2` — rapid iteration, exploration, budget/speed preference
 
-**Aspect ratio (set via `--aspect`):**
+**Aspect ratio:**
 - `16:9` — Cinematic, editorial, website headers, YouTube thumbnails
 - `4:3` — Documentary, traditional photography, some print layouts
 - `1:1` — Logos, social media posts (Instagram), album art, icons
 - `9:16` — Social media stories, vertical posters, mobile-first content
+- `2:3`, `3:2`, `4:5`, `5:4` — also available for specific compositions
 
-Always match the aspect ratio to the actual intended use. If unsure, ask.
-
-**Workflow:** Generate -> poll `status.sh` every 15s -> download when complete.
+Always match the aspect ratio to the actual intended use. If unsure, ask. **Set aspect ratio BEFORE typing the prompt** — this is the most common mistake.
 
 **Variations:**
 - Generate 2-4 variations per concept using fundamentally different visual approaches
 - Variations should explore different metaphors, styles, or compositions — not just minor tweaks
 - Every image in a set must be visually distinct from every other
+- Vary aspect ratios across a set when appropriate (not everything needs to be 16:9)
 
 **Reference images:**
 - If the user provides reference images, pass them via the `images` parameter

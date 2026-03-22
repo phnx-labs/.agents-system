@@ -1,30 +1,118 @@
 ---
 name: browser
-description: Drive any website via agent-browser CLI. Use when automating browser interactions, filling forms, clicking buttons, or taking screenshots.
+description: Drive any website via agent-browser CLI or OpenClaw browser relay. Use when automating browser interactions, filling forms, clicking buttons, or taking screenshots.
 argument-hint: "[url]"
-allowed-tools: Bash(agent-browser*), Bash(sleep*)
+allowed-tools: Bash(agent-browser*), Bash(sleep*), Bash(ssh*), Bash(openclaw*)
 user-invocable: true
 ---
 
-# Browser Automation via agent-browser
+# Browser Automation
 
-You automate websites using the `agent-browser` CLI. Run `agent-browser --help` for the full command reference.
+Two browser automation tools are available. Choose based on where the browser runs.
 
-## Guidelines
+## Tool Selection
+
+| Scenario | Tool | Why |
+|----------|------|-----|
+| Browser on **mac-mini** (remote) | OpenClaw browser | Stable relay via Chrome extension, no CDP flakiness, persistent sessions |
+| Browser on **local machine** | agent-browser | Direct CDP control, local Chrome profiles |
+| Site blocks Cloudflare/bot detection | OpenClaw browser on mac-mini | Extension relay = real user traffic, undetectable |
+| Need to grab auth tokens from browser | agent-browser | Can eval JS to extract tokens from page context |
+
+**Default: OpenClaw browser on mac-mini.** It's more stable, avoids Cloudflare blocks, and the relay persists across sessions. Only use agent-browser locally when you specifically need local Chrome or JS eval for token extraction.
+
+## OpenClaw Browser (Preferred)
+
+Runs on mac-mini via Chrome extension relay. All commands go through SSH.
+
+### Command Pattern
+
+```bash
+# All commands need the PATH prefix
+ssh muqsit@mac-mini "PATH=/opt/homebrew/bin:/Users/muqsit/.agents/shims:\$PATH openclaw browser <command>"
+```
+
+### Core Commands
+
+```bash
+# Start browser / ensure relay is connected
+openclaw browser start
+
+# Navigate to URL
+openclaw browser navigate 'https://example.com'
+
+# Snapshot page (get element refs for clicking/typing)
+openclaw browser snapshot --labels
+
+# Click element by ref
+openclaw browser click e42
+
+# Type into element by ref
+openclaw browser type e15 'text here'
+
+# Select dropdown option
+openclaw browser select e9 'OptionA'
+
+# Press key
+openclaw browser press Enter
+openclaw browser press 'Meta+a'
+
+# Screenshot (returns MEDIA: path)
+openclaw browser screenshot
+
+# Evaluate JS on page or element
+openclaw browser evaluate --fn '(el) => el.textContent' --ref 7
+
+# Tabs
+openclaw browser tabs
+openclaw browser focus <targetId>
+openclaw browser close <targetId>
+
+# Wait for text to appear
+openclaw browser wait --text "Done"
+
+# Download file triggered by clicking a ref
+openclaw browser download <ref>
+```
+
+### Workflow Pattern
+
+1. `navigate` to the target URL
+2. `snapshot --labels` to see the page structure and get refs
+3. `click` / `type` / `select` using refs from snapshot
+4. `snapshot --labels` again after actions (refs change!)
+
+### Key Behaviors
+
+- **Refs are ephemeral** — they change after every page mutation. Always re-snapshot before clicking if the page has changed.
+- **Aspect ratio dropdowns** — click the current aspect button to open dropdown, snapshot to find options, click the option. The dropdown must be open to see options.
+- **Contenteditable fields** — `type` works via the relay (unlike agent-browser where you need execCommand). If typing doesn't work, try `click` first to focus, then `type`.
+- **Page navigation on click** — some SPAs navigate when you click elements. If the URL changes unexpectedly after a click, re-navigate and re-snapshot.
+
+### Troubleshooting
+
+```bash
+# If commands timeout, restart the daemon
+openclaw daemon restart
+
+# If relay is disconnected, restart browser
+openclaw browser stop && openclaw browser start
+
+# Check if relay extension is connected
+openclaw browser tabs  # Should list open tabs
+```
+
+## agent-browser (Local Fallback)
+
+For local browser automation when OpenClaw isn't needed.
 
 ### Always Use Real Chrome + Headed Mode
 
-Never use the default Chromium — many sites block it (especially Google OAuth). Always pass `--executable-path` to real Chrome and `--headed`.
+Never use the default Chromium — many sites block it. Always pass `--executable-path` to real Chrome and `--headed`.
 
 ### Profile = Skill Name
 
-Profiles persist logins across sessions. They live at `~/.agent-browser/profiles/` and are named after the corresponding skill:
-
-- `/kimi` skill → `--profile ~/.agent-browser/profiles/kimi`
-- `/perplexity` skill → `--profile ~/.agent-browser/profiles/perplexity`
-- `/higgsfield` skill → `--profile ~/.agent-browser/profiles/higgsfield`
-
-Always use the matching profile. If it doesn't exist yet, create it — the user will need to log in manually once.
+Profiles persist logins: `~/.agent-browser/profiles/<skill-name>`
 
 ### Launch Template
 
@@ -37,24 +125,18 @@ agent-browser \
 
 ### Set Viewport After Launch
 
-Always set the viewport to a standard macOS resolution immediately after opening the browser. This prevents sites from blocking requests due to unusual window sizes.
-
 ```bash
 agent-browser set viewport 1440 900 2>&1
 ```
 
-### Read Site-Specific Skills First
-
-If a skill exists for the target site (e.g. `/kimi`), read it before doing anything. It documents input quirks, submission methods, and pitfalls specific to that site.
-
 ### Rich Text Editors
 
-Standard `fill`/`type` commands fail silently on contenteditable / ProseMirror editors. When typing produces nothing, use `execCommand('insertText')` via `agent-browser eval`.
+Standard `fill`/`type` commands fail on contenteditable / ProseMirror editors. Use `execCommand('insertText')` via `agent-browser eval`.
 
-### Waiting for Results
+### Read Site-Specific Skills First
 
-Pages load asynchronously. Use `sleep N && agent-browser screenshot` to wait and verify. Start short (3-5s), increase if content hasn't appeared.
+If a skill exists for the target site (e.g. `/higgsfield`), read it before doing anything.
 
 ### Screenshots Are Your Eyes
 
-Always screenshot after navigation, after submitting, and while waiting for generation. Read the screenshot files to understand page state.
+Always screenshot after navigation, after submitting, and while waiting for generation.
