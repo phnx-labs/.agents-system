@@ -1,5 +1,5 @@
 # Local-only directories (not synced to repo)
-sessions/claude/
+sessions/
 versions/
 shims/
 repos/
