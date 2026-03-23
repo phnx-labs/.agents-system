@@ -11,6 +11,7 @@ packages/
 swarm/
 agents/
 backups/
+growth/
 
 # Local-only permissions (machine-specific, not synced)
 permissions/groups/00-local.yaml
