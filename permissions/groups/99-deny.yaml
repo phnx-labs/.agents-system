@@ -21,7 +21,6 @@ deny:
   - "Bash(git gc:*)"
   - "Bash(git prune:*)"
   - "Bash(git fsck:*)"
-  - "Bash(git stash drop:*)"
-  - "Bash(git stash clear:*)"
+  - "Bash(git stash:*)"
   - "Bash(git branch -D:*)"
   - "Bash(git config:*)"
