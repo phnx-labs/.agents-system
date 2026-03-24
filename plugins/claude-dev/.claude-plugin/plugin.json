@@ -1,0 +1,5 @@
+{
+  "name": "claude-dev",
+  "description": "Enforced quality dev workflow: Plan, Implement, Review, Fix, Test. Spawns independent reviewers (Codex/Gemini) to catch bugs before you claim done.",
+  "version": "0.1.0"
+}

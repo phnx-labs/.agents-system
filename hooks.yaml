@@ -19,3 +19,9 @@ expand-bang-commands:
   events: [UserPromptSubmit]
   timeout: 10
   agents: [claude]
+
+claude-dev-stop-gate:
+  script: claude-dev-stop-gate.sh
+  events: [Stop]
+  timeout: 5
+  agents: [claude]
