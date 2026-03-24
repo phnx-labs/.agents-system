@@ -13,6 +13,37 @@ Stateful skill for warming up a new X account. Tracks phase, targets, and daily 
 ## Current State
 !`${CLAUDE_SKILL_DIR}/scripts/load-state.sh`
 
+## Phase Constraints (MANDATORY)
+
+These constraints are auto-injected by load-state.sh. They apply to ALL outputs — tweets, threads, blog posts, any content. Violation is a policy failure.
+
+**Phase 1** (days 0-14 AND followers < 50):
+- Mode: draft-only (send drafts to human, do NOT post via API)
+- Content: ZERO links, ZERO product mentions, ZERO product nouns, ZERO "we" language
+- Budget: max 3 posts/day (replies preferred)
+
+**Phase 2** (days 14-28 AND followers >= 50):
+- Mode: direct posting allowed
+- Content: 1 in 5 tweets may reference product space naturally (not by name)
+- Budget: max 5 posts/day
+
+**Phase 3** (days 28+ AND followers >= 200):
+- Mode: full posting, links allowed
+- Content: max 1 link/day, 70% value / 30% product
+- Budget: max 7 posts/day
+
+Phase transition requires BOTH conditions (age AND followers). check-phase.py computes this automatically.
+
+## Pre-Output Check (All Phases)
+
+Before emitting ANY content (tweet, thread, blog post, draft), verify:
+1. Does it contain product names, links, or "we" language? If Phase 1: **REJECT and rewrite.**
+2. Does it reference a target's current topic or a curator-narrator pattern? If neither: **REVISE.**
+3. Does it pass the anti-AI voice rules (see Anti-AI Voice section)? If not: **REVISE.**
+4. Is the tone appropriate for the current phase? Phase 1 = observer/commenter. Phase 2 = voice/identity. Phase 3 = earned authority.
+
+This check applies to ALL content generation, not just tweets.
+
 ## Pre-Flight Checklist
 
 **All must pass before ANY engagement session.** If any fail, guide the user through fixing them first.
@@ -187,7 +218,11 @@ After the initial seed, expand by:
 
 ## Content Mix
 
-### Daily Themes (defaults, override for breaking news)
+### Daily Themes (Phase 2+ only — skip during Phase 1)
+
+During Phase 1, react to whatever your targets are posting. Don't force themes.
+
+From Phase 2 onward, use these as loose guidance (override for breaking news):
 
 | Day | Theme | Angle |
 |-----|-------|-------|

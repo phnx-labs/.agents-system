@@ -20,6 +20,9 @@ permissions/groups/00-local.yaml
 skills/linkedin-writer/
 skills/x-writer/
 
+# Machine-specific environment (secrets, hosts, paths)
+.environment
+
 # Local state files
 *.log
 *.pid
