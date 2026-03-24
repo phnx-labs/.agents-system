@@ -2,7 +2,7 @@
 name: browser
 description: Drive any website via agent-browser CLI or OpenClaw browser relay. Use when automating browser interactions, filling forms, clicking buttons, or taking screenshots.
 argument-hint: "[url]"
-allowed-tools: Bash(agent-browser*), Bash(sleep*), Bash(ssh*), Bash(openclaw*)
+allowed-tools: Bash(agent-browser*), Bash(sleep*), Bash(ssh*), Bash(openclaw*), Bash(*/env.sh*)
 user-invocable: true
 ---
 
@@ -20,15 +20,16 @@ Two browser tools available. Choose based on where the browser runs.
 
 ## Environment
 
-- SSH target: !`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_USER muqsit`@!`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_HOST mac-mini`
-- PATH prefix: !`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_PATH /opt/homebrew/bin`
+!`${CLAUDE_SKILL_DIR}/env.sh block`
 
 ## OpenClaw Browser (Preferred)
 
 ### Command Pattern
 
+Use the **command prefix** from the environment block above, followed by the openclaw browser subcommand. Example:
+
 ```bash
-ssh !`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_USER muqsit`@!`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_HOST mac-mini` "PATH=!`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_PATH /opt/homebrew/bin`:$PATH openclaw browser <command>"
+ssh <user>@<host> "PATH=<pathprefix>:$PATH openclaw browser <command>"
 ```
 
 ### Tab Isolation (CRITICAL)

@@ -2,7 +2,7 @@
 name: higgsfield
 description: Generate images and videos via Higgsfield AI (higgsfield.ai) using OpenClaw browser or agent-browser
 argument-hint: "[image|video] prompt"
-allowed-tools: Bash(agent-browser*), Bash(sleep*), Bash(ssh*), Bash(openclaw*)
+allowed-tools: Bash(agent-browser*), Bash(sleep*), Bash(ssh*), Bash(openclaw*), Bash(*/env.sh*)
 user-invocable: true
 ---
 
@@ -26,8 +26,7 @@ Read the `/browser` skill first for general browser automation guidelines.
 ### Submission Workflow
 
 ```bash
-SSH="ssh !`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_USER muqsit`@!`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_HOST mac-mini`"
-OC="PATH=!`${CLAUDE_SKILL_DIR}/env.sh OPENCLAW_PATH /opt/homebrew/bin`:\$PATH openclaw browser"
+!`${CLAUDE_SKILL_DIR}/env.sh block`
 
 # 1. Open generation page in NEW TAB (never navigate!)
 $SSH "$OC open 'https://www.higgsfield.ai/image/nano_banana_2'"
