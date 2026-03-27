@@ -199,6 +199,7 @@ Each Telegram bot account needs its own `botToken` under `channels.telegram.acco
 | `paul` | @PaulTrpBot | Writer — blog posts for getrush.ai | `~/.openclaw/paul-workspace` |
 | `emma` | @EmmaTrpBot | Voice — social engagement, brand copy | `~/.openclaw/emma` |
 | `marc` | @MarcTrpBot | Closer — VC outreach, prospect research | `~/.openclaw/marc` |
+| `duck` | @DuckettAndHarryBot | Crypto analyst for Harry | `~/.openclaw/duck` |
 
 ### Telegram Chat ID
 Muqsit's Telegram chat ID: `6078999250`
@@ -226,8 +227,30 @@ ssh muqsit@mac-mini "PATH=/Users/muqsit/.agents/shims:$PATH openclaw channels st
 ```
 
 
+## CRITICAL: Daemon Caches Workspace Files
+
+**The OpenClaw daemon caches workspace files in memory.** When you edit SOUL.md, AGENTS.md, TOOLS.md, IDENTITY.md, USER.md, or any workspace file on disk, the daemon continues serving the OLD version until restarted.
+
+**After ANY workspace file edit, you MUST restart the daemon:**
+```bash
+ssh muqsit@mac-mini "PATH=/Users/muqsit/.agents/shims:$PATH openclaw daemon restart"
+```
+
+**How to verify your changes are live (not stale):**
+Run a test agent call with `--json` and check `systemPromptReport.injectedWorkspaceFiles` in the response metadata. Compare `injectedChars` against `wc -c` of the file on disk. If they don't match, the daemon is serving stale files.
+
+```bash
+# Check injected sizes vs disk sizes
+ssh muqsit@mac-mini 'wc -c ~/.openclaw/{agentId}/SOUL.md ~/.openclaw/{agentId}/AGENTS.md'
+# Then compare with injectedChars in the --json response
+```
+
+**This is the #1 cause of "I updated the file but the agent isn't following the instructions."** Always restart. Always verify.
+
+
 ## Common Mistakes to Avoid
 
+- **Editing workspace files without restarting the daemon** — daemon caches files. Edits are invisible until restart. This is the most common mistake.
 - **Using heartbeat for task execution** — heartbeat is monitoring only. Use cron for autonomous tasks.
 - **Setting `target: "none"`** — this is the default and means heartbeat runs silently, never delivered. Must set `target: "telegram"` to deliver.
 - **`--announce` with cron to Telegram** — known silent bug. Use `--no-deliver` instead and have the agent message directly.
