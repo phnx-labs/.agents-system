@@ -1,0 +1,28 @@
+{
+  "states": {
+    "Backlog": {
+      "id": "d7b21969-8ce6-4fc3-a616-6d1ff0823e0c",
+      "type": "backlog"
+    },
+    "Duplicate": {
+      "id": "897abea1-ee24-470c-8232-ca7f417ebb16",
+      "type": "canceled"
+    },
+    "Done": {
+      "id": "6e73a9ed-9a0e-4d98-b66b-449298dc66f3",
+      "type": "completed"
+    },
+    "Canceled": {
+      "id": "423872ae-1f3f-41bb-88e0-ddc4cb4bf4e0",
+      "type": "canceled"
+    },
+    "Todo": {
+      "id": "133aac2b-50e4-42a5-9d6e-c72e6f9c3540",
+      "type": "unstarted"
+    },
+    "In Progress": {
+      "id": "034a35aa-8f8e-455a-94da-0eeb4b09dee5",
+      "type": "started"
+    }
+  }
+}

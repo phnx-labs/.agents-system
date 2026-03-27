@@ -1,67 +1,69 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# Load recent activity from ~/.twitter-warmup/log/
 
+DAYS=${1:-7}
 LOG_DIR="$HOME/.twitter-warmup/log"
-DAYS="${1:-7}"
 
 if [ ! -d "$LOG_DIR" ]; then
-  echo "ACTIVITY: No log directory. Run init.sh first."
+  echo "No activity logs found."
   exit 0
 fi
 
-# Collect log files for the last N days
-log_files=""
-for i in $(seq 0 $((DAYS - 1))); do
-  day=$(date -v"-${i}d" "+%Y-%m-%d" 2>/dev/null || date -d "-${i} days" "+%Y-%m-%d" 2>/dev/null || continue)
-  file="$LOG_DIR/${day}.yaml"
-  if [ -f "$file" ]; then
-    log_files="$file $log_files"
-  fi
-done
+python3 - "$LOG_DIR" "$DAYS" << 'PYEOF'
+import sys, re
+from datetime import date, timedelta
+from pathlib import Path
 
-if [ -z "$log_files" ]; then
-  echo "ACTIVITY (last ${DAYS} days): No logged sessions yet."
-  exit 0
-fi
+log_dir = Path(sys.argv[1])
+days = int(sys.argv[2])
+cutoff = date.today() - timedelta(days=days)
 
-total_replies=0
-total_standalone=0
-total_qrts=0
-total_likes=0
-total_new_followers=0
-days_active=0
+files = sorted(log_dir.glob("*.yaml"))
+files = [f for f in files if f.stem >= cutoff.isoformat()]
 
-echo "ACTIVITY (last ${DAYS} days):"
-echo ""
+if not files:
+    print(f"ACTIVITY (last {days} days): no logs found")
+    sys.exit(0)
 
-for file in $log_files; do
-  day=$(basename "$file" .yaml)
+print(f"ACTIVITY (last {days} days):")
+print()
 
-  # Count entries
-  replies=$(grep -c '^\s*- to:' "$file" 2>/dev/null || echo "0")
-  standalone=$(grep -c '^\s*- tweet_url:' "$file" 2>/dev/null || echo "0")
-  # Standalone section items also have tweet_url, subtract replies that have tweet_url
-  # Better: count items under standalone: section
-  standalone_section=$(sed -n '/^standalone:/,/^[a-z]/p' "$file" 2>/dev/null | grep -c '^\s*- tweet_url:' || echo "0")
-  qrts=$(sed -n '/^quote_tweets:/,/^[a-z]/p' "$file" 2>/dev/null | grep -c '^\s*- ' || echo "0")
+totals = dict(replies=0, standalone=0, qrts=0, likes=0, followers=0, days=0)
 
-  likes=$(grep 'likes_received:' "$file" 2>/dev/null | sed 's/.*likes_received:\s*//' | tr -d '"' || echo "0")
-  new_followers=$(grep 'new_followers:' "$file" 2>/dev/null | sed 's/.*new_followers:\s*//' | tr -d '"' || echo "0")
+for f in files:
+    text = f.read_text()
+    replies = len(re.findall(r"^\s*- to:", text, re.MULTILINE))
 
-  engaged=$(grep '^\s*-\s*"@\|^\s*- "@' "$file" 2>/dev/null | sed -n '/targets_engaged/,/^[a-z]/p' | tr -d '[]"' | tr ',' '\n' | sed 's/^\s*//' | grep -c '@' || echo "0")
-  engaged_list=$(sed -n '/^targets_engaged:/,/^[a-z]/p' "$file" 2>/dev/null | grep '@' | tr -d '[]"' | tr ',' ' ' | sed 's/^\s*//' || echo "")
+    standalone_match = re.search(r"^standalone:\s*\n((?:\s+- .+\n)*)", text, re.MULTILINE)
+    standalone = standalone_match.group(1).count("- tweet_url:") if standalone_match else 0
 
-  echo "  $day: ${replies} replies, ${standalone_section} standalone, ${qrts} QRTs | likes: ${likes} | new followers: ${new_followers}"
-  [ -n "$engaged_list" ] && echo "    engaged: $engaged_list"
+    qrt_match = re.search(r"^quote_tweets:\s*\n((?:\s+- .+\n)*)", text, re.MULTILINE)
+    qrts = qrt_match.group(1).count("- ") if qrt_match else 0
 
-  total_replies=$((total_replies + replies))
-  total_standalone=$((total_standalone + standalone_section))
-  total_qrts=$((total_qrts + qrts))
-  total_likes=$((total_likes + likes))
-  total_new_followers=$((total_new_followers + new_followers))
-  days_active=$((days_active + 1))
-done
+    likes = 0
+    m = re.search(r"likes_received:\s*(\d+)", text)
+    if m: likes = int(m.group(1))
 
-echo ""
-echo "TOTALS ($days_active active days): ${total_replies} replies, ${total_standalone} standalone, ${total_qrts} QRTs"
-echo "ENGAGEMENT: ${total_likes} likes received, ${total_new_followers} new followers"
+    followers = 0
+    m = re.search(r"new_followers:\s*(\d+)", text)
+    if m: followers = int(m.group(1))
+
+    engaged = ""
+    m = re.search(r"targets_engaged:\s*\[([^\]]*)\]", text)
+    if m: engaged = m.group(1).replace('"', '').replace("'", "").strip()
+
+    print(f"  {f.stem}: {replies} replies, {standalone} standalone, {qrts} QRTs | likes: {likes} | new followers: {followers}")
+    if engaged:
+        print(f"    engaged: {engaged}")
+
+    totals["replies"] += replies
+    totals["standalone"] += standalone
+    totals["qrts"] += qrts
+    totals["likes"] += likes
+    totals["followers"] += followers
+    totals["days"] += 1
+
+print()
+print(f"TOTALS ({totals['days']} active days): {totals['replies']} replies, {totals['standalone']} standalone, {totals['qrts']} QRTs")
+print(f"ENGAGEMENT: {totals['likes']} likes received, {totals['followers']} new followers")
+PYEOF

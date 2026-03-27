@@ -49,3 +49,4 @@ skills/.system/
 # Temporary files
 *.tmp
 *~
+__pycache__/

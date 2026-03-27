@@ -94,7 +94,18 @@ def gql(api_key: str, query: str, variables: dict | None = None) -> dict:
         with urlopen(req) as resp:
             return json.loads(resp.read())
     except URLError as e:
-        return {"errors": [{"message": str(e)}]}
+        # HTTPError has a response body with actual GraphQL error details
+        body = ""
+        if hasattr(e, "read"):
+            try:
+                body = e.read().decode("utf-8", errors="replace")
+                parsed = json.loads(body)
+                if "errors" in parsed:
+                    return parsed
+            except (json.JSONDecodeError, Exception):
+                pass
+        detail = body if body else str(e)
+        return {"errors": [{"message": detail}]}
 
 
 def check_errors(data: dict) -> bool:
@@ -115,7 +126,7 @@ def get_states(api_key: str, team_id: str, cfg: dict) -> dict:
         return cached
 
     data = gql(api_key, """
-        query($teamId: String!) {
+        query($teamId: ID!) {
             workflowStates(filter: { team: { id: { eq: $teamId } } }) {
                 nodes { id name type }
             }
@@ -541,6 +552,55 @@ def cmd_update(args, cfg, api_key, team_id):
             print("Status update failed.")
         did_something = True
 
+    # Labels
+    if args.label:
+        label_data = gql(api_key, """
+            query($teamId: ID!) {
+                issueLabels(filter: { team: { id: { eq: $teamId } } }) {
+                    nodes { id name }
+                }
+            }
+        """, {"teamId": team_id})
+
+        if not check_errors(label_data):
+            all_labels = label_data["data"]["issueLabels"]["nodes"]
+            label_map = {l["name"]: l["id"] for l in all_labels}
+
+            # Also get current labels on the issue
+            issue_data = gql(api_key, f"""{{
+                issue(id: "{issue['id']}") {{
+                    labels {{ nodes {{ id name }} }}
+                }}
+            }}""")
+            current_ids = []
+            if not check_errors(issue_data):
+                current_ids = [l["id"] for l in issue_data["data"]["issue"]["labels"]["nodes"]]
+
+            label_ids = list(current_ids)
+            added = []
+            for lbl in args.label:
+                if lbl in label_map:
+                    if label_map[lbl] not in label_ids:
+                        label_ids.append(label_map[lbl])
+                        added.append(lbl)
+                else:
+                    print(f"Warning: label '{lbl}' not found, skipping.", file=sys.stderr)
+
+            if added:
+                data = gql(api_key, """
+                    mutation($id: String!, $labelIds: [String!]!) {
+                        issueUpdate(id: $id, input: { labelIds: $labelIds }) {
+                            success
+                        }
+                    }
+                """, {"id": issue["id"], "labelIds": label_ids})
+
+                if not check_errors(data) and data["data"]["issueUpdate"]["success"]:
+                    print(f"Labels added to {args.identifier}: {', '.join(added)}")
+                else:
+                    print("Label update failed.")
+                did_something = True
+
     # Comment
     if args.comment:
         comment_body = args.comment
@@ -589,7 +649,7 @@ def cmd_create(args, cfg, api_key, team_id):
 
     if args.label:
         label_data = gql(api_key, """
-            query($teamId: String!) {
+            query($teamId: ID!) {
                 issueLabels(filter: { team: { id: { eq: $teamId } } }) {
                     nodes { id name }
                 }
@@ -664,6 +724,7 @@ def main():
     status_group.add_argument("--todo", action="store_true", help="Mark Todo")
     status_group.add_argument("--status", help="Move to any state by name")
     p_update.add_argument("--comment", help="Add a comment")
+    p_update.add_argument("--label", action="append", help="Add label(s) (repeatable)")
 
     # create
     p_create = sub.add_parser("create", help="Create a new issue")

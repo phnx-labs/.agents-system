@@ -51,6 +51,7 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 ~/.agents/skills/linear/scripts/linear update GR-42 --todo                        # Mark Todo
 ~/.agents/skills/linear/scripts/linear update GR-42 --status "In Review"          # Any state by name
 ~/.agents/skills/linear/scripts/linear update GR-42 --comment "Completed the research phase"
+~/.agents/skills/linear/scripts/linear update GR-42 --label agent:claude            # Add label(s)
 ~/.agents/skills/linear/scripts/linear update GR-42 --done --comment "Shipped"    # Both at once
 ```
 
