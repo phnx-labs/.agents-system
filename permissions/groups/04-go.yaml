@@ -1,7 +1,6 @@
   # Go ecosystem
   - "Bash(air:*)"
   - "Bash(delve:*)"
-  - "Bash(echo:*)"
   - "Bash(gofmt:*)"
   - "Bash(goimports:*)"
   - "Bash(golangci-lint:*)"

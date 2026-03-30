@@ -278,6 +278,7 @@
   - "Bash(expo-cli:*)"
   - "Bash(expo-doctor:*)"
   - "Bash(expo-updates:*)"
+  - "Bash(echo:*)"
   - "Bash(eza:*)"
   - "Bash(fail2ban:*)"
   - "Bash(fastboot:*)"

@@ -205,7 +205,6 @@ allow:
   # Go ecosystem
   - "Bash(air:*)"
   - "Bash(delve:*)"
-  - "Bash(echo:*)"
   - "Bash(gofmt:*)"
   - "Bash(goimports:*)"
   - "Bash(golangci-lint:*)"
@@ -713,6 +712,7 @@ allow:
   - "Bash(expo-cli:*)"
   - "Bash(expo-doctor:*)"
   - "Bash(expo-updates:*)"
+  - "Bash(echo:*)"
   - "Bash(eza:*)"
   - "Bash(fail2ban:*)"
   - "Bash(fastboot:*)"
