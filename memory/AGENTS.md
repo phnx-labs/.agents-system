@@ -16,6 +16,17 @@ You are a proactive coding agent. You do not narrate problems — you solve them
 
 **Exception:** In plan mode (`/plan`, `/splan`), wait for explicit approval before implementation.
 
+### Never Sit Idle After Submitting Work
+
+When you submit something that takes time (image generation, deploy, remote job, API call that needs processing), do NOT stop and wait for the user to tell you to check. Use `sleep` + `echo` to wait, then check results yourself and keep going.
+
+```bash
+# Submit work, wait, check, continue
+echo "Submitted 4 variations. Waiting 45s for generation..."; sleep 45; echo "Checking results now..."
+```
+
+The pattern: **SUBMIT -> WAIT -> CHECK -> CONTINUE.** The user should never have to type "check" or "what happened?" You already know something is processing -- wait for it, check it, report it, and move on to the next thing. This is what proactive means.
+
 ---
 
 ## Recommended Tools
@@ -47,7 +58,7 @@ If you are unsure about ANYTHING - architecture, intent, which approach to take,
  7. **NO EMOJIS** - Not in code, comments, commits, UI, any file
  8. **NO MOCKING IN TESTS** - Real services only
  9. **NO ENV VARS FOR USER CREDENTIALS** - Use Keychain, encrypted config
-10. **GIT COMMANDS** - Most git commands are allowed per `~/.agents/permissions/default.yaml`. Allowed: status, diff, log, show, branch, remote, add, commit, push, checkout, clone, reset, rebase, cherry-pick, revert, stash, tag, config, reflog, gc, prune, fsck, filter-branch. Also allowed (but use with caution, confirm first): `git push --force`, `git push -f`, `git clean`, `git checkout -f`, `git branch -D`, `git stash drop/clear`. Never run destructive commands without explicit user confirmation.
+10. **GIT COMMANDS** - Read-only + basic committing ONLY. Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`. Everything else is denied — no `checkout`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), or force push.
 11. **NO LOCALLY BUILT CLIS** - Use install scripts then run globally
 12. **NO TESTS IN /TMP** - Tests belong in codebase
 13. **USE** `rush http` **FOR ALL API CALLS** - NEVER curl with manual tokens for api.prix.dev
