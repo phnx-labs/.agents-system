@@ -17,17 +17,22 @@ Two tools consume this repo:
 ## Quick Start
 
 ```bash
-# Install the CLI
+# Install agents-cli
 npm install -g @swarmify/agents-cli
 
-# Pull default config (clones this repo to ~/.agents)
+# Pull default config (auto-clones on first run)
 agents pull
 
-# Or use your own fork
-agents pull gh:yourname/.agents
+# Check what's installed
+agents status
 ```
 
-That's it. Your commands, skills, MCP servers, and memory files are now synced to all your agents.
+To use your own config, fork this repo then:
+
+```bash
+agents repo add gh:username/.agents
+agents pull
+```
 
 ## What's In Here
 
@@ -71,8 +76,12 @@ Running them in parallel means each does what it's best at. The `/swarm` command
 | `/plan` | Design features and plan implementation |
 | `/debug` | Systematic root cause analysis |
 | `/clean` | Remove technical debt, consolidate code |
-| `/test` | Write tests for critical paths |
-| `/ship` | Pre-launch verification (security, perf, QA) |
+| `/design` | UX design -- ASCII mockups, interactions, components |
+| `/redesign` | Redesign existing screens -- screenshot in, proposals out |
+| `/product` | Think like a product engineer -- user value over technical elegance |
+| `/recap` | Summarize current situation -- facts first, hypotheses with grounding |
+| `/spawn` | Spawn a single subagent with full context |
+| `/tasks` | Pull and display Linear tasks from the active sprint |
 
 ### Swarm (Multi-Agent)
 
@@ -80,34 +89,15 @@ Spawn independent agents to verify findings or work in parallel:
 
 | Command | Purpose |
 |---------|---------|
+| `/swarm` | Distribute tasks across parallel agents |
 | `/splan` | Planning with swarm consensus |
 | `/sdebug` | 2-3 agents independently verify root cause |
 | `/sconfirm` | Lightweight verification of findings |
 | `/sclean` | Parallel cleanup across different areas |
 | `/stest` | Parallel testing (auth, data, API, UI, errors) |
-| `/sship` | Independent pre-launch assessment |
+| `/srecap` | Recap with swarm -- agents gather evidence before handoff |
 
 Swarm commands require [agents-mcp](https://www.npmjs.com/package/@swarmify/agents-mcp) for orchestration.
-
-## Quick Start
-
-```bash
-# Install agents-cli
-npm install -g @swarmify/agents-cli
-
-# Pull default config (auto-clones on first run)
-agents pull
-
-# Check what's installed
-agents status
-```
-
-To use your own config, fork this repo then:
-
-```bash
-agents repo add gh:username/.agents
-agents pull
-```
 
 ## Project-Level Version Pinning
 
@@ -171,21 +161,21 @@ This repo is the prompts layer. Full stack:
 Fork this repo, edit commands, sync across machines:
 
 ```bash
-vim ~/.agents/claude/commands/debug.md
+vim ~/.agents/commands/debug.md
 cd ~/.agents && git commit -am "customize debug" && git push
 
 # On another machine
 agents pull
 ```
 
-See [AGENTS.md](./AGENTS.md) for command structure and framework detection.
-
 ## Hooks
 
-Prompt preprocessing in `claude/hooks/`:
+Prompt preprocessing in `hooks/`:
 
 - `expand-promptcuts.sh` - Text shortcuts from `promptcuts.yaml`
 - `expand-bang-commands.py` - Execute `` `! command` `` inline
+- `linear-tasks.sh` - Inject Linear task queue on session start
+- `permission-handler.sh` - Auto-approve tool patterns from permissions/
 
 ## License
 
