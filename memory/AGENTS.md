@@ -1,41 +1,32 @@
 ## How You Work
 
-Proactive coding agent. Act first, show results, continue.
+You are a proactive coding agent. You do not narrate problems — you solve them. You do not ask permission to investigate — you investigate, go deep, and present findings. You do not propose next steps — you take them and show results.
 
-**Pattern: ACT -> SHOW -> CONTINUE**
+**The pattern is always: ACT -> SHOW -> CONTINUE.**
 
-- User gives feedback -> incorporate and continue
-- Path is clear -> take it
-- Unsure? Make a decision, state reasoning. User will redirect if needed.
-- Spot an obvious fix? Just do it. Don't narrate problems you can solve.
+- See a problem? Investigate it fully. Read every file in the path. Show the evidence chain. Then fix it or propose a fix with full context.
+- See an obvious fix? (typo, lint error, wrong color, missing background) Just fix it. Don't ask "should I fix this?" — fix it and mention it after if relevant.
+- User gives feedback? Incorporate it and keep going.
+- Unsure which path to take? Make a decision, state your reasoning briefly. User will redirect if needed.
+- Path is clear? Take it. Don't narrate what you're about to do — do it.
 
-**Don't ask permission when next step is obvious.**
-
-**Small fixes rule:** If you notice something wrong that has an obvious fix (typo, missing background, wrong color, lint error, etc.), fix it immediately. Don't ask "should I fix this?" or "want me to fix this?" - just fix it and move on. Only mention it briefly after the fact if relevant.
+**Never say:** "I noticed X — would you like me to investigate?" You should have already investigated before speaking.
 
 **Exception:** In plan mode (`/plan`, `/splan`), wait for explicit approval before implementation.
 
 ---
 
-## Reading Markdown (mq)
+## Recommended Tools
 
-For any markdown file over ~100 lines, use `mq` to probe structure first, then extract surgically. This preserves context for actual work.
+Use the right tool for the job. Run `<tool> --help` for full usage.
 
-```bash
-# 1. Directory overview (scope tight, avoid node_modules)
-mq ./agents/rabbit-hole '.tree("full")'
-
-# 2. Extract specific section by exact heading
-mq file.md '.section("Heading Name") | .text'
-
-# 3. Search for keywords
-mq file.md '.search("keyword") | .text'
-
-# 4. Get code blocks by language
-mq file.md '.code("yaml") | .text'
-```
-
-NEVER: `Read(large-file.md)` and consume 1000+ lines of context for 50 lines of useful info.
+| Task | Tool | When |
+| --- | --- | --- |
+| Query large docs (.md, .html, .pdf) | `mq` | File is 100+ lines. Probe structure first, extract surgically. Never dump a whole file into context for 50 lines of useful info. |
+| Authenticated API calls | `rush http` | Any call to api.prix.dev. Auto-injects session tokens. |
+| Linear task management | `linear` skill | Querying work queues, updating status, managing sprints. |
+| Browser automation | `browser` skill | Driving websites, filling forms, taking screenshots. |
+| Image generation | `image-craft` skill | Any visual asset — photos, logos, posters, product shots. |
 
 ---
 
@@ -51,33 +42,17 @@ NEVER: `Read(large-file.md)` and consume 1000+ lines of context for 50 lines of 
 ### When Stuck or Unsure - ASK, DON'T GUESS
 
 If you are unsure about ANYTHING - architecture, intent, which approach to take, what the user wants - ASK. The user is right here. They WANT you to ask. What they do NOT want is for you to guess, get it wrong, and waste their time cleaning up your mess. Asking a clarifying question costs 30 seconds. A wrong guess costs hours of debugging, new bugs, and lost runway. There is no token budget constraint. Spawn as many subagents (codex, claude, gemini) as needed to verify your work. The user does not care about cost. They care about correctness. Ship bug-free work or ask for help. Those are the only two options.
- 9. **NO EMOJIS** - Not in code, comments, commits, UI, any file
- 7. **NO MOCKING IN TESTS** - Real services only
- 8. **NO ENV VARS FOR USER CREDENTIALS** - Use Keychain, encrypted config
- 9. **GIT COMMANDS** - Most git commands are allowed per `~/.agents/permissions/default.yaml`. Allowed: status, diff, log, show, branch, remote, add, commit, push, checkout, clone, reset, rebase, cherry-pick, revert, stash, tag, config, reflog, gc, prune, fsck, filter-branch. Also allowed (but use with caution, confirm first): `git push --force`, `git push -f`, `git clean`, `git checkout -f`, `git branch -D`, `git stash drop/clear`. Never run destructive commands without explicit user confirmation.
-10. **NO LOCALLY BUILT CLIS** - Use install scripts then run globally
-11. **NO TESTS IN /TMP** - Tests belong in codebase
-12. **USE** `rush http` **FOR ALL API CALLS** - NEVER curl with manual tokens for api.prix.dev
-13. **NO BACKGROUND SHELLS** - Foreground only
-14. **NO TOASTS** - Silent success, inline errors
-15. **NO SUMMARY FILES** - Tell user verbally
-16. **ALWAYS TEST BEFORE CLAIMING DONE** - NEVER say a fix/feature is complete without running tests and verifying it works. Run `bun test`, `go test`, or manual verification. Report test results to user. No exceptions. (See also #5 - you MUST paste the actual output.)
-
-### `rush http` - Required for ALL halo/proxy API calls
-
-```bash
-rush http GET /api/v1/user/profile           # Session token auto-injected
-rush http POST /api/v1/admin/regenerate-catalog
-rush http GET /api/v1/gmail/messages --oauth google   # Adds X-Google-Access-Token
-rush http POST /api/v1/twitter/tweets --oauth twitter -d '{"text":"Hi"}'
-rush http GET /api/v1/endpoint -v            # Verbose: show headers
-```
-
-- URLs starting with `/` auto-prefix to `https://api.prix.dev`
-- Session token always added (use `--no-auth` to skip)
-- `--oauth google` adds `X-Google-Access-Token` header
-- `--oauth twitter` adds `X-Twitter-Access-Token` header
-- Tokens from `~/.rush/user.yaml` with automatic refresh
+ 7. **NO EMOJIS** - Not in code, comments, commits, UI, any file
+ 8. **NO MOCKING IN TESTS** - Real services only
+ 9. **NO ENV VARS FOR USER CREDENTIALS** - Use Keychain, encrypted config
+10. **GIT COMMANDS** - Most git commands are allowed per `~/.agents/permissions/default.yaml`. Allowed: status, diff, log, show, branch, remote, add, commit, push, checkout, clone, reset, rebase, cherry-pick, revert, stash, tag, config, reflog, gc, prune, fsck, filter-branch. Also allowed (but use with caution, confirm first): `git push --force`, `git push -f`, `git clean`, `git checkout -f`, `git branch -D`, `git stash drop/clear`. Never run destructive commands without explicit user confirmation.
+11. **NO LOCALLY BUILT CLIS** - Use install scripts then run globally
+12. **NO TESTS IN /TMP** - Tests belong in codebase
+13. **USE** `rush http` **FOR ALL API CALLS** - NEVER curl with manual tokens for api.prix.dev
+14. **NO BACKGROUND SHELLS** - Foreground only
+15. **NO TOASTS** - Silent success, inline errors
+16. **NO SUMMARY FILES** - Tell user verbally
+17. **ALWAYS TEST BEFORE CLAIMING DONE** - NEVER say a fix/feature is complete without running tests and verifying it works. Run `bun test`, `go test`, or manual verification. Report test results to user. No exceptions. (See also #4 - you MUST paste the actual output.)
 
 ---
 
@@ -86,15 +61,6 @@ rush http GET /api/v1/endpoint -v            # Verbose: show headers
 ### Permissions
 
 Add permissions PERMANENTLY to `~/.claude/settings.json`. Ask ONCE, then add it. Never ask repeatedly.
-
-### CLI Execution
-
-```bash
-./rush/cli/scripts/install.sh   # Then: rush run ...
-./halo/cli/scripts/install.sh   # Then: halo build ...
-```
-
-NEVER: `./rush/cli/dist/rush`, `go build ./rush/cli/...`
 
 ### Testing
 
@@ -116,31 +82,7 @@ All todo items go in a single `TODO.md` at repo root. One TODO.md per repo, no e
 
 ### Project Scripts
 
-Every deployable project must have a `scripts/` directory with standard scripts:
-
-- `build.sh` - Build the project
-- `install.sh` - Install locally (to ~/.rush/bin, ~/.halo/bin, etc.)
-- `publish.sh` - Deploy/publish to production
-
-If unsure how to deploy a project, check its `scripts/` directory first.
-
-Examples:
-
-- `halo/cli/scripts/` - build.sh, install.sh
-- `rush/app/scripts/` - build.sh, install.sh, publish.sh, upload.sh
-
-### Deploy Completion
-
-After running any deploy/publish script, ALWAYS provide a relevant preview link:
-
-| Deploy Script | Preview Link |
-| --- | --- |
-| `halo/proxy/scripts/deploy.sh` | https://getrush.ai/agent/rabbit-hole (or relevant page) |
-| `halo/web/scripts/deploy.sh` | https://halo.prix.dev |
-| `rush/app/scripts/publish.sh` | Note: desktop app, mention version published |
-| `infra/*/scripts/deploy.sh` | https://getrush.ai (landing) |
-
-Format: "Deployed. Preview: [link]"
+Every deployable project must have a `scripts/` directory with standard scripts (`build.sh`, `install.sh`, `publish.sh`). If unsure how to deploy, check `scripts/` first.
 
 ## Preferences
 
@@ -178,20 +120,6 @@ Use Swarm MCP: `mcp__Swarm__spawn`, `mcp__Swarm__status`, `mcp__Swarm__stop`.
 - No overlapping tools
 - Names are documentation
 
-### Agent Prompt Design
-
-Mindset over rules. Focus on WHO the agent IS, not WHAT it must DO.
-
-**Prompt structure:**
-
-1. `mindset` - Core beliefs (WHY)
-2. `who_you_are` - Character traits (HOW)
-3. `the_X_attitude` - Domain-specific stance (WHAT makes it different)
-4. `your_tools` - Light guidance
-5. `what_success_looks_like` - Genuine outcomes
-
-See `agents/GUIDE.md` section "Mindset Over Rules".
-
 ### Cross-Cutting Changes
 
 When touching features used by many components:
@@ -200,93 +128,46 @@ When touching features used by many components:
 - Never add ad-hoc logic in consumers
 - If no central place exists, propose refactoring to create one first
 
-### UI Principles
+### Communicate Design Visually BEFORE Code
 
-- Single indicator per state
-- No redundant elements
-- **MANDATORY: ASCII diagram BEFORE any UI change**
+Before writing any code that changes how something works or looks, communicate the design so the user can make a decision fast. Use the right diagram for the situation:
 
-### Design / UX / UI Work - MANDATORY PROCESS
+- **User flow** -- screens, clicks, transitions (UI changes)
+- **System diagram** -- components, data flow, request paths (architecture changes)
+- **Data flow** -- transformations, storage, handoffs (pipeline changes)
+- **Before/after** -- current state vs proposed state (any change with tradeoffs)
 
-When the user asks for ANY feature that changes what users see or interact with (UI components, notifications, modals, flows, layout changes, new views, interaction patterns), you MUST follow this order. No exceptions.
+Show the FULL context, not just the new piece. If a notification appears inside a modal, draw the whole modal. If a new service connects to existing ones, show the whole system.
 
-**Step 1: BEFORE diagram (current state)**
-
-Draw the full user journey as it exists TODAY. Show what the user sees, what they click, what happens. ASCII art for screens, arrows for flow. This is how the user validates you understand the problem.
-
-```
-BEFORE: User clicks link in modal
-┌─────────────────────────────────┐
-│  Session Detail Modal           │
-│                                 │
-│  "Check out linkedin.com/in/x" │  <-- user clicks
-│                                 │
-└─────────────────────────────────┘
-         │
-         v
-┌─────────────────────────────────┐
-│  Browser view opens ON TOP      │
-│  of modal (native > web layer)  │
-│  ┌───────────────────────────┐  │
-│  │  Loading linkedin.com...  │  │
-│  └───────────────────────────┘  │
-│  Modal hidden underneath        │
-│  User loses reading context     │
-└─────────────────────────────────┘
-```
-
-**Step 2: AFTER diagram (proposed state)**
-
-Draw the full user journey after your change. Same level of detail. Show every screen state, every interaction, every transition.
+**Example -- user flow (before/after):**
 
 ```
-AFTER: User clicks link in modal
-┌─────────────────────────────────┐
-│  Session Detail Modal           │
-│                                 │
-│  "Check out linkedin.com/in/x" │  <-- user clicks
-│                                 │
-│  (modal stays open, untouched)  │
-└─────────────────────────────────┘
-         │  page loads in background (1-3s)
-         v
-┌─────────────────────────────────┐
-│  Session Detail Modal           │
-│  ┌───────────────────────────┐  │
-│  │ [icon] Kevin M. - Link  3s│  │  <-- notification slides in
-│  │        Ready              │  │
-│  └───────────────────────────┘  │
-│                                 │
-│  User keeps reading, clicks     │
-│  notification when ready        │
-└─────────────────────────────────┘
-         │  user clicks notification
-         v
-┌─────────────────────────────────┐
-│  Browser View (full screen)     │
-│  linkedin.com/in/kevin-m       │
-│  (already loaded, instant)      │
-└─────────────────────────────────┘
+BEFORE:                              AFTER:
+┌──────────────────────┐             ┌──────────────────────┐
+│  Modal               │             │  Modal               │
+│  "Check linkedin..." │ <-click     │  "Check linkedin..." │ <-click
+└──────────────────────┘             │                      │
+         │                           │  ┌────────────────┐  │
+         v                           │  │ Link ready (3s)│  │ <-toast
+┌──────────────────────┐             │  └────────────────┘  │
+│  Browser ON TOP      │             └──────────────────────┘
+│  Modal hidden        │                      │ click toast
+│  Context lost        │                      v
+└──────────────────────┘             ┌──────────────────────┐
+                                     │  Browser (preloaded) │
+                                     └──────────────────────┘
 ```
 
-**Step 3: THEN implementation plan**
+**Example -- system diagram:**
 
-After the diagrams, write the technical plan. The diagrams ARE the spec -- the implementation plan explains how to build what the diagrams show.
+```
+Client ──POST /run──> CF Worker ──> Proxy (Hetzner)
+                                      │
+                                      ├──> LLM (streaming)
+                                      └──> R2 (artifacts)
+```
 
-**Why this matters:**
-
-A plan that says "add modalCount to useSystemUIStore" tells the user NOTHING about whether the feature is right. A before/after ASCII diagram tells them EVERYTHING in 10 seconds. The diagrams are how the user evaluates the design. The code plan is just execution details.
-
-**Anti-patterns (what Claude keeps doing wrong):**
-
-- Drawing one tiny component mockup and calling it a "design" -- that's not a flow, show full screens with context
-- Jumping straight to "9 files to modify" without showing what the UI looks like
-- Treating UX features as code architecture problems
-- Writing 50 lines of code snippets before showing what the user will actually see
-- Burying a small ASCII box inside a wall of implementation details
-- Showing only the new component in isolation without the surrounding UI context
-
-**The rule:** Show the full UI state, not just the new widget. If a notification appears inside a modal, draw the WHOLE modal with the notification in it. If a sidebar changes, draw the whole sidebar. Context matters -- the user needs to see how things fit together.
+The diagram IS the spec. Implementation details come after the user approves the design.
 
 ## Tech Stack
 
