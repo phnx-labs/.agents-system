@@ -2,7 +2,7 @@
 name: higgsfield
 description: Generate images and videos via Higgsfield AI (higgsfield.ai) using OpenClaw browser with agent's own browser profile
 argument-hint: "[image|video] prompt"
-allowed-tools: Bash(sleep*), Bash(ssh*), Bash(*/env.sh*)
+allowed-tools: Bash(sleep*), Bash(ssh*), Bash(*/env.sh*), Bash(openclaw*), Bash(agent-browser*)
 user-invocable: true
 ---
 
@@ -18,66 +18,74 @@ Read the `/browser` skill first for general browser automation guidelines.
 
 | Mode | URL |
 |------|-----|
-| `image` | `https://higgsfield.ai/image/nano_banana_2` |
-| `video` | `https://higgsfield.ai/video` |
+| `image` | `https://www.higgsfield.ai/image/nano_banana_2` |
+| `video` | `https://www.higgsfield.ai/video` |
 
-## Method: OpenClaw Browser (with agent profile)
+## OpenClaw Browser Workflow
 
-Every command MUST include `--browser-profile <your-profile>` (e.g. `claude`, `paul`, `emma`). This ensures tab isolation across agents and preserves login sessions. Use the profile that matches your agent name.
+**CRITICAL: Always pass `--browser-profile <your-profile>` on every command.** Each agent has a dedicated browser profile (paul, emma, sergey, claude, etc.) with its own login sessions. Omitting the flag uses the default profile, which may not be logged into Higgsfield.
 
-### Environment
+### Local Agents (OC agents on mac-mini)
+
+```bash
+# PROFILE must be your agent's browser profile name (paul, emma, sergey, etc.)
+OC="PATH=/opt/homebrew/bin:/Users/muqsit/.agents/shims:$PATH openclaw browser --browser-profile PROFILE"
+```
+
+### Remote Agents (Claude via SSH)
 
 ```bash
 !`${CLAUDE_SKILL_DIR}/env.sh block`
+# Set PROFILE to your browser profile name (e.g. claude)
+# All commands: $SSH "$OC <command> --browser-profile $PROFILE"
 ```
-
-All commands below use the SSH and OC variables from the environment block. Set `PROFILE` to your agent's browser profile name (e.g. `claude`, `paul`, `emma`) and append `--browser-profile $PROFILE` to every `$OC` command.
 
 ### Submission Workflow
 
+Steps below use `$OC` shorthand. Remote agents prefix with `$SSH "..."`.
+
 ```bash
 # 1. Open generation page in NEW TAB (never navigate!)
-TARGET=$($SSH "$OC open 'https://higgsfield.ai/image/nano_banana_2' --browser-profile $PROFILE")
-# Parse target ID from output (second line), e.g. TARGET=5AC6D2B8...
+$OC open 'https://www.higgsfield.ai/image/nano_banana_2'
+# Save the target ID from output, e.g. TARGET=3EB5FF70...
 
 # 2. Focus your tab
-$SSH "$OC focus <targetId> --browser-profile $PROFILE"
+$OC focus <targetId>
 
 # 3. Snapshot to get element refs
-$SSH "$OC snapshot --labels --browser-profile $PROFILE"
+$OC snapshot --labels
 
 # 4. Dismiss any promo dialogs (press Escape if a dialog blocks the page)
-$SSH "$OC press Escape --browser-profile $PROFILE"
-$SSH "$OC snapshot --labels --browser-profile $PROFILE"
+$OC press Escape
+$OC snapshot --labels
 
-# 5. VERIFY MODEL (URL does NOT control the model — Higgsfield remembers last-used)
-#    Check the model label at bottom-left of the composer. If it doesn't say "Nano Banana 2":
-#    Click the model label button -> snapshot -> click "Nano Banana 2" from the dropdown
-$SSH "$OC snapshot --labels --browser-profile $PROFILE"
-# If model button text != "Nano Banana 2", click it, then select "Nano Banana 2" ref
+# 5. VERIFY MODEL (URL does NOT control the model — Higgsfield remembers the last-used model)
+#    Check the model label at bottom-left of the composer.
+#    If it doesn't say "Nano Banana 2", click the model label button,
+#    snapshot to see the dropdown, then click "Nano Banana 2".
 
 # 6. Set aspect ratio (MUST do before typing prompt)
 #    Click the current aspect button -> snapshot -> click desired option
-$SSH "$OC click <aspect-btn-ref> --browser-profile $PROFILE"
-$SSH "$OC snapshot --labels --browser-profile $PROFILE"   # Find the option refs
-$SSH "$OC click <option-ref> --browser-profile $PROFILE"  # e.g. 16:9, 9:16, 1:1
+$OC click <aspect-btn-ref>
+$OC snapshot --labels   # Find the option refs
+$OC click <option-ref>  # e.g. 16:9, 9:16, 1:1
 
 # 7. Click textbox, select all, type prompt
-$SSH "$OC click <textbox-ref> --browser-profile $PROFILE"
-$SSH "$OC press 'Meta+a' --browser-profile $PROFILE"
-$SSH "$OC type <textbox-ref> 'prompt text here' --browser-profile $PROFILE"
+$OC click <textbox-ref>
+$OC press 'Meta+a'
+$OC type <textbox-ref> 'prompt text here'
 
 # 8. Re-snapshot (refs change after typing) and click Generate
-$SSH "$OC snapshot --labels --browser-profile $PROFILE"
-$SSH "$OC click <generate-ref> --browser-profile $PROFILE"
+$OC snapshot --labels
+$OC click <generate-ref>
 
-# 9. Poll for completion (DO NOT use long sleep — relay times out after 30s idle)
-#    Take screenshots every 15s until images appear (no more "Generating" text)
-$SSH "$OC screenshot --browser-profile $PROFILE"   # poll every 15s
-# Repeat until images are ready (usually 30-60s for images, 60-180s for video)
+# 9. Poll for completion (DO NOT use sleep — relay times out after 30s idle)
+#    Take screenshots every 15s until images appear
+$OC screenshot   # Check if still "Generating..." or images are ready
+# Repeat until done (usually 30-60s for images, 60-180s for video)
 
-# 10. Close tab when done
-$SSH "$OC close <targetId> --browser-profile $PROFILE"
+# 10. Close tab when done downloading results
+$OC close <targetId>
 ```
 
 ### Downloading Results
@@ -88,21 +96,39 @@ After generation completes, images appear in the History panel. To download:
 2. Snapshot to find the download button ref
 3. Use `openclaw browser download <ref>` to save the image
 
-Alternatively, right-click save or screenshot the results.
+Alternatively, extract image URLs from the DOM and download via curl.
 
 ### Important Quirks
 
 - **Promo dialogs** -- Higgsfield shows promotional popups on page load. Press Escape to dismiss, then re-snapshot.
 - **Aspect ratio resets** -- Higgsfield may reset aspect ratio between generations. Always verify the current aspect before submitting.
 - **Refs change after every action** -- always re-snapshot before clicking if you've typed or navigated.
-- **Page navigation** -- clicking some elements navigates away. If this happens, open a fresh tab.
+- **Page navigation** -- clicking some elements navigates away from `/image/nano_banana_2`. If this happens, open a fresh tab.
 - **Contenteditable input** -- the prompt textbox is contenteditable, not a standard input. `type` via OpenClaw relay works. If it doesn't, try `click` first to focus.
 
 ## Guidelines
 
 - **Set aspect ratio FIRST** -- before typing the prompt. Most common mistake.
+- **Verify model EVERY TIME** -- the URL does not control the model. Check the label at bottom-left.
 - **Intelligently select settings** -- based on prompt, choose appropriate ratio. Portrait = 9:16, cinematic = 16:9, square = 1:1.
 - **Batch workflow** -- when generating many images, write a helper script rather than running individual commands.
 - **Wait times** -- image generation 30-60s, video 60-180s.
 - **Model** -- Nano Banana 2 for rapid iteration, Nano Banana Pro for higher quality.
-- **Always use `--browser-profile <your-profile>`** -- never omit it. Each agent has its own profile (paul, emma, sergey, claude, etc.) with separate Higgsfield login sessions.
+- **Always use `--browser-profile <your-profile>`** -- never omit it. Each agent has its own profile with separate Higgsfield login sessions.
+
+## Fallback: agent-browser (Local)
+
+If OpenClaw relay is unavailable, use agent-browser locally with the Higgsfield profile:
+
+```bash
+agent-browser \
+  --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --profile ~/.agent-browser/profiles/higgsfield \
+  open "https://www.higgsfield.ai/image" --headed 2>&1
+```
+
+Note: may hit Cloudflare verification.
+
+## Fallback: API via generate.sh
+
+The `generate.sh` script calls the Higgsfield API directly by extracting a Clerk auth token from a logged-in browser session. Currently blocked by Cloudflare challenges, but useful as reference. See `generate.sh` in this skill directory.
