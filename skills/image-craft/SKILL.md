@@ -1,7 +1,7 @@
 ---
 name: image-craft
 description: "Generate high-quality images for any creative use case — editorial/cinematic photography, logos and brand marks, posters and print design, product photography, social media graphics, book covers, illustrations, and more. The agent reads the surrounding content, understands context and intent, researches the domain, selects the right visual approach, and generates images with expert-level prompt craft. Load this skill whenever image generation is involved."
-allowed-tools: Bash(*/image-craft/generate.sh*), Bash(*/image-craft/status.sh*), Bash(*/image-craft/download.sh*), Bash(sleep*)
+allowed-tools: Bash(sleep*), Bash(ssh*), Bash(*/env.sh*)
 user-invocable: true
 ---
 
@@ -82,20 +82,7 @@ The specific vocabulary within each slot changes dramatically by use case. See s
 
 ### Step 5: Generate
 
-**Preferred: OpenClaw browser on mac-mini** — load the `/higgsfield` skill for the full workflow. Use `openclaw browser` commands via SSH to navigate, set aspect ratio, type prompt, and click Generate on higgsfield.ai.
-
-**Fallback: API scripts** (requires agent-browser running locally with logged-in Higgsfield session):
-
-```bash
-# Generate images (returns job ID)
-./generate.sh "prompt text" --model nano-banana-pro --aspect 16:9 --batch 4 --resolution 1k
-
-# Poll status every 15s until complete (returns status + image URLs)
-./status.sh <job_set_id>
-
-# Download results
-./download.sh <job_set_id> /path/to/output-prefix
-```
+Load the `/higgsfield` skill for the full generation workflow. Use OpenClaw browser commands via SSH with `--browser-profile claude` to open higgsfield.ai, set aspect ratio, type prompt, and click Generate.
 
 **Model selection:**
 - `nano-banana-pro` (default) — high-quality, professional, client-facing work
