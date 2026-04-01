@@ -499,6 +499,9 @@ Before publishing, verify:
 - `references/steve-jobs-literary-analysis.pdf` -- Steve Jobs keynote techniques: villain setup, tricolon, devastating comparison, pricing anchors
 - `references/jukic-literary-techniques.pdf` -- Marko Jukic's essay techniques: concrete-to-cosmic arcs, punchline sentences, trilogy of examples, steelman-dismantle
 - `references/gwern-literary-techniques.pdf` -- Gwern Branwen's analytical craft: evidence cascades, mathematical precision, declarative confidence, novelty budget
+- `references/burja-literary-techniques.pdf` -- Samo Burja's geopolitical writing: institutional analysis, great founder theory, civilizational framing
+- `references/greer-literary-techniques.pdf` -- John Michael Greer's long-form craft: historical cycles, decline narratives, accessible erudition, metaphor-driven argument
+- `references/wang-literary-techniques.pdf` -- Dan Wang's annual letters: personal-industrial synthesis, technology vs manufacturing distinction, place-based observation
 
 # Datasets
 
