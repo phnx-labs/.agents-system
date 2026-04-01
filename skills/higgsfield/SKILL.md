@@ -23,7 +23,7 @@ Read the `/browser` skill first for general browser automation guidelines.
 
 ## Method: OpenClaw Browser (with agent profile)
 
-Every command MUST include `--browser-profile claude`. This ensures tab isolation across agents and preserves login sessions.
+Every command MUST include `--browser-profile <your-profile>` (e.g. `claude`, `paul`, `emma`). This ensures tab isolation across agents and preserves login sessions. Use the profile that matches your agent name.
 
 ### Environment
 
@@ -31,47 +31,47 @@ Every command MUST include `--browser-profile claude`. This ensures tab isolatio
 !`${CLAUDE_SKILL_DIR}/env.sh block`
 ```
 
-All commands below use the SSH and OC variables from the environment block. Append `--browser-profile claude` to every `$OC` command.
+All commands below use the SSH and OC variables from the environment block. Set `PROFILE` to your agent's browser profile name (e.g. `claude`, `paul`, `emma`) and append `--browser-profile $PROFILE` to every `$OC` command.
 
 ### Submission Workflow
 
 ```bash
 # 1. Open generation page in NEW TAB (never navigate!)
-TARGET=$($SSH "$OC open 'https://higgsfield.ai/image/nano_banana_2' --browser-profile claude")
+TARGET=$($SSH "$OC open 'https://higgsfield.ai/image/nano_banana_2' --browser-profile $PROFILE")
 # Parse target ID from output (second line), e.g. TARGET=5AC6D2B8...
 
 # 2. Focus your tab
-$SSH "$OC focus <targetId> --browser-profile claude"
+$SSH "$OC focus <targetId> --browser-profile $PROFILE"
 
 # 3. Snapshot to get element refs
-$SSH "$OC snapshot --labels --browser-profile claude"
+$SSH "$OC snapshot --labels --browser-profile $PROFILE"
 
 # 4. Dismiss any promo dialogs (press Escape if a dialog blocks the page)
-$SSH "$OC press Escape --browser-profile claude"
-$SSH "$OC snapshot --labels --browser-profile claude"
+$SSH "$OC press Escape --browser-profile $PROFILE"
+$SSH "$OC snapshot --labels --browser-profile $PROFILE"
 
 # 5. Set aspect ratio (MUST do before typing prompt)
 #    Click the current aspect button -> snapshot -> click desired option
-$SSH "$OC click <aspect-btn-ref> --browser-profile claude"
-$SSH "$OC snapshot --labels --browser-profile claude"   # Find the option refs
-$SSH "$OC click <option-ref> --browser-profile claude"  # e.g. 16:9, 9:16, 1:1
+$SSH "$OC click <aspect-btn-ref> --browser-profile $PROFILE"
+$SSH "$OC snapshot --labels --browser-profile $PROFILE"   # Find the option refs
+$SSH "$OC click <option-ref> --browser-profile $PROFILE"  # e.g. 16:9, 9:16, 1:1
 
 # 6. Click textbox, select all, type prompt
-$SSH "$OC click <textbox-ref> --browser-profile claude"
-$SSH "$OC press 'Meta+a' --browser-profile claude"
-$SSH "$OC type <textbox-ref> 'prompt text here' --browser-profile claude"
+$SSH "$OC click <textbox-ref> --browser-profile $PROFILE"
+$SSH "$OC press 'Meta+a' --browser-profile $PROFILE"
+$SSH "$OC type <textbox-ref> 'prompt text here' --browser-profile $PROFILE"
 
 # 7. Re-snapshot (refs change after typing) and click Generate
-$SSH "$OC snapshot --labels --browser-profile claude"
-$SSH "$OC click <generate-ref> --browser-profile claude"
+$SSH "$OC snapshot --labels --browser-profile $PROFILE"
+$SSH "$OC click <generate-ref> --browser-profile $PROFILE"
 
-# 8. Wait for generation (30-60s for images, 60-180s for video)
-sleep 45
-$SSH "$OC snapshot --labels --browser-profile claude"
-# Look for completed images in history (no more "Generating" text)
+# 8. Poll for completion (DO NOT use long sleep — relay times out after 30s idle)
+#    Take screenshots every 15s until images appear (no more "Generating" text)
+$SSH "$OC screenshot --browser-profile $PROFILE"   # poll every 15s
+# Repeat until images are ready (usually 30-60s for images, 60-180s for video)
 
 # 9. Close tab when done
-$SSH "$OC close <targetId> --browser-profile claude"
+$SSH "$OC close <targetId> --browser-profile $PROFILE"
 ```
 
 ### Downloading Results
@@ -99,4 +99,4 @@ Alternatively, right-click save or screenshot the results.
 - **Batch workflow** -- when generating many images, write a helper script rather than running individual commands.
 - **Wait times** -- image generation 30-60s, video 60-180s.
 - **Model** -- Nano Banana 2 for rapid iteration, Nano Banana Pro for higher quality.
-- **Always use `--browser-profile claude`** -- never omit it. Other agents use their own profiles.
+- **Always use `--browser-profile <your-profile>`** -- never omit it. Each agent has its own profile (paul, emma, sergey, claude, etc.) with separate Higgsfield login sessions.

@@ -159,7 +159,7 @@ Each Telegram bot account needs its own `botToken` under `channels.telegram.acco
    - `AGENTS.md` — use the official template from `openclaw setup` or copy from another agent
    - `SOUL.md` — persona and values
    - `IDENTITY.md` — name, role, emoji
-   - `USER.md` — who Muqsit is, his context
+   - `USER.md` — who Muqsit is, his context, **must include Escalation Protocol section**
    - `TOOLS.md` — environment-specific notes
    - `HEARTBEAT.md` — monitoring checklist (or empty to skip)
    - `MEMORY.md` — start empty with headings so dashboard doesn't warn
@@ -172,6 +172,34 @@ Each Telegram bot account needs its own `botToken` under `channels.telegram.acco
    ```
 
 
+## Escalation Protocol (Required for All Agents)
+
+Every agent's `USER.md` MUST include an Escalation Protocol section. This ensures agents can reach the user when critically blocked instead of spinning for hours.
+
+**Standard escalation ladder:**
+1. **Telegram** — always first. Describe the blocker, then move on to other work.
+2. **Phone call** — if blocked 2+ consecutive cron runs on the same issue. Uses the `phone-call` skill (`~/.openclaw/skills/phone-call/`).
+
+**Template for USER.md:**
+```markdown
+## Escalation Protocol
+
+How to reach [USER] when you need help:
+
+1. **Telegram** (always first): Send a message describing the blocker.
+2. **Phone call** (last resort): If blocked for 2+ consecutive cron runs:
+   ```bash
+   bash ~/.openclaw/skills/phone-call/call.sh "This is [AGENT]. [describe blocker]. Please check Telegram."
+   ```
+   - Max once per hour for the same issue
+   - Active hours only
+   - See ~/.openclaw/skills/phone-call/SKILL.md
+3. **After escalating**: Move on to other work immediately.
+```
+
+**Credentials** are stored in `openclaw.json` under `skills.entries.phone-call`. The `call.sh` script reads them automatically.
+
+
 ## Which File to Edit for Each Change
 
 | Goal | File to Edit |
@@ -180,6 +208,7 @@ Each Telegram bot account needs its own `botToken` under `channels.telegram.acco
 | Agent's personality, tone | `~/.openclaw/{agentId}/SOUL.md` |
 | Agent's workflows, instructions | `~/.openclaw/{agentId}/AGENTS.md` |
 | What the agent knows about Muqsit | `~/.openclaw/{agentId}/USER.md` |
+| How agent escalates blockers to user | `~/.openclaw/{agentId}/USER.md` (Escalation Protocol section) |
 | Monitoring checklist (heartbeat) | `~/.openclaw/{agentId}/HEARTBEAT.md` |
 | Long-term memory | `~/.openclaw/{agentId}/MEMORY.md` |
 | Startup behavior | `~/.openclaw/{agentId}/BOOT.md` |
