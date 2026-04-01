@@ -50,27 +50,33 @@ $SSH "$OC snapshot --labels --browser-profile $PROFILE"
 $SSH "$OC press Escape --browser-profile $PROFILE"
 $SSH "$OC snapshot --labels --browser-profile $PROFILE"
 
-# 5. Set aspect ratio (MUST do before typing prompt)
+# 5. VERIFY MODEL (URL does NOT control the model — Higgsfield remembers last-used)
+#    Check the model label at bottom-left of the composer. If it doesn't say "Nano Banana 2":
+#    Click the model label button -> snapshot -> click "Nano Banana 2" from the dropdown
+$SSH "$OC snapshot --labels --browser-profile $PROFILE"
+# If model button text != "Nano Banana 2", click it, then select "Nano Banana 2" ref
+
+# 6. Set aspect ratio (MUST do before typing prompt)
 #    Click the current aspect button -> snapshot -> click desired option
 $SSH "$OC click <aspect-btn-ref> --browser-profile $PROFILE"
 $SSH "$OC snapshot --labels --browser-profile $PROFILE"   # Find the option refs
 $SSH "$OC click <option-ref> --browser-profile $PROFILE"  # e.g. 16:9, 9:16, 1:1
 
-# 6. Click textbox, select all, type prompt
+# 7. Click textbox, select all, type prompt
 $SSH "$OC click <textbox-ref> --browser-profile $PROFILE"
 $SSH "$OC press 'Meta+a' --browser-profile $PROFILE"
 $SSH "$OC type <textbox-ref> 'prompt text here' --browser-profile $PROFILE"
 
-# 7. Re-snapshot (refs change after typing) and click Generate
+# 8. Re-snapshot (refs change after typing) and click Generate
 $SSH "$OC snapshot --labels --browser-profile $PROFILE"
 $SSH "$OC click <generate-ref> --browser-profile $PROFILE"
 
-# 8. Poll for completion (DO NOT use long sleep — relay times out after 30s idle)
+# 9. Poll for completion (DO NOT use long sleep — relay times out after 30s idle)
 #    Take screenshots every 15s until images appear (no more "Generating" text)
 $SSH "$OC screenshot --browser-profile $PROFILE"   # poll every 15s
 # Repeat until images are ready (usually 30-60s for images, 60-180s for video)
 
-# 9. Close tab when done
+# 10. Close tab when done
 $SSH "$OC close <targetId> --browser-profile $PROFILE"
 ```
 
