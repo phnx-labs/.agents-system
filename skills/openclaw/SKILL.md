@@ -197,7 +197,7 @@ How to reach [USER] when you need help:
 3. **After escalating**: Move on to other work immediately.
 ```
 
-**Credentials** are stored in `openclaw.json` under `skills.entries.phone-call`. The `call.sh` script reads them automatically.
+**Credentials** are stored in `~/.openclaw/skills/phone-call/config.json` (machine-local, not synced via agents-cli). The `call.sh` script reads them automatically.
 
 
 ## Which File to Edit for Each Change
