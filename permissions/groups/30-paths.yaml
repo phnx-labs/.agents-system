@@ -1,4 +1,6 @@
   # File system paths (Read/Write/Edit)
+  - "Read(~/Downloads/*)"
+  - "Read(~/Downloads/**)"
   - "Read(/tmp/*)"
   - "Read(/tmp/**)"
   - "Read(/tmp/claude/*)"

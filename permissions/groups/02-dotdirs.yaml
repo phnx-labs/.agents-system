@@ -1,4 +1,17 @@
   # Bash read commands for common agent/config dotfile directories
+  # ~/Downloads
+  - "Bash(ls ~/Downloads:*)"
+  - "Bash(ls ~/Downloads/:*)"
+  - "Bash(ls -la ~/Downloads:*)"
+  - "Bash(ls -la ~/Downloads/:*)"
+  - "Bash(cat ~/Downloads:*)"
+  - "Bash(cat ~/Downloads/:*)"
+  - "Bash(head ~/Downloads:*)"
+  - "Bash(head ~/Downloads/:*)"
+  - "Bash(tail ~/Downloads:*)"
+  - "Bash(tail ~/Downloads/:*)"
+  - "Bash(cp ~/Downloads:*)"
+  - "Bash(mv ~/Downloads:*)"
   # ~/.agents
   - "Bash(ls ~/.agents:*)"
   - "Bash(ls ~/.agents/:*)"
