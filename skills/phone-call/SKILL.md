@@ -1,52 +1,44 @@
 ---
 name: phone-call
 description: Call Muqsit when critically blocked. Last resort escalation.
+allowed-tools: Bash(bash ~/.openclaw/skills/phone-call/call.sh*)
 user-invocable: true
 ---
 
 # Phone Call Escalation
 
-Call Muqsit's phone when you are critically blocked and cannot make progress.
+Call Muqsit's phone when you are critically blocked and need human help.
 
-## When to Use
+## When to Call
 
-- You have been blocked on the **same issue for 2+ consecutive cron runs**
-- All retries and workarounds are exhausted
-- The blocker requires human intervention (credentials, service restart, manual approval)
-- It is within active hours (7 AM - midnight PT)
+- You need something only Muqsit can provide (credentials, service restart, manual approval, a decision)
+- All workarounds and alternative tasks are exhausted
+- The blocker is preventing meaningful progress
 
-## When NOT to Use
+Calling disturbs Muqsit directly. Exhaust every alternative first. But when you genuinely need help, call without hesitation.
 
-- Minor issues that can wait for the next cron run
-- Problems you can work around by switching to a different task
-- Non-blocking observations or status updates (use Telegram instead)
-- Outside active hours unless truly urgent
+## How to Escalate
 
-## How to Use
+**Step 1: Print a Telegram briefing.** Before calling, print a clear message. This appears in Telegram and is what Muqsit reads when he unlocks his phone after the call.
 
+Format:
+```
+BLOCKED: [one-line summary]
+
+What: [what you were trying to do]
+Error: [the specific error or blocker]
+Tried: [what you already attempted]
+Need: [exactly what you need from Muqsit]
+Link: [relevant URL, file path, or log location]
+```
+
+**Step 2: Call.**
 ```bash
-bash ~/.openclaw/skills/phone-call/call.sh "This is Paul. Blocked on Higgsfield browser timeouts for 3 hours. Browser relay times out before I can download generated images. Please check Telegram for details."
+bash ~/.openclaw/skills/phone-call/call.sh "This is [Name]. [one sentence: what is blocked]. Check Telegram for details."
 ```
 
-The message plays twice so Muqsit catches it. Keep messages under 30 seconds. State:
-1. Who you are
-2. What is blocked
-3. How long
-4. What you need
+The call message plays twice. Keep it under 15 seconds. All detail goes in the Telegram briefing -- the call just gets Muqsit's attention.
 
-## Credentials
+## After Calling
 
-Stored in `~/.openclaw/skills/phone-call/config.json` (machine-local, not synced). The `call.sh` script reads them automatically.
-
-```json
-{
-  "accountSid": "...",
-  "authToken": "...",
-  "fromNumber": "+1...",
-  "toNumber": "+1..."
-}
-```
-
-## Rate Limit
-
-Do NOT call more than once per hour for the same issue. If no response after 60 minutes, try once more then stop.
+Move on to other work immediately. Do not retry the blocked action.

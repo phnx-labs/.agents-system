@@ -177,23 +177,20 @@ Each Telegram bot account needs its own `botToken` under `channels.telegram.acco
 Every agent's `USER.md` MUST include an Escalation Protocol section. This ensures agents can reach the user when critically blocked instead of spinning for hours.
 
 **Standard escalation ladder:**
-1. **Telegram** — always first. Describe the blocker, then move on to other work.
-2. **Phone call** — if blocked 2+ consecutive cron runs on the same issue. Uses the `phone-call` skill (`~/.openclaw/skills/phone-call/`).
+1. **Telegram** — always first. Print a detailed briefing (what's blocked, what you tried, what you need, relevant links).
+2. **Phone call** — when blocked and need human help. Print the Telegram briefing first, then call. The call gets attention; the briefing has the details.
 
 **Template for USER.md:**
 ```markdown
 ## Escalation Protocol
 
-How to reach [USER] when you need help:
+1. **Telegram** (default): Print status, blockers, and updates as normal output.
 
-1. **Telegram** (always first): Send a message describing the blocker.
-2. **Phone call** (last resort): If blocked for 2+ consecutive cron runs:
-   ```bash
-   bash ~/.openclaw/skills/phone-call/call.sh "This is [AGENT]. [describe blocker]. Please check Telegram."
-   ```
-   - Max once per hour for the same issue
-   - Active hours only
-   - See ~/.openclaw/skills/phone-call/SKILL.md
+2. **Phone call** (when blocked and need human help):
+   - First, print a Telegram briefing: what is blocked, what you tried, what you need, relevant links.
+   - Then call: `bash ~/.openclaw/skills/phone-call/call.sh "This is [Name]. [one-sentence blocker]. Check Telegram."`
+   - The briefing is what the user reads when they unlock their phone. The call just gets their attention.
+
 3. **After escalating**: Move on to other work immediately.
 ```
 
