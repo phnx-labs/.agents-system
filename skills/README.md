@@ -1,0 +1,105 @@
+# Skills
+
+Skills give agents domain expertise they can load on demand. Each skill is a directory with a `SKILL.md` file containing instructions, workflows, and context for a specific capability.
+
+## How Skills Work
+
+When you invoke a skill (e.g., `/browser`) or when an agent detects relevant context (e.g., you ask to generate an image), the skill's instructions load into the agent's context. Skills can include:
+
+- **Instructions** in `SKILL.md` - the core knowledge
+- **Scripts** (`.sh` files) - automations the skill can invoke
+- **References** - example content, datasets, style guides
+
+Skills differ from commands: a command is a one-shot prompt expansion, while a skill stays loaded and provides ongoing capability.
+
+## Environment Injection
+
+Skills often need machine-specific values (hostnames, paths, credentials). We solve this with environment injection:
+
+```markdown
+## Environment
+
+!`${CLAUDE_SKILL_DIR}/env.sh block`
+```
+
+The `!` syntax executes the script and injects its output into the skill at load time. The `env.sh` script sources `~/.agents/.environment` (gitignored) and prints the resolved values.
+
+**Why this matters for sharing:** You can publish skills publicly without exposing sensitive data. Each machine has its own `.environment` file with local values. The skill references variables; the environment provides values.
+
+Example `.environment`:
+```bash
+BROWSER_SSH_USER=myuser
+BROWSER_SSH_HOST=my-server.local
+API_KEY_REF=keychain:my-api-key
+```
+
+Example `env.sh`:
+```bash
+source ~/.agents/.environment 2>/dev/null
+USER="${BROWSER_SSH_USER:-default}"
+HOST="${BROWSER_SSH_HOST:-localhost}"
+echo "SSH target: ${USER}@${HOST}"
+```
+
+## Creating Skills
+
+A minimal skill:
+
+```
+skills/my-skill/
+  SKILL.md     # Required
+```
+
+The `SKILL.md` frontmatter:
+
+```yaml
+---
+name: my-skill
+description: "One line - when should Claude load this?"
+allowed-tools: Bash(pattern*)   # Optional: tools this skill can use
+user-invocable: true            # Can user type /my-skill?
+---
+```
+
+Keep skills focused. One capability per skill. A "do everything" skill is less effective than three focused ones.
+
+## Learning from Others
+
+The agent skills ecosystem is evolving fast. Some notable collections:
+
+- **[gstack](https://github.com/garrytan/gstack)** - Garry Tan's opinionated setup with persona-based skills (CEO review, design review, QA). Notable for its "forcing function" patterns that surface hidden assumptions.
+- **[awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code)** - Curated list of skill repositories, hooks, and orchestrators
+- **[Trail of Bits Security Skills](https://github.com/trailofbits)** - Professional security-focused skills for static analysis and code review
+
+Key patterns emerging in the community:
+
+1. **Persona-based skills** - Each skill embodies a specialist role (security officer, QA lead, design reviewer)
+2. **Pipeline chaining** - Skills write artifacts that downstream skills consume
+3. **Forcing functions** - Skills that surface assumptions through structured questions
+4. **Risk budgets** - Limiting how much a skill can change in one pass
+
+## Challenges with Sharing Skills
+
+When publishing skills, watch for:
+
+1. **Embedded credentials** - API keys, hostnames, paths hardcoded in SKILL.md
+2. **Machine-specific assumptions** - Paths like `/Users/yourname/` or `~/my-project`
+3. **Implicit dependencies** - Scripts that assume certain CLIs are installed
+
+The environment injection pattern solves (1) and (2). For (3), document dependencies in SKILL.md or add setup scripts.
+
+## Skills in This Repo
+
+Browse the subdirectories to see available skills. Each has its own SKILL.md with detailed documentation. Notable ones:
+
+- `browser/` - Browser automation via OpenClaw or agent-browser
+- `image-craft/` - Expert prompt craft for image generation
+- `linear/` - Task management CLI for agent teams
+- `mq/` - Query large documents without reading entire files
+- `writer/` - Professional writing with literary craft
+
+## Further Reading
+
+- [Claude Code Skills Documentation](https://code.claude.com/docs/en/skills)
+- [Essential Claude Code Skills and Commands](https://batsov.com/articles/2026/03/11/essential-claude-code-skills-and-commands/)
+- [A Practical Guide to AI Dotfiles](https://engineersmeetai.substack.com/p/a-practical-guide-to-ai-dotfiles)
