@@ -18,7 +18,7 @@ Read the `/browser` skill first for general browser automation guidelines.
 
 | Mode | URL |
 |------|-----|
-| `image` | `https://www.higgsfield.ai/image/nano_banana_2` |
+| `image` | `https://higgsfield.ai/image/nano_banana_flash` |
 | `video` | `https://www.higgsfield.ai/video` |
 
 ## OpenClaw Browser Workflow
@@ -46,7 +46,7 @@ Steps below use `$OC` shorthand. Remote agents prefix with `$SSH "..."`.
 
 ```bash
 # 1. Open generation page in NEW TAB (never navigate!)
-$OC open 'https://www.higgsfield.ai/image/nano_banana_2'
+$OC open 'https://higgsfield.ai/image/nano_banana_flash'
 # Save the target ID from output, e.g. TARGET=3EB5FF70...
 
 # 2. Focus your tab
