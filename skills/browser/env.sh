@@ -6,13 +6,15 @@
 source ~/.agents/.environment 2>/dev/null
 
 if [ "$1" = "block" ]; then
-  USER="${OPENCLAW_USER:-muqsit}"
-  HOST="${OPENCLAW_HOST:-mac-mini}"
-  PATHPFX="${OPENCLAW_PATH:-/opt/homebrew/bin}"
+  USER="${BROWSER_SSH_USER:-muqsit}"
+  HOST="${BROWSER_SSH_HOST:-mac-mini}"
+  PATHPFX="${BROWSER_SSH_PATH:-/opt/homebrew/bin}"
+  BROWSER_CMD="${BROWSER_CMD:-openclaw browser}"
   cat <<EOF
 - SSH target: ${USER}@${HOST}
 - PATH prefix: ${PATHPFX}
-- Command prefix: ssh ${USER}@${HOST} "PATH=${PATHPFX}:\$PATH openclaw browser"
+- Browser command: ${BROWSER_CMD}
+- Command prefix: ssh ${USER}@${HOST} "PATH=${PATHPFX}:\$PATH ${BROWSER_CMD}"
 EOF
 else
   key="$1"

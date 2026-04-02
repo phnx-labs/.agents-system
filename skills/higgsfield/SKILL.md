@@ -29,7 +29,7 @@ Read the `/browser` skill first for general browser automation guidelines.
 
 ```bash
 # PROFILE must be your agent's browser profile name (paul, emma, sergey, etc.)
-OC="PATH=/opt/homebrew/bin:/Users/muqsit/.agents/shims:$PATH openclaw browser --browser-profile PROFILE"
+OC="PATH=/opt/homebrew/bin:/Users/muqsit/.agents/shims:$PATH ${BROWSER_CMD} --browser-profile PROFILE"
 ```
 
 ### Remote Agents (Claude via SSH)
@@ -94,7 +94,7 @@ After generation completes, images appear in the History panel. To download:
 
 1. Click on a generated image in history to open the detail view
 2. Snapshot to find the download button ref
-3. Use `openclaw browser download <ref>` to save the image
+3. Use `${BROWSER_CMD} download <ref>` to save the image
 
 Alternatively, extract image URLs from the DOM and download via curl.
 

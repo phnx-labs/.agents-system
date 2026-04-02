@@ -1,7 +1,7 @@
 ---
 name: phone-call
 description: Call Muqsit when critically blocked. Last resort escalation.
-allowed-tools: Bash(bash ~/.openclaw/skills/phone-call/call.sh*)
+allowed-tools: Bash(bash ~/.agents/skills/phone-call/call.sh*)
 user-invocable: true
 ---
 
@@ -34,7 +34,7 @@ Link: [relevant URL, file path, or log location]
 
 **Step 2: Call.**
 ```bash
-bash ~/.openclaw/skills/phone-call/call.sh "This is [Name]. [one sentence: what is blocked]. Check Telegram for details."
+bash ~/.agents/skills/phone-call/call.sh "This is [Name]. [one sentence: what is blocked]. Check Telegram for details."
 ```
 
 The call message plays twice. Keep it under 15 seconds. All detail goes in the Telegram briefing -- the call just gets Muqsit's attention.

@@ -44,7 +44,7 @@ def main():
         # Try to read Emma's latest daily file via ssh
         try:
             result = subprocess.run(
-                ["ssh", "muqsit@mac-mini",
+                ["ssh", os.environ.get("BROWSER_SSH_USER", "muqsit") + "@" + os.environ.get("BROWSER_SSH_HOST", "mac-mini"),
                  f"ls ~/.openclaw/emma/state/daily/ 2>/dev/null | sort | tail -1"],
                 capture_output=True, text=True, timeout=10
             )

@@ -1,6 +1,6 @@
 #!/bin/bash
 MSG="${1:-Agent needs attention. Check Telegram.}"
-CFG="$HOME/.openclaw/skills/phone-call/config.json"
+CFG="$HOME/.agents/skills/phone-call/config.json"
 SID=$(python3 -c "import json; print(json.load(open('${CFG}'))['accountSid'])")
 TOKEN=$(python3 -c "import json; print(json.load(open('${CFG}'))['authToken'])")
 FROM=$(python3 -c "import json; print(json.load(open('${CFG}'))['fromNumber'])")
