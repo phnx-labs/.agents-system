@@ -29,7 +29,7 @@ Two browser tools available. Choose based on where the browser runs.
 Use the **command prefix** from the environment block above, followed by the browser subcommand. Example:
 
 ```bash
-ssh <user>@<host> "PATH=<pathprefix>:$PATH ${BROWSER_CMD} <command>"
+ssh <user>@<host> "PATH=<pathprefix>:$PATH openclaw browser <command>"
 ```
 
 ### Tab Isolation (CRITICAL)
@@ -38,21 +38,21 @@ The browser is shared across multiple agents. **NEVER use `navigate`** — it re
 
 **Three rules:**
 
-1. **`open`, never `navigate`** — start every task with `${BROWSER_CMD} open <url>`. This creates a new tab and returns a target ID. Save it.
-2. **`focus` before interact** — before screenshot/click/type, always `${BROWSER_CMD} focus <targetId>` first.
-3. **`close` when done** — clean up with `${BROWSER_CMD} close <targetId>`.
+1. **`open`, never `navigate`** — start every task with `openclaw browser open <url>`. This creates a new tab and returns a target ID. Save it.
+2. **`focus` before interact** — before screenshot/click/type, always `openclaw browser focus <targetId>` first.
+3. **`close` when done** — clean up with `openclaw browser close <targetId>`.
 
 ```bash
 # CORRECT: isolated tab workflow
-${BROWSER_CMD} open 'https://example.com'       # returns target ID, e.g. 3EB5FF70...
-${BROWSER_CMD} focus 3EB5FF70                    # focus YOUR tab (prefix match works)
-${BROWSER_CMD} snapshot --labels                 # snapshot YOUR tab
-${BROWSER_CMD} click e42                         # interact with YOUR tab
-${BROWSER_CMD} screenshot                        # screenshot YOUR tab
-${BROWSER_CMD} close 3EB5FF70                    # cleanup when done
+openclaw browser open 'https://example.com'       # returns target ID, e.g. 3EB5FF70...
+openclaw browser focus 3EB5FF70                    # focus YOUR tab (prefix match works)
+openclaw browser snapshot --labels                 # snapshot YOUR tab
+openclaw browser click e42                         # interact with YOUR tab
+openclaw browser screenshot                        # screenshot YOUR tab
+openclaw browser close 3EB5FF70                    # cleanup when done
 
 # WRONG: hijacks whatever tab is active
-${BROWSER_CMD} navigate 'https://example.com'    # NEVER DO THIS
+openclaw browser navigate 'https://example.com'    # NEVER DO THIS
 ```
 
 **Why:** If Agent A is waiting for image generation and Agent B runs `navigate`, Agent A's tab is replaced and the generation is lost.
@@ -61,28 +61,28 @@ ${BROWSER_CMD} navigate 'https://example.com'    # NEVER DO THIS
 
 ```bash
 # Tab management
-${BROWSER_CMD} open <url>              # open URL in NEW tab (returns target ID)
-${BROWSER_CMD} tabs                    # list all open tabs with IDs
-${BROWSER_CMD} focus <targetId>        # switch to tab (prefix match)
-${BROWSER_CMD} close <targetId>        # close tab
+openclaw browser open <url>              # open URL in NEW tab (returns target ID)
+openclaw browser tabs                    # list all open tabs with IDs
+openclaw browser focus <targetId>        # switch to tab (prefix match)
+openclaw browser close <targetId>        # close tab
 
 # Page interaction (always focus your tab first)
-${BROWSER_CMD} snapshot --labels       # get element refs for clicking/typing
-${BROWSER_CMD} click <ref>             # click element by ref
-${BROWSER_CMD} type <ref> 'text'       # type into element by ref
-${BROWSER_CMD} select <ref> 'Option'   # select dropdown option
-${BROWSER_CMD} press Enter             # press key
-${BROWSER_CMD} press 'Meta+a'          # key combo
+openclaw browser snapshot --labels       # get element refs for clicking/typing
+openclaw browser click <ref>             # click element by ref
+openclaw browser type <ref> 'text'       # type into element by ref
+openclaw browser select <ref> 'Option'   # select dropdown option
+openclaw browser press Enter             # press key
+openclaw browser press 'Meta+a'          # key combo
 
 # Capture
-${BROWSER_CMD} screenshot              # screenshot active tab (MEDIA: path)
-${BROWSER_CMD} evaluate --fn '(el) => el.textContent' --ref 7
+openclaw browser screenshot              # screenshot active tab (MEDIA: path)
+openclaw browser evaluate --fn '(el) => el.textContent' --ref 7
 
 # Wait
-${BROWSER_CMD} wait --text "Done"      # wait for text to appear
+openclaw browser wait --text "Done"      # wait for text to appear
 
 # Download
-${BROWSER_CMD} download <ref>          # click ref and save download
+openclaw browser download <ref>          # click ref and save download
 ```
 
 ### Workflow Pattern
@@ -107,10 +107,10 @@ ${BROWSER_CMD} download <ref>          # click ref and save download
 openclaw daemon restart
 
 # If relay is disconnected, restart browser
-${BROWSER_CMD} stop && ${BROWSER_CMD} start
+openclaw browser stop && openclaw browser start
 
 # Check if relay extension is connected
-${BROWSER_CMD} tabs    # should list open tabs
+openclaw browser tabs    # should list open tabs
 ```
 
 ## agent-browser (Local Fallback)
