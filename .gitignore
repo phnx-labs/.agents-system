@@ -15,6 +15,7 @@ growth/
 
 # Local-only permissions (machine-specific, not synced)
 permissions/groups/00-local.yaml
+permissions/default.yml
 
 # Private skills (local only, not version controlled)
 skills/linkedin-writer/
