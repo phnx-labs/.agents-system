@@ -156,6 +156,17 @@ def draw_star(draw, cx, cy, r, color):
         points.append((cx + radius * math.cos(angle), cy + radius * math.sin(angle)))
     draw.polygon(points, fill=color)
 
+# Druk trial fonts are missing %, $, + glyphs -- fall back to Helvetica
+BROKEN_IN_DRUK = set('%$+')
+def draw_mixed_text(draw, pos, text, druk_font, helv_font, color):
+    x, y = pos
+    for c in text:
+        f = helv_font if c in BROKEN_IN_DRUK else druk_font
+        draw.text((x, y), c, fill=color, font=f)
+        x += int(draw.textlength(c, font=f))
+def mixed_text_width(draw, text, druk_font, helv_font):
+    return sum(int(draw.textlength(c, font=(helv_font if c in BROKEN_IN_DRUK else druk_font))) for c in text)
+
 img = Image.new('RGB', (W, H), CREAM)
 draw = ImageDraw.Draw(img)
 
@@ -197,16 +208,15 @@ draw.ellipse([cx-r-6, cy-r-6, cx+r+6, cy+r+6], fill=NAVY)
 draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=DARK_RED)
 draw.ellipse([cx-r+12, cy-r+12, cx+r-12, cy+r-12], outline=CREAM, width=2)
 
-# --- 6. Hero number (centered in circle) ---
-# Auto-size: try large font, reduce if it doesn't fit
+# --- 6. Hero number (centered in circle, mixed rendering for %, $, +) ---
 for font_size in [180, 160, 140, 120]:
     num_font = druk_cond(font_size)
-    num_bbox = num_font.getbbox(config["hero_stat"])
-    nw = num_bbox[2] - num_bbox[0]
+    helv_font = helvetica_bold(int(font_size * 0.85))
+    nw = mixed_text_width(draw, config["hero_stat"], num_font, helv_font)
     if nw < r * 1.6:
         break
-nh = num_bbox[3] - num_bbox[1]
-draw.text(((W - nw) // 2, cy - nh // 2 - 18), config["hero_stat"], fill=CREAM, font=num_font)
+nh = num_font.getbbox("0")[3] - num_font.getbbox("0")[1]
+draw_mixed_text(draw, ((W - nw) // 2, cy - nh // 2 - 18), config["hero_stat"], num_font, helv_font, CREAM)
 
 # Sublabel inside circle
 if config.get("hero_sublabel"):

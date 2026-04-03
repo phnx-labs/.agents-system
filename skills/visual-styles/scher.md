@@ -147,6 +147,18 @@ druk_wide = lambda s: ImageFont.truetype(os.path.expanduser("~/Library/Fonts/Dru
 druk_text = lambda s: ImageFont.truetype(os.path.expanduser("~/Library/Fonts/DrukText-Heavy-Trial.otf"), s)
 druk_text_bold = lambda s: ImageFont.truetype(os.path.expanduser("~/Library/Fonts/DrukText-Bold-Trial.otf"), s)
 druk_super = lambda s: ImageFont.truetype(os.path.expanduser("~/Library/Fonts/Druk-Super-Trial.otf"), s)
+helvetica_bold = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=1)
+
+# Druk trial fonts are missing %, $, + glyphs -- fall back to Helvetica for those
+BROKEN_IN_DRUK = set('%$+')
+def draw_mixed_text(draw, pos, text, druk_font, helv_font, color):
+    x, y = pos
+    for c in text:
+        f = helv_font if c in BROKEN_IN_DRUK else druk_font
+        draw.text((x, y), c, fill=color, font=f)
+        x += int(draw.textlength(c, font=f))
+def mixed_text_width(draw, text, druk_font, helv_font):
+    return sum(int(draw.textlength(c, font=(helv_font if c in BROKEN_IN_DRUK else druk_font))) for c in text)
 
 YELLOW = (255, 210, 0)
 BLACK = (0, 0, 0)
@@ -225,21 +237,21 @@ for i, (label, value) in enumerate(data):
     line_y = y + (lbbox[3] - lbbox[1]) // 2 + 2
     draw.line([(x_base - 4, line_y), (x_base + lbbox[2] - lbbox[0] + 4, line_y)], fill=RED, width=5)
 
-    # Value -- offset right of label
-    vbbox = value_font.getbbox(value)
-    vw = vbbox[2] - vbbox[0]
-    draw.text((x_base + 440 - vw, y - 2), value, fill=BLACK, font=value_font)
+    # Value -- offset right of label (mixed rendering for $, %, +)
+    value_helv = helvetica_bold(34)
+    vw = mixed_text_width(draw, value, value_font, value_helv)
+    draw_mixed_text(draw, (x_base + 440 - vw, y - 2), value, value_font, value_helv, BLACK)
 
 # --- 5. HERO STAT: big red block in center ---
 if config.get("hero_stat"):
-    big_font = druk_wide(280)
-    pct_bbox = big_font.getbbox(config["hero_stat"])
-    pct_w = pct_bbox[2] - pct_bbox[0]
-    pct_h = pct_bbox[3] - pct_bbox[1]
+    big_druk = druk_wide(280)
+    big_helv = helvetica_bold(240)
+    pct_w = mixed_text_width(draw, config["hero_stat"], big_druk, big_helv)
+    pct_h = big_druk.getbbox("0")[3] - big_druk.getbbox("0")[1]  # use digit for height ref
     pct_x = (W - pct_w) // 2
     pct_y = 560
-    draw.rectangle([pct_x - 40, pct_y - 10, pct_x + pct_w + 40, pct_y + pct_h + 20], fill=RED)
-    draw.text((pct_x, pct_y), config["hero_stat"], fill=WHITE, font=big_font)
+    draw.rectangle([pct_x - 60, pct_y - 10, pct_x + pct_w + 60, pct_y + pct_h + 20], fill=RED)
+    draw_mixed_text(draw, (pct_x, pct_y), config["hero_stat"], big_druk, big_helv, WHITE)
 
     # Label under hero
     if config.get("hero_label"):

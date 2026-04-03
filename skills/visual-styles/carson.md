@@ -181,13 +181,37 @@ druk_text_med = lambda s: ImageFont.truetype(os.path.expanduser("~/Library/Fonts
 helvetica = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=0)
 helvetica_light = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=2)
 
+helvetica_bold = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=1)
+
+# Druk trial fonts are missing %, $, + glyphs -- fall back to Helvetica
+BROKEN_IN_DRUK = set('%$+')
+
 def draw_rotated_text(canvas, position, text, font, color, angle):
     bbox = font.getbbox(text)
-    tw = bbox[2] - bbox[0] + 40
-    th = bbox[3] - bbox[1] + 40
+    pad = 80
+    tw = bbox[2] - bbox[0] + pad * 2
+    th = bbox[3] - bbox[1] + pad * 2
     txt_img = Image.new('RGBA', (tw, th), (0, 0, 0, 0))
     txt_draw = ImageDraw.Draw(txt_img)
-    txt_draw.text((20, 20), text, fill=color + (255,), font=font)
+    txt_draw.text((pad, pad), text, fill=color + (255,), font=font)
+    rotated = txt_img.rotate(angle, expand=True, resample=Image.BICUBIC)
+    canvas.paste(rotated, position, rotated)
+
+def draw_rotated_mixed(canvas, position, text, druk_font, helv_font, color, angle):
+    """Rotated text with Druk/Helvetica glyph fallback for %, $, +."""
+    dummy = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
+    total_w = sum(int(dummy.textlength(c, font=(helv_font if c in BROKEN_IN_DRUK else druk_font))) for c in text)
+    h_ref = druk_font.getbbox("A")
+    pad = 80
+    th = h_ref[3] - h_ref[1] + pad * 2
+    tw = total_w + pad * 2
+    txt_img = Image.new('RGBA', (tw, th), (0, 0, 0, 0))
+    txt_draw = ImageDraw.Draw(txt_img)
+    x = pad
+    for c in text:
+        f = helv_font if c in BROKEN_IN_DRUK else druk_font
+        txt_draw.text((x, pad), c, fill=color + (255,), font=f)
+        x += int(txt_draw.textlength(c, font=f))
     rotated = txt_img.rotate(angle, expand=True, resample=Image.BICUBIC)
     canvas.paste(rotated, position, rotated)
 
@@ -226,7 +250,12 @@ for i, item in enumerate(config["scatter_data"]):
 
     draw_rotated_text(img, (x, y), item["label"], druk_text_med(label_size), GRAY, angle)
     draw = ImageDraw.Draw(img)
-    draw_rotated_text(img, (x + 15, y + label_size + 8), item["value"], druk_heavy(value_size), OFF_WHITE, angle + random.uniform(-4, 4))
+    # Use mixed rendering if value contains %, $, +
+    val = item["value"]
+    if any(c in BROKEN_IN_DRUK for c in val):
+        draw_rotated_mixed(img, (x + 15, y + label_size + 8), val, druk_heavy(value_size), helvetica_bold(value_size), OFF_WHITE, angle + random.uniform(-4, 4))
+    else:
+        draw_rotated_text(img, (x + 15, y + label_size + 8), val, druk_heavy(value_size), OFF_WHITE, angle + random.uniform(-4, 4))
     draw = ImageDraw.Draw(img)
 
 # --- Layer 4: HERO PHRASE (accent color, minimal rotation) ---
