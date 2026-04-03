@@ -6,132 +6,96 @@ Minimalist geometric data visualization inspired by Saul Bass's title sequences 
 
 - **One geometric shape dominates.** A circle, spiral, hand, silhouette, angular cutout. The shape IS the poster.
 - **Vast solid-color fields.** 70%+ of the canvas is a single flat color. The shape punches through it.
-- **Minimal text.** Title at top or bottom. One number. Maybe a subtitle. Nothing else.
+- **Minimal text.** Title stack on one side, number in or near the shape. Nothing else.
 - **Orange/black/white palette.** Occasionally red. Never more than 3 colors total.
-- **Asymmetric composition.** The shape is often off-center, creating tension.
+- **Asymmetric composition.** Shape off-center creates tension. Text on the opposite side balances.
+
+## When to Use
+
+- Post has ONE dominant number or KPI
+- Milestone announcement ("we hit X")
+- Single surprising stat
+- NOT for multi-stat comparisons (use Scher) or grid data (use Vignelli)
+
+## Data Interface
+
+```python
+# === YOUR DATA (fill this in) ===
+config = {
+    "number": "45,745",                # The hero number (inside the shape)
+    "label_stack": [                    # Text stack on the opposite side of the shape
+        ("TIMES", "small"),            # (text, size): "small", "large", or "light"
+        ("CLAUDE", "large"),
+        ("SAID", "large"),
+    ],
+    "phrase": '"let me"',              # Key phrase (light/italic weight)
+    "context": "IN 60,254 MESSAGES",   # Context line below rule
+    "secondary_stat": "75.9%",         # Optional secondary stat
+    "secondary_label": "OF ALL MESSAGES",  # Label for secondary stat
+    "shape": "circle",                 # "circle", "ring", "triangle", "diagonal"
+    "layout": "shape-left",            # "shape-left" or "shape-right" or "shape-center"
+}
+# === END DATA ===
+```
 
 ## Color Palette
 
 ```python
 # Primary palette
-BG = (232, 93, 38)           # Signature Bass orange
-SHAPE = (0, 0, 0)            # Black (the geometric shape)
-TEXT = (255, 255, 255)        # White text on orange
-ALT_TEXT = (0, 0, 0)         # Black text on white areas
+ORANGE = (232, 93, 38)
+DARK_ORANGE = (190, 70, 25)    # Shadow/depth
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 
-# Dark variant
-BG_DARK = (0, 0, 0)          # Black background
-SHAPE_DARK = (232, 93, 38)   # Orange shape on black
-TEXT_DARK = (255, 255, 255)   # White text
+# Dark variant (swap bg and shape colors)
+# BG = BLACK, SHAPE = ORANGE, TEXT = WHITE
 
 # Minimal variant
-BG_MINIMAL = (245, 240, 230) # Off-white/cream
-SHAPE_MINIMAL = (0, 0, 0)    # Black shape
-ACCENT = (232, 93, 38)       # Orange accent (number only)
+# BG = (245, 240, 230), SHAPE = BLACK, ACCENT = ORANGE
 ```
 
 ## Layout Patterns
 
-### Pattern 1: Central Shape + Number
-For single KPI or milestone announcements.
+### Pattern 1: Shape Left + Text Right (default)
+The shape pushes against the left side, text stacks on the right.
 
 ```
 +-----------------------------------------------+
 |                                                |
-|              YOUR TITLE HERE                   |
-|                                                |
-|                                                |
-|                  [LARGE                         |
-|                 GEOMETRIC                       |
-|                  SHAPE]                         |
-|                                                |
-|                 45,745                          |
-|              subtitle text                     |
+|                         SMALL LABEL            |
+|     +--------+          LARGE TEXT             |
+|    /          \         LARGE TEXT             |
+|   |   NUMBER   |                               |
+|   |            |        "phrase"               |
+|    \          /         ________________       |
+|     +--------+          context line           |
+|                         stat  label            |
 |                                                |
 +------------------------------------------------+
 ```
 
-- Solid orange background
-- Title in Helvetica Bold, white, centered near top
-- Large geometric shape (black) centered, taking 40-50% of canvas height
-- Number below shape in Helvetica Bold, large
-- Optional subtitle in lighter weight
+### Pattern 2: Shape Right + Text Left
+Mirror of Pattern 1.
 
-### Pattern 2: Shape AS Number
-The geometric shape contains or frames the number.
-
-```
-+-----------------------------------------------+
-|                                                |
-|          +-------------------+                 |
-|         /                     \                |
-|        |       75.9%           |               |
-|        |                       |               |
-|         \                     /                |
-|          +-------------------+                 |
-|                                                |
-|          OF ALL MESSAGES                       |
-+------------------------------------------------+
-```
-
-- Number sits inside the shape (circle, rectangle, angular form)
-- Shape acts as a frame/container
-- Text label below or beside
-
-### Pattern 3: Silhouette/Cutout
-The data creates a recognizable silhouette.
-
-```
-+-----------------------------------------------+
-|  ████                                          |
-|  ██████                                        |
-|  ████████      TITLE                           |
-|  ██████████                                    |
-|  ████████████                                  |
-|  ██████████████                                |
-|  ████████████████   NUMBER                     |
-|  ██████████████████                            |
-+------------------------------------------------+
-```
-
-- A jagged or stepped shape formed by data bars
-- But rendered as a solid silhouette, not as a chart
-- Title and number positioned in the negative space
+### Pattern 3: Shape Center + Text Below
+Shape centered, text underneath. For maximum shape dominance.
 
 ## Geometric Shape Library
 
-Use these PIL drawing primitives:
-
 ```python
-# Circle
-draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=SHAPE)
+# Circle (with subtle drop shadow)
+draw.ellipse([cx-r+8, cy-r+8, cx+r+8, cy+r+8], fill=DARK_ORANGE)  # shadow
+draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=BLACK)                  # shape
 
 # Ring (circle with hole)
-draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=SHAPE)
-draw.ellipse([cx-r2, cy-r2, cx+r2, cy+r2], fill=BG)  # punch out center
+draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=BLACK)
+draw.ellipse([cx-r2, cy-r2, cx+r2, cy+r2], fill=ORANGE)
 
 # Triangle
-draw.polygon([(cx, cy-r), (cx-r, cy+r), (cx+r, cy+r)], fill=SHAPE)
+draw.polygon([(cx, cy-r), (cx-r, cy+r), (cx+r, cy+r)], fill=BLACK)
 
-# Spiral (approximate with arcs)
-import math
-points = []
-for angle in range(0, 720, 5):
-    rad = math.radians(angle)
-    radius = 50 + angle * 0.3
-    x = cx + radius * math.cos(rad)
-    y = cy + radius * math.sin(rad)
-    points.append((x, y))
-draw.line(points, fill=SHAPE, width=8)
-
-# Angular hand/arm (Bass signature)
-draw.polygon([
-    (cx-20, cy+200), (cx-60, cy), (cx-30, cy-150),
-    (cx+30, cy-150), (cx+60, cy), (cx+20, cy+200)
-], fill=SHAPE)
-
-# Diagonal cut (divides canvas)
-draw.polygon([(0, H*0.6), (W, H*0.3), (W, H), (0, H)], fill=SHAPE)
+# Diagonal cut
+draw.polygon([(0, H*0.6), (W, H*0.3), (W, H), (0, H)], fill=BLACK)
 ```
 
 ## Fonts
@@ -139,70 +103,130 @@ draw.polygon([(0, H*0.6), (W, H*0.3), (W, H), (0, H)], fill=SHAPE)
 ```python
 from PIL import ImageFont
 
-# Helvetica Bold for titles and numbers
-helvetica_bold = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 120, index=1)
-
-# Helvetica Regular for subtitles
-helvetica = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 48, index=0)
-
-# Helvetica Light for small text
-helvetica_light = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 32, index=2)
+helvetica_bold = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=1)
+helvetica = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=0)
+helvetica_light = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=2)
 ```
 
-Sizes:
-- Hero number: 140-240pt Helvetica Bold
-- Title: 48-72pt Helvetica Bold
-- Subtitle: 28-40pt Helvetica Regular or Light
+Size map for label_stack:
+- `"small"` = Helvetica Bold 28pt
+- `"large"` = Helvetica Bold 72pt
+- `"light"` = Helvetica Light 56pt
 
-## Script Template
+## Production Script Template
 
 ```python
 from PIL import Image, ImageDraw, ImageFont
 import os, math
 
-# --- Config ---
+# === YOUR DATA (fill this in) ===
+config = {
+    "number": "45,745",
+    "label_stack": [
+        ("TIMES", "small"),
+        ("CLAUDE", "large"),
+        ("SAID", "large"),
+    ],
+    "phrase": '"let me"',
+    "context": "IN 60,254 MESSAGES",
+    "secondary_stat": "75.9%",
+    "secondary_label": "OF ALL MESSAGES",
+    "shape": "circle",
+    "layout": "shape-left",
+}
+# === END DATA ===
+
 W, H = 1800, 1012
-
-helvetica_bold = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=1)
-helvetica = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=0)
-
-# Colors
 ORANGE = (232, 93, 38)
+DARK_ORANGE = (190, 70, 25)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+
+font_map = {
+    "small": lambda: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 28, index=1),
+    "large": lambda: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 72, index=1),
+    "light": lambda: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 56, index=2),
+}
+helvetica_bold = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=1)
+helvetica = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=0)
+helvetica_light = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s, index=2)
 
 img = Image.new('RGB', (W, H), ORANGE)
 draw = ImageDraw.Draw(img)
 
-# 1. TITLE (top, centered)
-title = "YOUR TITLE"
-title_font = helvetica_bold(56)
-title_bbox = title_font.getbbox(title)
-title_w = title_bbox[2] - title_bbox[0]
-draw.text(((W - title_w) // 2, 60), title, fill=WHITE, font=title_font)
+# --- Shape placement (off-center for tension) ---
+if config["layout"] == "shape-left":
+    cx, cy = int(W * 0.42), int(H * 0.52)
+    text_x = int(W * 0.72)
+elif config["layout"] == "shape-right":
+    cx, cy = int(W * 0.58), int(H * 0.52)
+    text_x = int(W * 0.08)
+else:  # shape-center
+    cx, cy = W // 2, int(H * 0.45)
+    text_x = W // 2  # text below, centered
 
-# 2. GEOMETRIC SHAPE (centered, dominant)
-cx, cy = W // 2, H // 2 - 20
-r = 220  # radius
+r = 340  # shape radius -- large, dominant
 
-# Circle example
-draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=BLACK)
+# --- Draw shape ---
+if config["shape"] == "circle":
+    draw.ellipse([cx-r+8, cy-r+8, cx+r+8, cy+r+8], fill=DARK_ORANGE)
+    draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=BLACK)
+elif config["shape"] == "ring":
+    draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=BLACK)
+    r2 = int(r * 0.6)
+    draw.ellipse([cx-r2, cy-r2, cx+r2, cy+r2], fill=ORANGE)
+elif config["shape"] == "triangle":
+    draw.polygon([(cx, cy-r), (cx-r, cy+r), (cx+r, cy+r)], fill=BLACK)
 
-# 3. NUMBER (inside or below shape)
-number = "45,745"
-num_font = helvetica_bold(160)
-num_bbox = num_font.getbbox(number)
-num_w = num_bbox[2] - num_bbox[0]
-num_h = num_bbox[3] - num_bbox[1]
-# Inside circle (white on black)
-draw.text(((W - num_w) // 2, cy - num_h // 2), number, fill=WHITE, font=num_font)
+# --- Number inside shape ---
+num_font = helvetica_bold(200)
+num_bbox = num_font.getbbox(config["number"])
+nw = num_bbox[2] - num_bbox[0]
+nh = num_bbox[3] - num_bbox[1]
+draw.text((cx - nw // 2, cy - nh // 2 - 15), config["number"], fill=WHITE, font=num_font)
 
-# 4. SUBTITLE (below shape)
-subtitle = "TIMES MEASURED"
-sub_font = helvetica(36)
-sub_bbox = sub_font.getbbox(subtitle)
-sub_w = sub_bbox[2] - sub_bbox[0]
-draw.text(((W - sub_w) // 2, cy + r + 40), subtitle, fill=WHITE, font=sub_font)
+# --- Text stack (on opposite side) ---
+if config["layout"] != "shape-center":
+    y_cursor = int(H * 0.25)
+    for text, size in config["label_stack"]:
+        font = font_map[size]()
+        draw.text((text_x, y_cursor), text, fill=WHITE, font=font)
+        bbox = font.getbbox(text)
+        y_cursor += bbox[3] - bbox[1] + 8
+
+    # Phrase (light weight, slightly indented)
+    if config.get("phrase"):
+        y_cursor += 10
+        draw.text((text_x, y_cursor), config["phrase"], fill=WHITE, font=helvetica_light(56))
+        y_cursor += 70
+
+    # Thin horizontal rule
+    draw.line([(text_x, y_cursor), (W - 80, y_cursor)], fill=WHITE, width=2)
+    y_cursor += 20
+
+    # Context line
+    if config.get("context"):
+        draw.text((text_x, y_cursor), config["context"], fill=WHITE, font=helvetica(24))
+        y_cursor += 40
+
+    # Secondary stat
+    if config.get("secondary_stat"):
+        draw.text((text_x, y_cursor), config["secondary_stat"], fill=WHITE, font=helvetica_bold(40))
+        if config.get("secondary_label"):
+            # Place label next to stat
+            stat_bbox = helvetica_bold(40).getbbox(config["secondary_stat"])
+            stat_w = stat_bbox[2] - stat_bbox[0]
+            draw.text((text_x + stat_w + 15, y_cursor + 12), config["secondary_label"], fill=WHITE, font=helvetica_light(20))
+
+else:
+    # Center layout: text below shape
+    y_cursor = cy + r + 40
+    for text, size in config["label_stack"]:
+        font = font_map[size]()
+        bbox = font.getbbox(text)
+        tw = bbox[2] - bbox[0]
+        draw.text(((W - tw) // 2, y_cursor), text, fill=WHITE, font=font)
+        y_cursor += bbox[3] - bbox[1] + 8
 
 img.save('/tmp/bass_visual.png', quality=95)
 print(f"Saved: /tmp/bass_visual.png ({W}x{H})")
@@ -210,9 +234,10 @@ print(f"Saved: /tmp/bass_visual.png ({W}x{H})")
 
 ## Key Rules
 
-1. **Maximum three colors.** Orange + black + white. That's it. If you need a fourth, you've over-designed.
+1. **Maximum three colors.** Orange + black + white. If you need a fourth, you've over-designed.
 2. **One shape.** Not two shapes. Not a shape with decorations. One bold geometric form.
-3. **One number.** This style is for single stats. If you have multiple data points, use Scher or Vignelli.
-4. **70% negative space.** The power comes from what you DON'T fill. Let the shape breathe.
+3. **One number.** If you have multiple data points, use Scher or Vignelli instead.
+4. **Asymmetry is power.** Shape off-center, text on the opposite side. Creates visual tension.
 5. **No gradients.** Flat color only. Hard edges. Bass never blurred anything.
-6. **Asymmetry is strength.** Slightly off-center placement creates visual tension. Don't center everything.
+6. **Drop shadow on shape.** Subtle offset (+8px) in darker shade adds depth without breaking flatness.
+7. **Text hierarchy via weight.** Small bold for labels, large bold for emphasis, light for phrases.
