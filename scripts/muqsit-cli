@@ -11,7 +11,8 @@
 set -euo pipefail
 
 CHAT_ID="6078999250"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REAL_SCRIPT="$(readlink -f "$0" 2>/dev/null || python3 -c "import os; print(os.path.realpath('$0'))")"
+SCRIPT_DIR="$(cd "$(dirname "$REAL_SCRIPT")" && pwd)"
 AGENTS_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OPENCLAW_CONFIG="${HOME}/.openclaw/openclaw.json"
 PHONE_CALL_DIR="${AGENTS_DIR}/skills/phone-call"
