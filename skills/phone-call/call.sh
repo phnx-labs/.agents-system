@@ -1,6 +1,7 @@
 #!/bin/bash
 MSG="${1:-Agent needs attention. Check Telegram.}"
-CFG="$HOME/.agents/skills/phone-call/config.json"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CFG="${SCRIPT_DIR}/config.json"
 SID=$(python3 -c "import json; print(json.load(open('${CFG}'))['accountSid'])")
 TOKEN=$(python3 -c "import json; print(json.load(open('${CFG}'))['authToken'])")
 FROM=$(python3 -c "import json; print(json.load(open('${CFG}'))['fromNumber'])")
