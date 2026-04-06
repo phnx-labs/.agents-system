@@ -53,3 +53,4 @@ skills/.system/
 *.tmp
 *~
 __pycache__/
+linear.json
