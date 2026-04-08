@@ -1,9 +1,1 @@
-  # Go ecosystem
-  - "Bash(air:*)"
-  - "Bash(delve:*)"
-  - "Bash(gofmt:*)"
-  - "Bash(goimports:*)"
-  - "Bash(golangci-lint:*)"
-  - "Bash(gopls:*)"
-  - "Bash(govulncheck:*)"
-  - "Bash(staticcheck:*)"
+  # Covered by blanket "Bash" in 30-paths.yaml

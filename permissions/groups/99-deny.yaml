@@ -8,7 +8,6 @@ deny:
 
   # Git - dangerous commands that rewrite history or lose work
   - "Bash(git reset:*)"
-  - "Bash(git rebase:*)"
   - "Bash(git push --force:*)"
   - "Bash(git push -f:*)"
   - "Bash(git clean:*)"
