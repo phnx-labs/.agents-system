@@ -467,6 +467,48 @@ One-line reframes and blunt named criticism with historical callbacks.
 
 You don't need original evidence. You need to find interesting real things and tell them well. Specific names > abstract categories. Specific numbers > vague claims. Stories > theses.
 
+# Post-Draft Decontamination Pass
+
+After drafting, run this pass to strip machine-generated patterns. Write freely first. Clean mechanically second.
+
+## Machine Tell Checklist
+
+Run through every item. These are the patterns that make readers think "AI wrote this."
+
+### Punctuation
+
+- [ ] **Em dash audit.** Search for every `—` and `--`. For each one: can it be a comma, a period, or folded into the sentence? Remove at least 80% of them. Humans under-punctuate. AI over-punctuates.
+- [ ] **"X isn't Y — it's Z" formula.** The reframe-via-dash. Kill every instance. Rewrite as two sentences, or just state the claim.
+- [ ] **Semicolons.** Most blog posts need zero. If you have more than one, you're performing.
+
+### Structure
+
+- [ ] **Definition-first opening.** Does any section start with "X is a..."? Rewrite. Open with a problem, a story, a question, a number.
+- [ ] **Identical skeletons.** If writing multiple posts, do they follow the same section pattern? Vary the structure. Humans get bored of their own patterns.
+- [ ] **"Measuring X" / "The Road Ahead" / "When to Choose" sections.** Nobody asked for these. Cut them unless the user specifically requested them.
+- [ ] **Bullet inventory lists.** Any list of 5+ technical terms without examples? Replace with one concrete scenario that makes the same point.
+
+### Voice
+
+- [ ] **Announced rhetorical moves.** "Here's the counterargument." "Let's unpack this." "Here's where it gets interesting." Just do the thing. Don't announce you're doing it.
+- [ ] **Metronomic rhythm.** Read three consecutive paragraphs. Are they all the same length? Same sentence count? Vary them. Uniformity is the loudest AI signal.
+- [ ] **Hedging clusters.** "We believe," "arguably," "it seems." One per essay max, for genuine uncertainty. Not social anxiety.
+- [ ] **Diplomatic non-opinions.** "Both have their strengths." "Many people will use both." If you're comparing things, have a position.
+
+### The Entropy Test
+
+Read the draft aloud. Does it sound like one consistent voice, or does it sound like a template filled in with different nouns? A human's writing shifts register within a piece — slightly more formal here, slightly more casual there — because their emotional state changes as they write. Perfect consistency is the tell. Introduce controlled imperfection: a shorter section where you expected a long one, a sentence that trails off with "..." where the pattern demanded a clean period, a parenthetical that admits uncertainty.
+
+## When to Run
+
+- After every first draft before showing to user
+- After any revision that adds more than 3 paragraphs
+- Before publishing or deploying
+
+## Verification (optional)
+
+After the decontamination pass, run `/brain-scan` to verify the edits improved neural engagement in the flagged areas. Agreement between the checklist fixes and neural improvement confirms the diagnosis.
+
 # Voice Checklist (All Modes)
 
 Before publishing, verify:
