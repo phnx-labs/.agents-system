@@ -90,13 +90,50 @@ The environment injection pattern solves (1) and (2). For (3), document dependen
 
 ## Skills in This Repo
 
-Browse the subdirectories to see available skills. Each has its own SKILL.md with detailed documentation. Notable ones:
+Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with `/skill-name` or let the agent auto-detect from context.
 
-- `browser/` - Browser automation via OpenClaw or agent-browser
-- `image-craft/` - Expert prompt craft for image generation
-- `linear/` - Task management CLI for agent teams
-- `mq/` - Query large documents without reading entire files
-- `writer/` - Professional writing with literary craft
+### Content & Creative
+
+| Skill | What It Does |
+|-------|-------------|
+| `brain-scan/` | Neural engagement analysis using Meta TRIBE v2 brain simulation. Predicts how a human brain responds to text, audio, or video content across Language, Attention, Emotion, Memory, and Default Mode regions. |
+| `creative-analysis/` | Multi-dimensional creative analysis for any medium. Combines subjective craft analysis (visual, composition, prose, word choice) with neural data from brain-scan. |
+| `image-craft/` | Expert prompt engineering for image generation across styles: editorial photography, logos, posters, product shots, illustrations. |
+| `memician/` | Create culturally resonant memes and viral social content. Compresses cultural tensions into minimal words. |
+| `visual-styles/` | Visual style reference library for consistent image generation. |
+| `writer/` | Professional writing craft across formats: product launches, landing pages, essays, blog posts, social posts, newsletters. |
+
+### Productivity & Ops
+
+| Skill | What It Does |
+|-------|-------------|
+| `browser/` | Drive websites via remote browser relay (OpenClaw) or local Chrome (agent-browser). Tab isolation, screenshots, form filling. |
+| `linear/` | Task management CLI for AI agent teams. Query work queues, update status, manage sprints via Linear. |
+| `mq/` | Query large markdown, HTML, and PDF files without reading entire documents. Probe structure first, extract surgically. |
+| `openclaw/` | Manage OpenClaw agents on remote machines. Configure workspaces, cron jobs, heartbeats, and Telegram gateway. |
+| `sessions/` | List and load named sessions across agent versions. |
+
+### Agent Infrastructure
+
+| Skill | What It Does |
+|-------|-------------|
+| `agents-cli/` | Manage AI coding agent CLIs. Install versions, sync configs, switch between agents, manage MCP servers. |
+| `mcporter/` | MCP server CLI for managing Model Context Protocol servers. |
+| `skill-creator/` | Meta-skill for creating and improving other skills. Documents SKILL.md structure, env injection, and sync workflow. |
+| `reflect/` | Recall all feedback, corrections, and constraints from the current conversation before rewriting. Prevents iterative drift. |
+
+### Growth & Outreach
+
+| Skill | What It Does |
+|-------|-------------|
+| `twitter-warmup/` | Warm up a new Twitter/X account from zero to credible. Stateful phase tracking across sessions. |
+| `higgsfield/` | Generate images and videos via Higgsfield AI using browser automation. |
+
+### Escalation
+
+| Skill | What It Does |
+|-------|-------------|
+| `phone-call/` | Last-resort escalation. Call the human when critically blocked. |
 
 ## Further Reading
 
