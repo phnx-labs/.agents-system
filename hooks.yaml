@@ -5,7 +5,7 @@
 linear-tasks:
   script: linear-tasks.sh
   events: [SessionStart]
-  timeout: 10
+  timeout: 15
   agents: [claude]
 
 expand-promptcuts:
