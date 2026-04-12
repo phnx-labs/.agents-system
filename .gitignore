@@ -22,6 +22,13 @@ skills/linkedin-writer/
 skills/x-writer/
 skills/drift-check/
 skills/growth-check/
+skills/dispatch/
+skills/proof-loop/
+skills/rush-agent-builder/
+skills/rush-analytics/
+skills/rush-product-knowledge/
+skills/rush-taste/
+skills/rush-writer/
 
 # Machine-specific environment (secrets, hosts, paths)
 .environment
