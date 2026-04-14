@@ -359,17 +359,12 @@ def cmd_setup(args, cfg):
     cfg["teamId"] = team["id"]
     cfg["teamKey"] = team["key"]
 
-    agent = args.agent or input("Default agent identity (e.g. claude, codex) [skip]: ").strip()
-    if agent:
-        cfg["agent"] = agent
-
+    cfg.pop("agent", None)  # Remove legacy agent identity if present
     cfg.pop("states", None)
     states = get_states(api_key, team["id"], cfg)
 
     save_config(cfg)
     print(f"\nConfigured: team={team['name']}, states={len(states)}")
-    if agent:
-        print(f"Agent identity: {agent}")
     print(f"Config: {CONFIG_PATH}")
 
 
@@ -393,7 +388,7 @@ def cmd_tasks(args, cfg, api_key, team_id):
 def list_tasks(args, cfg, api_key, team_id):
     filters = []
 
-    agent = args.agent or (cfg.get("agent") if not args.all else None)
+    agent = args.agent  # Explicit --agent flag only; no config default
     if agent:
         filters.append(f'labels: {{ name: {{ eq: "agent:{agent}" }} }}')
     elif args.label:
@@ -841,13 +836,11 @@ def main():
     # setup
     p_setup = sub.add_parser("setup", help="Configure Linear connection and agent identity")
     p_setup.add_argument("--api-key", help="Linear API key")
-    p_setup.add_argument("--agent", help="Default agent identity")
 
     # tasks (list + view + board)
     p_tasks = sub.add_parser("tasks", help="List tasks, view details, or show team board")
     p_tasks.add_argument("identifier", nargs="?", help="Issue identifier for detail view (e.g. GR-42)")
     p_tasks.add_argument("--agent", help="Filter by agent label (e.g. --agent claude)")
-    p_tasks.add_argument("--all", action="store_true", help="Ignore default agent filter, show all")
     p_tasks.add_argument("--board", action="store_true", help="Team board grouped by agent")
     p_tasks.add_argument("--label", help="Filter by any label")
     p_tasks.add_argument("--status", help="Filter: backlog, todo, progress, done, open")

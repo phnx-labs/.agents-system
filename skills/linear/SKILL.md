@@ -32,9 +32,8 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 ### tasks - List, view, or board
 
 ```bash
-~/.agents/skills/linear/scripts/linear tasks                          # My tasks (uses default agent identity)
-~/.agents/skills/linear/scripts/linear tasks --all                    # All open tasks in active cycle
-~/.agents/skills/linear/scripts/linear tasks --agent codex            # Codex's tasks
+~/.agents/skills/linear/scripts/linear tasks                          # All open tasks in active cycle
+~/.agents/skills/linear/scripts/linear tasks --agent codex            # Codex's tasks only
 ~/.agents/skills/linear/scripts/linear tasks --label today            # Filter by any label
 ~/.agents/skills/linear/scripts/linear tasks --status todo            # Filter by status
 ~/.agents/skills/linear/scripts/linear tasks --cycle next             # Next cycle instead of active
@@ -103,7 +102,7 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 
 Agents follow this pattern each session:
 
-1. `~/.agents/skills/linear/scripts/linear tasks` - see your queue
+1. `~/.agents/skills/linear/scripts/linear tasks --agent marc` - see your queue
 2. `~/.agents/skills/linear/scripts/linear update GR-42 --pickup` - claim the highest priority task
 3. Do the work
 4. `~/.agents/skills/linear/scripts/linear update GR-42 --done --proof <evidence> --comment "Summary"` - proof is REQUIRED
@@ -113,4 +112,4 @@ Agents follow this pattern each session:
 
 Tasks are assigned to agents via labels: `agent:claude`, `agent:codex`, `agent:sergey`, etc.
 
-When an agent runs `~/.agents/skills/linear/scripts/linear tasks` with a configured default identity, it automatically filters to its own queue. Use `--all` to see everything.
+`linear tasks` shows all tasks by default. Use `--agent <name>` to filter to a specific agent's queue.

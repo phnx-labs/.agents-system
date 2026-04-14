@@ -8,7 +8,7 @@ Task management CLI for AI agent teams. Query work queues, update status, create
 # Setup (one-time)
 ~/.agents/skills/linear/scripts/linear setup
 
-# See your tasks
+# See all tasks in current cycle
 linear tasks
 
 # See full team board
@@ -32,7 +32,7 @@ linear update RUSH-42 --comment "Halfway done, blocked on API key"
 | Command | Purpose |
 |---------|---------|
 | `setup` | Configure Linear connection, discover team |
-| `tasks` | List tasks (yours, team, filtered by label/status/cycle) |
+| `tasks` | List all tasks (filter by `--agent`, `--label`, `--status`) |
 | `tasks RUSH-42` | Detail view for a specific issue |
 | `tasks --board` | Team board grouped by agent |
 | `create` | Create a new issue |
@@ -63,9 +63,8 @@ Images are embedded inline. Other files are linked. Proof is required when marki
 Tasks are assigned to agents via labels: `agent:claude`, `agent:codex`, etc.
 
 ```bash
-linear tasks                    # Your tasks (default identity)
-linear tasks --agent codex      # Codex's tasks
-linear tasks --all              # Everything in current cycle
+linear tasks                    # All tasks in current cycle
+linear tasks --agent codex      # Codex's tasks only
 linear update RUSH-42 --label agent:claude  # Assign to Claude
 ```
 
