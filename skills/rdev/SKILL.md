@@ -7,21 +7,43 @@ description: "Dispatch engineering tasks to coding agents (Claude, Codex) on mac
 
 Dispatch engineering tasks to coding agents on mac-mini. Agents work in isolated git worktrees. The full pipeline runs automatically: implement, review, fix if needed, label when ready.
 
-## Pipeline
+## Plan-First Workflow
+
+Agents must plan before implementing. Human approves the plan before execution begins.
 
 ```
-/rdev RUSH-167
-  |
-  v
-[1. Dev Agent] -- implements feature, writes tests, pushes branch, opens PR
+Todo ──> Plan ──> Todo ──> Doing ──> Review ──> Done
+          agent        human    agent         human
+```
+
+1. **Todo**: Default state. Human decides: move to Plan (complex) or Doing (simple).
+2. **Plan**: Agent explores codebase, verifies assumptions, posts structured plan as Linear comment. Moves issue back to Todo.
+3. **Todo** (with plan): Human reviews plan. Can comment feedback and move back to Plan for revision, or approve by moving to Doing.
+4. **Doing**: Agent reads plan comments, implements, writes tests, pushes branch, opens PR. Then review + fix-if-needed pipeline runs automatically.
+5. **Review**: Auto-review agent runs tests and reviews code. Human merges.
+
+### Triggers
+
+| Trigger | Mode | What happens |
+|---------|------|-------------|
+| Issue moved to Plan | `plan` | Agent explores, posts plan comment, returns to Todo |
+| Issue moved to Doing | `exec` | Agent reads plan, implements, opens PR |
+| `agent:*` label added | `exec` | Legacy: agent implements directly (backwards compat) |
+
+All state-change triggers require: (1) an `agent:*` label on the issue, (2) an assignee.
+
+## Pipeline (Doing mode)
+
+```
+[1. Dev Agent] -- reads plan comments, implements, writes tests, pushes branch, opens PR
   |
   v
 [2. Review Agent] -- separate Claude session, runs tests, reviews code,
   |                   posts comment on PR via gh pr comment
   v
 [3. Fix-if-needed Agent] -- reads review comment, decides:
-  |   clean? --> adds ux-ready label, done
-  |   issues? --> fixes them, pushes, adds ux-ready label, done
+  |   clean? --> adds qa-ready label, done
+  |   issues? --> fixes them, pushes, adds qa-ready label, done
   v
 Human merges
 ```
