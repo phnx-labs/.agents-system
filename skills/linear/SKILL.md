@@ -23,7 +23,7 @@ The `linear` CLI is at `~/.agents/skills/linear/scripts/linear`. It is NOT in PA
 ~/.agents/skills/linear/scripts/linear setup
 ```
 
-Stores config in `~/.agents/linear.json`. Discovers your team, caches workflow states, and sets a default agent identity.
+Stores config in `~/.agents/linear.json`. Discovers your team, resolves API key owner (for auto-assign), and caches workflow states.
 
 Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Keychain (`linear-api-key`).
 
@@ -49,7 +49,11 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 ~/.agents/skills/linear/scripts/linear update GR-42 --todo                        # Mark Todo
 ~/.agents/skills/linear/scripts/linear update GR-42 --status "In Review"          # Any state by name
 ~/.agents/skills/linear/scripts/linear update GR-42 --comment "Completed the research phase"
-~/.agents/skills/linear/scripts/linear update GR-42 --label agent:claude            # Add label(s)
+~/.agents/skills/linear/scripts/linear update GR-42 --label agent:claude          # Add label(s)
+~/.agents/skills/linear/scripts/linear update GR-42 --label Bug                   # Works with workspace labels too
+~/.agents/skills/linear/scripts/linear update GR-42 --cycle active               # Move to active cycle
+~/.agents/skills/linear/scripts/linear update GR-42 --cycle next                 # Move to next cycle
+~/.agents/skills/linear/scripts/linear update GR-42 --cycle none                 # Remove from cycle
 ```
 
 ### Marking done (proof required)
@@ -92,10 +96,16 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 
 ### create - New issue
 
+New issues are auto-assigned to the API key owner and added to the active cycle by default.
+
 ```bash
-~/.agents/skills/linear/scripts/linear create "Fix login redirect bug"
-~/.agents/skills/linear/scripts/linear create "Add retry logic" --priority 2 --label agent:codex
+~/.agents/skills/linear/scripts/linear create "Fix login redirect bug"                              # -> you, active cycle
+~/.agents/skills/linear/scripts/linear create "Add retry logic" --priority 2 --label agent:codex    # -> you, active cycle, labeled
 ~/.agents/skills/linear/scripts/linear create "Research competitors" --description "Deep dive on..." --status backlog
+~/.agents/skills/linear/scripts/linear create "Backlog item" --cycle none                            # No cycle
+~/.agents/skills/linear/scripts/linear create "Next sprint" --cycle next                             # Next cycle
+~/.agents/skills/linear/scripts/linear create "Unowned task" --assign none                           # No assignee
+~/.agents/skills/linear/scripts/linear create "For someone else" --assign user@email.com             # Assign by email
 ```
 
 ## Agent Workflow
