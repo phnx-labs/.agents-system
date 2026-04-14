@@ -47,13 +47,49 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 
 ```bash
 ~/.agents/skills/linear/scripts/linear update GR-42 --pickup                     # Mark In Progress
-~/.agents/skills/linear/scripts/linear update GR-42 --done                        # Mark Done
 ~/.agents/skills/linear/scripts/linear update GR-42 --todo                        # Mark Todo
 ~/.agents/skills/linear/scripts/linear update GR-42 --status "In Review"          # Any state by name
 ~/.agents/skills/linear/scripts/linear update GR-42 --comment "Completed the research phase"
 ~/.agents/skills/linear/scripts/linear update GR-42 --label agent:claude            # Add label(s)
-~/.agents/skills/linear/scripts/linear update GR-42 --done --comment "Shipped"    # Both at once
 ```
+
+### Marking done (proof required)
+
+`--done` requires at least one `--proof`. The CLI will reject `--done` without proof. Each `--proof` is repeatable and auto-detected:
+
+- **File path** -- uploaded to Linear, embedded as image (png/jpg) or file link
+- **URL** -- embedded as a clickable link
+- **Plain text** -- inlined as-is (metrics, counts, summaries)
+
+```bash
+# Screenshot proof
+~/.agents/skills/linear/scripts/linear update GR-42 --done \
+  --proof /tmp/tests-passing.png \
+  --comment "All 14 assertions pass"
+
+# URL proof
+~/.agents/skills/linear/scripts/linear update GR-42 --done \
+  --proof https://getrush.ai/blog/comparison \
+  --comment "Published and live"
+
+# Metric proof
+~/.agents/skills/linear/scripts/linear update GR-42 --done \
+  --proof "Sent 15/30 outreach emails, 3 replies, 1 demo booked"
+
+# Multiple proofs
+~/.agents/skills/linear/scripts/linear update GR-42 --done \
+  --proof /tmp/screenshot.png \
+  --proof https://github.com/org/repo/commit/abc123 \
+  --proof "Deploy verified on production" \
+  --comment "Feature shipped end-to-end"
+```
+
+**What counts as proof:**
+
+| Task type | Acceptable proof |
+|-----------|-----------------|
+| Engineering | Screenshot of tests passing, deploy URL, commit URL |
+| Growth | Screenshot of published post, URL of live content, outreach metrics ("sent X/Y, Z replies") |
 
 ### create - New issue
 
@@ -70,7 +106,7 @@ Agents follow this pattern each session:
 1. `~/.agents/skills/linear/scripts/linear tasks` - see your queue
 2. `~/.agents/skills/linear/scripts/linear update GR-42 --pickup` - claim the highest priority task
 3. Do the work
-4. `~/.agents/skills/linear/scripts/linear update GR-42 --done --comment "Summary of what was done"`
+4. `~/.agents/skills/linear/scripts/linear update GR-42 --done --proof <evidence> --comment "Summary"` - proof is REQUIRED
 5. Repeat
 
 ## Label Convention for Agent Assignment

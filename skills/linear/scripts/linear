@@ -14,11 +14,15 @@ Commands:
 Config: ~/.agents/linear.json
 """
 
+from __future__ import annotations
+
 import argparse
 import json
+import mimetypes
 import os
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError
@@ -160,6 +164,110 @@ def resolve_state_id(states: dict, name: str) -> str | None:
     if mapped in states:
         return states[mapped]["id"]
     return None
+
+
+# ---------------------------------------------------------------------------
+# File upload
+# ---------------------------------------------------------------------------
+
+def upload_file(api_key: str, filepath: str) -> str | None:
+    """Upload a file to Linear and return the asset URL."""
+    path = Path(filepath)
+    if not path.exists():
+        print(f"File not found: {filepath}", file=sys.stderr)
+        return None
+
+    size = path.stat().st_size
+    content_type = mimetypes.guess_type(filepath)[0] or "application/octet-stream"
+
+    data = gql(api_key, """
+        mutation($filename: String!, $contentType: String!, $size: Int!) {
+            fileUpload(filename: $filename, contentType: $contentType, size: $size) {
+                success
+                uploadFile { uploadUrl assetUrl headers { key value } }
+            }
+        }
+    """, {"filename": path.name, "contentType": content_type, "size": size})
+
+    if check_errors(data):
+        return None
+
+    upload = data["data"]["fileUpload"]
+    if not upload["success"]:
+        print("Failed to get upload URL.", file=sys.stderr)
+        return None
+
+    uf = upload["uploadFile"]
+    file_bytes = path.read_bytes()
+
+    req = Request(uf["uploadUrl"], data=file_bytes, method="PUT")
+    req.add_header("Content-Type", content_type)
+    for h in uf.get("headers") or []:
+        req.add_header(h["key"], h["value"])
+
+    try:
+        with urlopen(req) as resp:
+            if resp.status not in (200, 201):
+                print(f"Upload failed: HTTP {resp.status}", file=sys.stderr)
+                return None
+    except URLError as e:
+        print(f"Upload failed: {e}", file=sys.stderr)
+        return None
+
+    return uf["assetUrl"]
+
+
+def build_proof_comment(api_key: str, proofs: list[str]) -> str:
+    """Build a markdown comment body from proof items.
+
+    Each item is auto-detected:
+      - File path (exists on disk) -> upload and embed as image/link
+      - URL (starts with http) -> embed as link
+      - Plain text -> inline as-is
+    """
+    parts = []
+    for i, proof in enumerate(proofs, 1):
+        label = f"**Proof {i}:**" if len(proofs) > 1 else "**Proof:**"
+        path = Path(proof)
+
+        # macOS screenshot filenames use U+202F (narrow no-break space) before AM/PM.
+        # Normalize unicode whitespace so regular-space paths still resolve.
+        if not path.exists() and "/" in proof:
+            normalized = unicodedata.normalize("NFC", proof)
+            # Try replacing regular spaces with narrow no-break spaces near AM/PM
+            for ch in ["\u202f", "\u00a0"]:
+                candidate = proof.replace(" AM", f"{ch}AM").replace(" PM", f"{ch}PM")
+                if Path(candidate).exists():
+                    proof = candidate
+                    path = Path(proof)
+                    break
+            # Also try the reverse: replace special spaces with regular ones
+            if not path.exists():
+                import re
+                cleaned = re.sub(r"[\u00a0\u202f]", " ", proof)
+                if Path(cleaned).exists():
+                    proof = cleaned
+                    path = Path(proof)
+
+        if path.exists() and path.is_file():
+            asset_url = upload_file(api_key, proof)
+            if not asset_url:
+                parts.append(f"{label} (upload failed: {path.name})")
+                continue
+            ct = mimetypes.guess_type(proof)[0] or ""
+            if ct.startswith("image/"):
+                parts.append(f"{label}\n![{path.name}]({asset_url})")
+            else:
+                parts.append(f"{label} [{path.name}]({asset_url})")
+        elif proof.startswith("http://") or proof.startswith("https://"):
+            parts.append(f"{label} {proof}")
+        elif "/" in proof or proof.endswith((".png", ".jpg", ".jpeg", ".pdf", ".gif", ".webp")):
+            print(f"File not found: {proof}", file=sys.stderr)
+            parts.append(f"{label} (file not found: {Path(proof).name})")
+        else:
+            parts.append(f"{label} {proof}")
+
+    return "\n\n".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -507,12 +615,43 @@ def show_issue_detail(args, api_key, team_id):
 # ---------------------------------------------------------------------------
 
 def cmd_update(args, cfg, api_key, team_id):
+    # Require proof when marking done
+    if args.done and not args.proof:
+        print("Cannot mark done without proof. Provide at least one --proof:", file=sys.stderr)
+        print("  --proof /path/to/screenshot.png   (file upload)", file=sys.stderr)
+        print("  --proof https://example.com/result (URL)", file=sys.stderr)
+        print('  --proof "Sent 15/30 emails"        (text)', file=sys.stderr)
+        sys.exit(1)
+
     issue = resolve_issue(api_key, team_id, args.identifier)
     if not issue:
         print(f"Issue {args.identifier} not found.")
         sys.exit(1)
 
     did_something = False
+
+    # Post proof as a comment before status change
+    if args.proof:
+        proof_body = build_proof_comment(api_key, args.proof)
+        if args.comment:
+            proof_body = f"{args.comment}\n\n{proof_body}"
+
+        data = gql(api_key, """
+            mutation($input: CommentCreateInput!) {
+                commentCreate(input: $input) { success }
+            }
+        """, {"input": {"issueId": issue["id"], "body": proof_body}})
+
+        if check_errors(data):
+            return
+        if data["data"]["commentCreate"]["success"]:
+            print(f"Proof posted to {args.identifier}.")
+        else:
+            print("Proof comment failed.", file=sys.stderr)
+            sys.exit(1)
+        did_something = True
+        # Comment already included in proof, don't post separately
+        args.comment = None
 
     # Status change
     target_state = None
@@ -724,6 +863,8 @@ def main():
     status_group.add_argument("--todo", action="store_true", help="Mark Todo")
     status_group.add_argument("--status", help="Move to any state by name")
     p_update.add_argument("--comment", help="Add a comment")
+    p_update.add_argument("--proof", action="append",
+                          help="Proof of completion (repeatable). File path, URL, or text.")
     p_update.add_argument("--label", action="append", help="Add label(s) (repeatable)")
 
     # create
@@ -758,13 +899,12 @@ def main():
         print("No team configured. Run: linear setup", file=sys.stderr)
         sys.exit(1)
 
-    match args.command:
-        case "tasks":
-            cmd_tasks(args, cfg, api_key, team_id)
-        case "update":
-            cmd_update(args, cfg, api_key, team_id)
-        case "create":
-            cmd_create(args, cfg, api_key, team_id)
+    if args.command == "tasks":
+        cmd_tasks(args, cfg, api_key, team_id)
+    elif args.command == "update":
+        cmd_update(args, cfg, api_key, team_id)
+    elif args.command == "create":
+        cmd_create(args, cfg, api_key, team_id)
 
 
 if __name__ == "__main__":
