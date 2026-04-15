@@ -82,6 +82,41 @@ These are the elements you can work with. Read `enrichment.md` for deep guidance
 
 ## Working with a Blog
 
+### Visual Review First
+
+Before reading a single line of markdown, **open the post in the browser and see it.** You cannot judge rhythm, spacing, image sizing, or visual flow from source files. The reader sees a rendered page, not frontmatter.
+
+1. **Find the live URL.** Check the frontmatter slug, the site's domain, and the URL pattern (e.g. `https://gorabbithole.ai/blog/{slug}`). If the post isn't deployed yet, build locally and open the dev server.
+2. **Take full-page screenshots.** Use the `/browser` skill or `agent-browser` CLI. Capture the entire page, not just above the fold. On desktop AND mobile widths if possible.
+3. **Study what you see.** Before forming any plan, ask:
+   - Does the post have a hero image? If not, that's the first gap to fix.
+   - Does the post have an OG image? (Check frontmatter `image:` field — if missing, social shares look broken.)
+   - Where are the visual dead zones — long stretches of unbroken text?
+   - How do existing images sit? Are they well-sized, or do they feel like afterthoughts?
+   - Does the page feel designed, or does it feel like a Google Doc?
+4. **Screenshot = your brief.** The screenshots are your reference for the rest of the session. Every addition you make should improve what you saw in those screenshots.
+
+Only AFTER this visual review should you read the markdown source and start planning enrichment. The browser shows you the problem; the markdown is where you fix it.
+
+### The Enrichment Ladder
+
+When improving a post, work in priority order. Don't skip ahead — the basics must be covered before you add polish.
+
+**Level 1 — Essentials (every post must have these)**
+1. **Hero image** — if missing, generate one. This is the opening shot. See `og-images.md`.
+2. **OG image** — if missing, create one. This is how the post looks when shared on Twitter/LinkedIn/Slack. It must have the post title on it, plus subtle brand presence (logo or wordmark in corner). See `og-images.md`. The OG image is NOT the hero resized — it's designed for social thumbnails.
+
+**Level 2 — Structure (make the reading experience flow)**
+3. **Visual rhythm** — find the dead zones from your screenshots. Add editorial images, diagrams, pull quotes, or whitespace where the text is thick and unbroken. See `enrichment.md`.
+4. **Internal/external links** — connect to related posts on the site, cite sources. See `enrichment.md`.
+
+**Level 3 — Polish (make it memorable)**
+5. **GIFs and video** — product demos, step-by-step walkthroughs, anything where motion tells the story better than a static image. GIFs under 5 seconds; longer = embedded video.
+6. **Data visualizations** — if the post cites numbers or trends, show them visually.
+7. **Research boost** — is there a stronger example, a more recent data point, a better quote? Do a quick web search to see if you can strengthen the post's evidence.
+
+Don't try to hit all 7 in one session. But always start from Level 1 and work down. A post with a beautiful GIF but no hero image has its priorities backwards.
+
 ### Understanding the Structure
 
 Before making changes, understand the blog's architecture. Every blog has conventions:
@@ -137,10 +172,12 @@ Choose based on what the image IS, not a fixed rule:
 
 When running via cron or autonomous session:
 
-1. Choose a post that would benefit most from enrichment. Not randomly -- look at the ones with the most text and fewest visuals, or the ones most important for the site.
-2. Read it fully. Feel its rhythm.
-3. Make 2-4 high-impact additions per session. Don't try to finish an entire post in one run.
-4. Track what you've done in your daily memory so you don't repeat work.
-5. Deploy and verify the page renders correctly.
+1. **Pick a post.** Choose the one that would benefit most from enrichment. Not randomly -- look at the ones with the most text and fewest visuals, or the ones most important for the site.
+2. **Open it in the browser.** Take full-page screenshots. This is your brief — you're seeing what the reader sees.
+3. **Check essentials first.** Missing hero image? Missing OG image? Fix those before anything else. Follow the Enrichment Ladder.
+4. **Make 2-4 high-impact additions per session.** Don't try to finish an entire post in one run. But always work in priority order (hero > OG > visual rhythm > links > GIFs/video > data viz > research).
+5. **Verify in browser.** After changes, open the post again. Screenshot it. Compare before and after. Did you improve the experience?
+6. **Track what you've done** in your daily memory so you don't repeat work.
+7. **Deploy** and verify the page renders correctly on the live site.
 
 The post gets richer over multiple sessions. That's fine. Rushing to add 10 images in one session produces wallpaper.

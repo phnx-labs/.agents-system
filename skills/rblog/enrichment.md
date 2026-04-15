@@ -6,8 +6,10 @@ This is not a checklist of visual types to apply. It is a guide to developing th
 
 Before adding anything, understand what the post already has and what it's missing. Not mechanically -- the way a chef tastes a dish and knows it needs acid, not sweetness.
 
-Read the post twice:
-1. **First read: as a reader.** Where did you get bored? Where were you confused? Where did your mind wander? Where did you want to see something? Those reactions are data.
+**Step zero: see it rendered.** Open the post in the browser and take full-page screenshots (see "Visual Review First" in `SKILL.md`). You are looking at the page the way a reader will — scrolling, skimming, feeling the weight of each section. Markdown source lies to you about spacing, image sizing, and rhythm. The browser tells the truth.
+
+Then read the markdown twice:
+1. **First read: as a reader.** Where did you get bored? Where were you confused? Where did your mind wander? Where did you want to see something? Those reactions are data. Compare against your screenshots — does what felt thin in the browser match what felt thin in the text?
 2. **Second read: as a designer.** Map the density. Where is the text thick and unbroken? Where does the post change direction? Where are claims made that could be shown instead of told?
 
 After both reads, you should have an instinct for what the post is asking for. Trust that instinct before applying any framework.
@@ -135,9 +137,11 @@ Sometimes the most powerful design decision is restraint. A section that's worki
 
 ## The Process
 
-1. Read the post. Feel it.
-2. Mark the moments that need something. Note WHAT they need and WHY -- not "add image here" but "this is where the reader's attention breaks because 600 words of abstraction need a concrete visual anchor."
-3. Plan the additions. For each one, know what it is, why it belongs, and what tool creates it.
-4. Generate. Use the right tool for each type.
-5. Insert. Place it where it serves the reading experience, with descriptive alt text.
-6. Read the post again with the additions. Does it flow better? Or did you interrupt something that was working? Remove anything that hurts the rhythm.
+1. **See it.** Open the post in the browser. Take full-page screenshots. Study the page as a reader would see it — not as markdown.
+2. **Check the essentials.** Hero image present? OG image present? If either is missing, that's your first job. Don't move to enrichment until the basics are covered.
+3. **Read the post. Feel it.** Now read the markdown source. Compare your reading experience against what you saw in the screenshots.
+4. **Mark the moments that need something.** Note WHAT they need and WHY -- not "add image here" but "this is where the reader's attention breaks because 600 words of abstraction need a concrete visual anchor."
+5. **Plan the additions.** For each one, know what it is, why it belongs, and what tool creates it. Follow the Enrichment Ladder priority order from `SKILL.md`.
+6. **Generate.** Use the right tool for each type.
+7. **Insert.** Place it where it serves the reading experience, with descriptive alt text.
+8. **Verify in the browser.** Open the post again after your changes. Take new screenshots. Does it flow better? Or did you interrupt something that was working? Remove anything that hurts the rhythm.
