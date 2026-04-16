@@ -3,8 +3,6 @@
 name: default
 description: Default development permissions for Claude Code
 allow:
-  # Local machine-specific permissions
-  # Note: Bash(ls:*) already in 15-misc-bash.yaml covers ls ~/Downloads
   # Covered by blanket "Bash" in 30-paths.yaml
   # Covered by blanket "Bash" in 30-paths.yaml
   # Covered by blanket "Bash" in 30-paths.yaml
@@ -23,8 +21,6 @@ allow:
   - "mcp__Swarm__Status"
   - "mcp__Swarm__Stop"
   - "mcp__Swarm__Tasks"
-  # Covered by blanket "Bash" in 30-paths.yaml
-  # Covered by blanket "Bash" in 30-paths.yaml
   # WebFetch - Developer documentation and tools
   - "WebSearch"
   - "WebFetch(domain:anthropic.com)"
