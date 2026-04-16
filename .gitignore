@@ -37,6 +37,7 @@ skills/rush-writer/
 # Local state files
 *.log
 *.pid
+.update-check
 meta.yaml
 agents.yaml
 cache.json
