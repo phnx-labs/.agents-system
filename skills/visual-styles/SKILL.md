@@ -1,3 +1,7 @@
+---
+name: visual-styles
+description: "Generate scroll-stopping data visualization images in iconic designer styles."
+---
 # Visual Styles
 
 Generate scroll-stopping data visualization images in iconic designer styles. Each style has a distinct visual language, palette, and layout system. Choose the right style for the content, then follow that style's sub-skill to generate the image.

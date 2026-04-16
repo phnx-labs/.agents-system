@@ -1,3 +1,7 @@
+---
+name: mcporter
+description: "Use the mcporter CLI to list, configure, and call MCP servers/tools directly from the command line."
+---
 # mcporter — MCP Server CLI
 
 Use the mcporter CLI to list, configure, and call MCP servers/tools directly from the command line.
