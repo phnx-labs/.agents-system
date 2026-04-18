@@ -127,6 +127,19 @@ Use the right tool for the job. Run `<tool> --help` for full usage.
 | Linear task management | `linear` skill | Querying work queues, updating status, managing sprints. |
 | Browser automation | `browser` skill | Driving websites, filling forms, taking screenshots. |
 | Image generation | `image-craft` skill | Any visual asset — photos, logos, posters, product shots. |
+| Interactive terminal programs | `agents pty` | REPLs, TUIs, interactive CLIs, anything needing a real PTY. |
+
+### Interactive Terminal (agents pty)
+
+Use `agents pty` when you need a real PTY — REPLs, TUIs, interactive prompts, other agent CLIs. Regular Bash is non-interactive; `agents pty` gives persistent sessions with screen rendering. Run `agents pty --help` for full usage.
+
+```bash
+SID=$(agents pty start)              # start session
+agents pty exec $SID "python3"       # run command (non-blocking)
+sleep 1 && agents pty screen $SID    # see the screen (clean text, no ANSI)
+agents pty write $SID "exit()\n"     # send keystrokes
+agents pty stop $SID                 # clean up
+```
 
 ### Tech Stack
 
