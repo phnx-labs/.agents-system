@@ -1,0 +1,37 @@
+# Promptcuts — type these anywhere in your prompt to expand them
+# Expanded by ~/.agents/hooks/02-expand-prompt-user-shortcuts.sh on UserPromptSubmit
+#
+# This file is VERSION-INDEPENDENT. It lives at ~/.agents/promptcuts.yaml
+# so that upgrading claude/codex/gemini versions never drops your shortcuts.
+#
+# Promptcuts augment messages (type #checkit alongside your prompt).
+# Slash commands (/debug, /plan, /recap) are standalone actions.
+
+shortcuts:
+  # Verification
+  "#checkit": "Before responding, verify every claim by searching the codebase and reading the actual source code. Quote file:line evidence. Do not paraphrase or summarize — show the actual code that proves your point."
+  "#rethink": "But before we go ahead and make this change, what do you think? Is this the right direction for our product? Reread any relevant files and docs, then give me your honest assessment."
+  "#debugit": "Confirm the root cause of these issues by spinning up codex and gemini agents via swarm. You should clearly explain the context, the evidence chain, and what each agent should verify independently."
+
+  # Thinking modifiers
+  "#godeep": "Think about this deeply. Consider second-order effects, edge cases, and what could go wrong. Don't rush to a solution. Take your time. I'd rather wait for a thorough answer than get a fast shallow one."
+  "#simplifyit": "Give me the simplest possible solution. No abstractions, no future-proofing, no over-engineering. Minimum viable change. Three lines of code is better than a clever abstraction."
+  "#behonest": "Be brutally honest. Don't sugarcoat it. If this is a bad idea, say so and explain why. If I'm wrong, tell me I'm wrong. I need your real opinion, not diplomacy."
+
+  # Handoff / continuity
+  "#userecap": |
+    Produce a recap of the current state of work for handoff or continuity.
+
+    Gather facts first — verifiable only. File changes, test results, concrete errors. "It seems like X" is not a fact.
+
+    Identify open questions: bugs not root-caused, decisions not made, external deps with unknown status, edge cases not tested.
+
+    Ground every hypothesis in evidence. BAD: "The bug is probably in auth." GOOD: "The bug may be in auth because (1) error occurs after login, (2) auth.ts:45 logs 'token expired' before crash, (3) no errors elsewhere." If you can't cite evidence, label it speculation.
+
+    Output these sections:
+    ### Situation — goal + current state, one paragraph max.
+    ### Completed — bullets of concrete work, with file paths.
+    ### In Progress — what's started but not finished.
+    ### Blocked / Open Questions — what can't proceed without more info.
+    ### Hypotheses — "[Hypothesis]: [Evidence 1], [Evidence 2], ..."
+    ### Recommended Next Steps — concrete actions, prioritized by impact.
