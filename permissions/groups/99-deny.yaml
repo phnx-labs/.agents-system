@@ -6,9 +6,12 @@ deny:
   - "Read(~/.ssh/**)"
   - "Edit(~/.ssh/**)"
 
-  # Git - dangerous commands that rewrite history or lose work
+  # Git - dangerous commands that rewrite history or lose work.
+  # `git push --force` is blocked; `--force-with-lease` is permitted because
+  # it refuses to overwrite if the remote has advanced.
   - "Bash(git reset:*)"
-  - "Bash(git push --force:*)"
+  - "Bash(git push --force origin:*)"
+  - "Bash(git push --force upstream:*)"
   - "Bash(git push -f:*)"
   - "Bash(git clean:*)"
   - "Bash(git checkout:*)"

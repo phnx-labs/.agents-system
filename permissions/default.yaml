@@ -3,6 +3,9 @@
 name: default
 description: Default development permissions for Claude Code
 allow:
+  # Local machine-specific permissions (gitignored -- not checked into repo)
+  # Add paths, tools, or commands specific to YOUR machine here.
+  # See permissions/AGENTS.md for guidance.
   # Covered by blanket "Bash" in 30-paths.yaml
   # Covered by blanket "Bash" in 30-paths.yaml
   # Covered by blanket "Bash" in 30-paths.yaml
@@ -1876,9 +1879,12 @@ deny:
   - "Read(~/.ssh/**)"
   - "Edit(~/.ssh/**)"
 
-  # Git - dangerous commands that rewrite history or lose work
+  # Git - dangerous commands that rewrite history or lose work.
+  # `git push --force` is blocked; `--force-with-lease` is permitted because
+  # it refuses to overwrite if the remote has advanced.
   - "Bash(git reset:*)"
-  - "Bash(git push --force:*)"
+  - "Bash(git push --force origin:*)"
+  - "Bash(git push --force upstream:*)"
   - "Bash(git push -f:*)"
   - "Bash(git clean:*)"
   - "Bash(git checkout:*)"
