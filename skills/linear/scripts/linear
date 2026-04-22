@@ -419,6 +419,7 @@ ISSUE_FIELDS = """
     identifier title description state { name type }
     priority labels { nodes { name } }
     assignee { name }
+    project { name id }
     dueDate createdAt url
 """
 
