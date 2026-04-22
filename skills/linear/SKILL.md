@@ -32,14 +32,26 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 ### tasks - List, view, or board
 
 ```bash
-~/.agents/skills/linear/scripts/linear tasks                          # All open tasks in active cycle
+~/.agents/skills/linear/scripts/linear tasks                          # My tasks + unowned (if agent configured); else all tasks in active cycle
 ~/.agents/skills/linear/scripts/linear tasks --agent codex            # Codex's tasks only
+~/.agents/skills/linear/scripts/linear tasks --all                    # Literally every task in the active cycle (incl other agents)
 ~/.agents/skills/linear/scripts/linear tasks --label today            # Filter by any label
 ~/.agents/skills/linear/scripts/linear tasks --status todo            # Filter by status
 ~/.agents/skills/linear/scripts/linear tasks --cycle next             # Next cycle instead of active
-~/.agents/skills/linear/scripts/linear tasks --board                  # Team board grouped by agent
+~/.agents/skills/linear/scripts/linear tasks --board                  # Team board grouped by agent (unowned gets its own group)
 ~/.agents/skills/linear/scripts/linear tasks GR-42                    # Detail view for a specific issue
 ~/.agents/skills/linear/scripts/linear tasks --json                   # Machine-readable output
+```
+
+**Sort order** inside any list: priority (Urgent → No-priority), then due date ascending (overdue first, nulls last), then identifier. So when you have 20 urgent tasks, the one due today comes before the one due next week. The row shows `due` column with relative labels (`today`, `tomorrow`, `1d overdue`, `in 3d`, `May 04`, or `--` if unset).
+
+**Default-view behavior:** If `agent` is set in your config (via `setup`), you see **your tasks + any tasks with no `agent:*` label**. Tasks owned by a different agent are hidden. This keeps the queue focused without letting unclaimed work fall through the cracks. Use `--agent X` to see a specific agent, `--all` to see everything.
+
+### cycles - List all cycles
+
+```bash
+~/.agents/skills/linear/scripts/linear cycles             # All cycles, marked: * active, > next, - completed
+~/.agents/skills/linear/scripts/linear cycles --json      # Machine-readable
 ```
 
 ### update - Modify an issue
@@ -96,17 +108,29 @@ Credentials resolve in order: config file > `$LINEAR_API_KEY` env var > macOS Ke
 
 ### create - New issue
 
-New issues are auto-assigned to the API key owner and added to the active cycle by default.
+**Zero-config defaults:** new issues auto-assign to the API key owner, auto-attach to the active cycle, and default to **Todo** status (or **Backlog** if priority=Low). Pass `--assign none` / `--cycle none` / `--status X` to override.
+
+**Priority values** (pass to `--priority`, case-insensitive). Default is `medium`.
+
+| Value | Default status |
+| --- | --- |
+| `urgent` | Todo |
+| `high` | Todo |
+| `medium` (default) | Todo |
+| `low` | Backlog |
+| `none` | Todo |
 
 ```bash
-~/.agents/skills/linear/scripts/linear create "Fix login redirect bug"                              # -> you, active cycle
-~/.agents/skills/linear/scripts/linear create "Add retry logic" --priority 2 --label agent:codex    # -> you, active cycle, labeled
+~/.agents/skills/linear/scripts/linear create "Fix login redirect bug"                                    # -> you, active cycle
+~/.agents/skills/linear/scripts/linear create "Add retry logic" --priority high --label agent:codex       # -> you, active cycle, labeled
 ~/.agents/skills/linear/scripts/linear create "Research competitors" --description "Deep dive on..." --status backlog
-~/.agents/skills/linear/scripts/linear create "Backlog item" --cycle none                            # No cycle
+~/.agents/skills/linear/scripts/linear create "Backlog item" --cycle none                            # No cycle (backlog)
 ~/.agents/skills/linear/scripts/linear create "Next sprint" --cycle next                             # Next cycle
 ~/.agents/skills/linear/scripts/linear create "Unowned task" --assign none                           # No assignee
 ~/.agents/skills/linear/scripts/linear create "For someone else" --assign user@email.com             # Assign by email
 ```
+
+Output prints `Created RUSH-XX: title  [cycle | assignee]` so you can verify defaults applied.
 
 ## Agent Workflow
 
