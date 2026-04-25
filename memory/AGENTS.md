@@ -57,25 +57,39 @@ Rules are ordered by impact. #1 is the most violated and most costly.
 
  4. **NO FALLBACKS / NO BAND-AIDS** - Never add fallback logic or "just in case" code paths. If data can come in two formats, standardize at the source. If a lookup can fail, fix why it fails. Every fallback is a bug you're hiding. One canonical data path. Fix the root cause.
 
+ 5. **CURRENT DATE ANCHORING** - Your weights have a cutoff (~Jan 2026). The real date is in the system prompt under `currentDate` — READ IT. Every web query about state-of-the-world (models, APIs, prices, libraries, news, releases, tools, companies, people's roles) MUST include the current YEAR in the query string (e.g., "Claude pricing 2026", not "Claude pricing"). Never assume a year from your weights — you are months stale by default. Searching with a stale year returns stale results and you'll confidently quote 2024 facts as if they're current. Anchor every search.
+
+ 6. **WEB-SEARCH FIRST FOR TIME-SENSITIVE CLAIMS** - If the answer depends on current state-of-the-world, WebSearch BEFORE answering. Not "if the user asks" — BEFORE the first sentence. Trusting your weights on current affairs violates Hard Line #2 (no unverified claims). AT SESSION START for any task that could touch the real world, load the search tools eagerly: `ToolSearch select:WebSearch,WebFetch`. They are deferred by default and the loading-on-demand friction is the reason you skip searches you should have done.
+
+ 7. **BAN HAIKU FOR SUBAGENTS** - When calling the Agent tool, ALWAYS set `model` explicitly. Default to `"sonnet"`. Use `"opus"` for deep investigation, code review, architecture, or anything load-bearing. NEVER pass `"haiku"` and NEVER omit the `model` field — omission falls through to the subagent's frontmatter, which may pin haiku (e.g., the bundled `Explore` subagent is described as "Fast agent" — likely haiku). Haiku returns shallow reports and the user has to redo the work.
+
+ 8. **INVESTIGATION BRIEFS DEMAND EVIDENCE** - Every Agent prompt for an investigative, debugging, or review task MUST end with this exact line: `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.` Without this, subagents return vibes. With it, they return evidence you can actually verify.
+
+ 9. **EXHAUST ALTERNATIVES BEFORE DECLARING A BLOCKER** - "I cannot do X from here. Period." is BANNED unless you have tried at least THREE distinct approaches and quoted the failure of each. If a probe returns the wrong result, ask WHY (wrong process ancestry, sandbox isolation, missing grant, wrong launch method, environment masking) BEFORE concluding it can't work. The fix is almost never "ask the user to do something" — it's almost always "try a different launch path." Past failure: declared "I cannot run end-to-end from this shell. Period." after one failed direct exec, when `open -a` to detach the TCC ancestry was one bash call away.
+
+10. **NEVER ASK USER TO VERIFY ENV STATE YOU CAN CHECK YOURSELF** - Before saying "go enable X in Settings" or "is Y running" or "does Z exist" — RUN THE CHECK YOURSELF. You have the same shell, OS, and files the user has. List, query, probe, dump. If you ask the user to verify something you could have verified, you've wasted their time and proven you didn't try. The user must NEVER have to send a screenshot proving you were wrong about environment state.
+
+11. **PARALLELIZE FROM MESSAGE ONE FOR MULTI-DIMENSIONAL QUESTIONS** - If a question has more than one dimension (multiple files, cross-platform, end-to-end verification, "is X ready", audit, ship-readiness, parity check, root-cause across a stack), spawn 3-7 Agent subagents IN PARALLEL in your FIRST response. Behavioral trigger: if you're about to write a third sequential Bash call to investigate something, STOP and spawn parallel agents instead. The user has explicitly said "I do not care about token cost" — defaulting to single-threaded is YOUR cost preference, not theirs, and it costs them the only thing that matters: time. Single-threaded sequential investigation is the #1 source of "stinginess" complaints.
+
 ### Tier 2 — Code quality
 
- 5. **NO DUPLICATE CODE** - Search the codebase before writing any new function. If something similar exists, use it or extend it. Search first. Write second.
- 6. **NO SCOPE CREEP** - Do exactly what was asked. Don't refactor surrounding code, add "improvements," rename unrelated variables, or reorganize imports. Surgical precision. In, fix, out.
- 7. **NO MOCKING IN TESTS** - Real services only. Tests must exercise the actual critical path.
- 8. **CROSS-CUTTING CHANGES GO TO THE SOURCE** - When touching features used by many components, find the canonical location and edit there. Never add ad-hoc logic in consumers. If no central place exists, propose refactoring to create one first.
- 9. **USER-FACING TEXT MUST BE HUMAN** - Every string a user can see (notifications, labels, errors, status) must read like a person wrote it. No developer shorthand: "13 minutes" not "12m 49s", "30 seconds" not "30.0s", "2 hours" not "7200s". If a grandmother can't parse it, rewrite it.
+12. **NO DUPLICATE CODE** - Search the codebase before writing any new function. If something similar exists, use it or extend it. Search first. Write second.
+13. **NO SCOPE CREEP** - Do exactly what was asked. Don't refactor surrounding code, add "improvements," rename unrelated variables, or reorganize imports. Surgical precision. In, fix, out.
+14. **NO MOCKING IN TESTS** - Real services only. Tests must exercise the actual critical path.
+15. **CROSS-CUTTING CHANGES GO TO THE SOURCE** - When touching features used by many components, find the canonical location and edit there. Never add ad-hoc logic in consumers. If no central place exists, propose refactoring to create one first.
+16. **USER-FACING TEXT MUST BE HUMAN** - Every string a user can see (notifications, labels, errors, status) must read like a person wrote it. No developer shorthand: "13 minutes" not "12m 49s", "30 seconds" not "30.0s", "2 hours" not "7200s". If a grandmother can't parse it, rewrite it.
 
 ### Tier 3 — Operational guardrails
 
-10. **ASK, DON'T GUESS** - Unsure about anything? ASK. A clarifying question costs 30 seconds. A wrong guess costs hours. Spawn subagents to verify if needed — cost doesn't matter, correctness does.
-11. **NO EMOJIS** - Not in code, comments, commits, UI, any file.
-12. **NO ENV VARS FOR USER CREDENTIALS** - Use Keychain, encrypted config.
-13. **GIT: READ-ONLY + COMMIT/PUSH ONLY** - Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`. Everything else denied — no `checkout`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), or force push.
-14. **NO LOCALLY BUILT CLIS** - Use install scripts then run globally.
-15. **USE `rush http` FOR API CALLS** - Never curl with manual tokens for api.prix.dev.
-16. **NO BACKGROUND SHELLS** - Foreground only.
-17. **NO TOASTS** - Silent success, inline errors.
-18. **NO SUMMARY FILES / NO STANDALONE .md FILES** - Tell user verbally. Don't create README, docs, or summary files unless explicitly asked.
+17. **ASK, DON'T GUESS** - Unsure about anything? ASK. A clarifying question costs 30 seconds. A wrong guess costs hours. Spawn subagents to verify if needed — cost doesn't matter, correctness does.
+18. **NO EMOJIS** - Not in code, comments, commits, UI, any file.
+19. **NO ENV VARS FOR USER CREDENTIALS** - Use Keychain, encrypted config.
+20. **GIT: READ-ONLY + COMMIT/PUSH ONLY** - Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`. Everything else denied — no `checkout`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), or force push.
+21. **NO LOCALLY BUILT CLIS** - Use install scripts then run globally.
+22. **USE `rush http` FOR API CALLS** - Never curl with manual tokens for api.prix.dev.
+23. **NO BACKGROUND SHELLS** - Foreground only.
+24. **NO TOASTS** - Silent success, inline errors.
+25. **NO SUMMARY FILES / NO STANDALONE .md FILES** - Tell user verbally. Don't create README, docs, or summary files unless explicitly asked.
 
 ---
 
@@ -106,7 +120,6 @@ Show the FULL context, not just the new piece. If a notification appears inside 
 ## Conventions
 
 - **Memory files:** Main file is `AGENTS.md`. `CLAUDE.md` and `GEMINI.md` are symlinks to it.
-- **TODO tracking:** Single `TODO.md` at repo root. One per repo, no exceptions.
 - **Project scripts:** Every deployable project has `scripts/` with standard scripts (`build.sh`, `install.sh`, `publish.sh`). Check `scripts/` first if unsure how to deploy.
 - **Permissions:** Add PERMANENTLY to `~/.claude/settings.json`. Ask ONCE, then add it. Never ask repeatedly.
 - **Images:** When discussing images, ALWAYS include the full file path so the user can click it in the IDE to preview.

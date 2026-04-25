@@ -9,11 +9,8 @@ Fetch the current agent's Linear task queue and present it for action.
 1. Run the Linear CLI to get your tasks:
 
 ```bash
-LINEAR=$(find ~/.agents/versions -name linear -path '*/skills/linear/scripts/*' -type f 2>/dev/null | head -1)
-$LINEAR tasks
+~/.agents/skills/linear/scripts/linear tasks
 ```
-
-If the binary isn't found, fall back to the Linear API directly (same query as the SessionStart hook in `~/.agents/hooks/linear-tasks.sh`).
 
 2. If there are tasks, present them clearly:
    - Sorted by priority (Urgent > High > Medium > Low)
@@ -26,7 +23,7 @@ If the binary isn't found, fall back to the Linear API directly (same query as t
    - Then mark it In Progress and start working:
 
 ```bash
-$LINEAR update <ID> --pickup
+~/.agents/skills/linear/scripts/linear update <ID> --pickup
 ```
 
 4. If a task is already In Progress, resume that one first instead of picking a new one.
@@ -38,7 +35,7 @@ $LINEAR update <ID> --pickup
 If `$ARGUMENTS` contains a task ID (like `GR-42`), show the detail view for that specific task instead:
 
 ```bash
-$LINEAR tasks $ARGUMENTS
+~/.agents/skills/linear/scripts/linear tasks $ARGUMENTS
 ```
 
 Then start working on it.

@@ -1,55 +1,52 @@
 ---
-description: Resume a previous task - load context, assess state, then continue working
+description: Resume a previous task - load context via agents sessions, assess state, then continue working
 ---
 
 Resume previous work: $ARGUMENTS
 
-You are picking up where a previous session left off. The user may provide a summary, a session name/ID, or just a vague description of what they were working on. Your job is to rebuild full context and keep going.
+You are picking up where a previous session left off. Typically called as `/continue <session-id>` (UUID or short prefix) — the invocation you see when resuming from the `agents sessions` picker across versions. The argument may also be a name, a topic, or empty.
 
-## Step 1: Load Prior Context
+## Step 1: Load the prior session
 
-Based on what the user provided, use the best source:
+Pick the loader based on what the user passed.
 
-| User Provides | Action |
-|--------------|--------|
-| Session name/ID | Use `/sessions <id>` to load the transcript |
-| Summary or description | Search the codebase for related recent changes |
-| Nothing specific | Check `git log --oneline -20` and recent file modifications |
+| Input | Command |
+|------|---------|
+| Session ID (UUID or short prefix) | `agents sessions <id>` |
+| Only a topic / name / keyword | `agents sessions "<query>"` to pick an ID, then `agents sessions <id>` |
+| Nothing | `agents sessions` (interactive picker) — abort if no TTY and ask the user |
 
-Also check:
-- `TODO.md` at repo root for tracked work items
-- Recent git history: `git log --oneline --since="3 days ago"`
-- Any in-progress branches or uncommitted changes
+The default render is a concise summary: header, original prompt, tool-call groupings, final response. That's enough 90% of the time. Only escalate to `agents sessions <id> --markdown` if the summary leaves a real gap (e.g. you need a specific mid-session message). Narrow with `--include user,assistant` or `--last 5` if the full conversation is too long.
 
-## Step 2: Assess Current State
+## Step 2: Assess current state
 
-Build a clear picture of what's done and what's not. Read the actual files -- don't guess from commit messages alone.
+The transcript shows what the previous session *intended*. Verify what actually landed.
 
-For each piece of prior work, verify:
-- Does the code exist and look complete?
-- Are there TODOs, FIXMEs, or half-finished implementations?
-- Do tests exist? Do they pass?
-- Are there any obvious gaps between what was intended and what was shipped?
+- `git status`, `git log --oneline -20`, `git diff` — what's committed, what's in flight
+- Read the files the session touched and confirm the changes are still there
+- Check for TODOs, FIXMEs, half-edited functions, failing tests
+- If the session referenced a Linear issue, check its current state via the `linear` skill
 
-## Step 3: Present Findings and Align
+Quote file:line evidence when summarizing — don't paraphrase from memory.
 
-Use `AskUserQuestion` to confirm your understanding and get direction:
+## Step 3: Present and align
 
-- State what you found (completed work, remaining work, blockers)
-- Propose what to tackle next, ordered by priority
-- Offer options if the path isn't obvious
+One short block:
 
-Keep this concise -- the user wants to get back to work, not read an essay.
+- **Done:** what landed (with file paths)
+- **Remaining:** what's unfinished or broken (with specifics)
+- **Drift:** anything that changed since the session ended
+- **Next:** concrete next step
 
-## Step 4: Continue Working
+Use `AskUserQuestion` only if the next step is genuinely ambiguous. If the path is obvious, just state it and start.
 
-Once aligned, start executing. Follow the standard pattern: ACT -> SHOW -> CONTINUE.
+## Step 4: Continue working
 
-Don't re-do work that's already done. Pick up exactly where things left off.
+Pick up exactly where things left off. Don't redo completed work. Follow ACT -> VERIFY -> SHOW -> CONTINUE.
 
-## Anti-Patterns
+## Anti-patterns
 
-- Don't ask "what were you working on?" if you can figure it out from git/code
-- Don't dump a wall of git log output -- synthesize it
-- Don't start coding before confirming you understand the remaining work
-- Don't re-explain what the user already knows about their own project
+- Do not ask "what were you working on?" — load the transcript first
+- Do not dump raw transcript output at the user — synthesize it
+- Do not start coding before verifying the prior work is still intact
+- Do not use the older `/sessions` skill or hand-traverse `~/.agents/versions/.../projects/` — `agents sessions` is the canonical tool

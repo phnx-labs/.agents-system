@@ -9,14 +9,376 @@
 
 shortcuts:
   # Verification
-  "#checkit": "Before responding, verify every claim by searching the codebase and reading the actual source code. Quote file:line evidence. Do not paraphrase or summarize — show the actual code that proves your point."
-  "#rethink": "But before we go ahead and make this change, what do you think? Is this the right direction for our product? Reread any relevant files and docs, then give me your honest assessment."
-  "#debugit": "Confirm the root cause of these issues by spinning up codex and gemini agents via swarm. You should clearly explain the context, the evidence chain, and what each agent should verify independently."
+  "#checkit": |
+    Verification mode. Every factual claim must be backed by evidence you gathered THIS session. No weights-based assertions.
+
+    Rules (non-negotiable):
+    - READ (not grep, not guess) every file on the data path. Open the actual source. Quote file:line directly.
+    - Ban paraphrase. Ban summary. Paste the actual code/text that proves your point.
+    - Ban "probably", "I think", "it seems", "should be". Either you have proof or you label the statement "unverified".
+    - For state-of-the-world claims (APIs, library behavior, prices, SOTA, versions, framework capabilities), run WebSearch FIRST with the current year in the query. Weights are stale by default (Hard Lines #5, #6).
+    - For counts, sizes, directory contents: run the tool call THIS session. "I think there are 26 files" is a Hard Line #2 violation — run `ls | wc -l` and quote the number.
+    - For cross-cutting claims spanning multiple files/modules, spawn parallel Agent subagents (model="sonnet" for breadth, "opus" for depth — NEVER "haiku", NEVER omit the field — Hard Line #7). Every subagent brief MUST end with:
+      `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.`
+
+    If you cannot verify a claim, say "unverified" explicitly. Never smuggle an assumption in as a fact.
+  "#rethink": |
+    Rethink mode. NOT one angle — MANY. Multi-agent, multi-lens investigation before committing to a direction. This is a MANDATORY GATE, not a green light to implement.
+
+    ---------------- PREP ----------------------------------------------
+    1. Load the `reflect` skill — recall every constraint, correction, and piece of feedback in this conversation. Ignoring prior feedback makes the rethink worthless.
+    2. Load the `product` skill — user value over technical elegance is the measuring stick.
+    3. Re-READ (not grep) every file and doc relevant to the decision. Stale memory produces stale takes.
+
+    ---------------- SPAWN A TEAM VIA `agents teams` -------------------
+    Do NOT single-thread this. Use `agents teams` to run diverse teammates in parallel, each on a DIFFERENT angle. Shell commands:
+
+      agents teams create rethink-<short-slug>
+      agents teams add <team> claude  "<angle task>" --name product-lens
+      agents teams add <team> codex   "<angle task>" --name tradeoffs-lens
+      agents teams add <team> gemini  "<angle task>" --name steelman-opposite
+      agents teams start <team>
+      agents teams status <team> --since <ts>   # poll until all finish
+      agents teams logs <teammate>               # read a specific teammate
+      agents teams disband <team>                # when synthesis is done
+
+    If you haven't used this before, run `agents teams --help` first. Run `agents teams doctor` to verify which CLIs are installed.
+
+    ---------------- ANGLES (pick at least 3, more if warranted) ------
+    - PRODUCT — is this what the user actually needs? Does it beat the no-build alternative? Does it earn its complexity?
+    - SECOND-ORDER — what breaks elsewhere, who depends on this, what precedent does it set, what migration cost appears later?
+    - STEELMAN-OPPOSITE — one teammate AGGRESSIVELY argues the opposite choice. If they can't find a good argument, your direction is robust. If they can, you learned something.
+    - PRIOR-ART — has this been tried here before? Search git history, old branches, closed PRs. Why was it abandoned or kept?
+    - TRADEOFFS — what does this choice foreclose? What flexibility, performance, clarity, or optionality is sacrificed?
+    - TASTE — is this consistent with the app's design language, mental model, and vocabulary?
+    - SCOPE — is this the right size of change? Could a smaller version achieve 80%? Could a bigger version solve the underlying problem permanently?
+
+    Every teammate task prompt MUST end with:
+      `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.`
+
+    (Hard Line #7 still applies to any Agent() subagents you spawn alongside — model explicit, never haiku.)
+
+    ---------------- SYNTHESIS ----------------------------------------
+    Once the team finishes:
+    - Where do the teammates AGREE? That's probably true.
+    - Where do they DIVERGE? That's the REAL decision point — surface it plainly.
+    - Give the user an HONEST assessment (same bar as `#behonest`): right direction or not, real tradeoffs, simplest 80% alternative.
+    - Cite each finding to its teammate + file:line.
+
+    DO NOT IMPLEMENT after rethinking. Present findings. Wait for direction.
+  "#debugit": |
+    Root-cause mode. NO guessing. NO fix until the cause is proven with evidence.
+
+    Execution plan (follow in order):
+    1. Load the `sdebug` skill (or `debug` for single-agent) — it encodes the project's debugging workflow.
+    2. Trace the full data path end-to-end. If data flows A → B → C → D, open A, B, C, AND D. Quote file:line from each. Skipping files in the middle is how you misdiagnose (Hard Line #3: NO LAZY DEBUGGING).
+    3. Spawn parallel agents for independent verification (parallelize — Hard Line #8c):
+       - Codex agent via Swarm MCP — reproduce the bug from scratch
+       - Gemini agent via Swarm MCP — cross-check the data flow independently
+       - Opus Agent subagent — deep review of the suspected module
+       Every agent prompt MUST end with the exact line:
+       `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.`
+       NEVER pass model="haiku". NEVER omit the model field. (Hard Lines #7, #8)
+    4. Synthesize: do the agents AGREE on the cause? Where do they DIVERGE? Divergence = you do not understand the bug yet — investigate more, do NOT patch.
+    5. Present: bug description, full evidence chain with file:line quotes from every file on the path, root cause, proposed fix (sorted by scope). NO fix ships until the user confirms the diagnosis.
+
+    FORBIDDEN: fallback logic, "just in case" guards, patching symptoms (Hard Line #4: NO FALLBACKS / NO BAND-AIDS). Fix the root cause or don't fix anything.
 
   # Thinking modifiers
-  "#godeep": "Think about this deeply. Consider second-order effects, edge cases, and what could go wrong. Don't rush to a solution. Take your time. I'd rather wait for a thorough answer than get a fast shallow one."
-  "#simplifyit": "Give me the simplest possible solution. No abstractions, no future-proofing, no over-engineering. Minimum viable change. Three lines of code is better than a clever abstraction."
-  "#behonest": "Be brutally honest. Don't sugarcoat it. If this is a bad idea, say so and explain why. If I'm wrong, tell me I'm wrong. I need your real opinion, not diplomacy."
+  "#godeep": |
+    Deep-think mode. Time is not scarce. Correctness is. A thorough answer in 5 minutes beats a shallow one in 30 seconds.
+
+    Rules:
+    - Re-READ every file relevant to the question. Not grep. Read.
+    - Consider second-order effects: what breaks elsewhere, who depends on this, what precedent does it set, what migration cost does it impose, what assumptions does it lock in?
+    - Enumerate edge cases explicitly: empty input, large input, concurrent access, partial failure, network death, stale data, race conditions, permission boundaries, timezones, unicode, rounding, off-by-one, retries.
+    - Present the evidence chain, not vibes. Every claim backed by a file:line quote or a web-search citation (with year).
+    - Banned words: "probably", "I think", "it seems", "might", "should work". Either you have proof or you label the statement explicitly as speculation.
+    - For state-of-the-world dimensions (library behavior, API contracts, SOTA approaches, framework capabilities, current-year best practice), WebSearch with the current year BEFORE answering (Hard Lines #5, #6).
+    - For multi-dimensional questions (multi-file, cross-platform, audits, parity checks, root-cause across a stack), spawn 3-7 parallel Agent subagents (model="opus" for depth, NEVER "haiku", NEVER omit the field — Hard Line #7). Every brief ends with:
+      `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.`
+
+    Shallow fast answers are rejected here. If you catch yourself about to answer in one paragraph, stop — you're being lazy.
+  "#simplifyit": |
+    Simplification mode. Scope creep is FINE. Complexity is FINE. What is NOT fine: overlapping functions, near-duplicate code, fragmented concepts that should be one, and a mountain of abstractions that hide the actual shape.
+
+    Load these skills in parallel:
+    - `simplify` — reviews changed code for reuse, quality, efficiency.
+    - `clean` — identifies duplicates, consolidates scattered truth, unifies inconsistent patterns.
+
+    WHAT YOU ARE HUNTING (in order of danger):
+
+    1. 50-70% SIMILAR CODE — the MOST dangerous kind of duplication. Too different to deduplicate mechanically, too similar to leave alone. Find these pairs. Extract the shared core. Parameterize the variance. One canonical function, callers pass what varies.
+
+    2. NON-ORTHOGONAL FUNCTIONS — two or more functions whose responsibilities overlap. Test: can you state what each one does without referencing the other? If no, they're not orthogonal. Either find the clean axis and split, or collapse into one.
+
+    3. CONCEPTUAL DUPLICATION — the same IDEA expressed under different names: `User` / `Account` / `Member` / `Principal` all modeling the same thing; `session` / `run` / `invocation` for the same runtime object. Pick ONE term. Rename the rest. Abstractions are concepts too — not just code.
+
+    4. ABSTRACTION BLOAT — too many small wrappers, adapters, layers each doing 10% of a job. If there are 5 abstractions for one concern, propose a SINGLE cleaner abstraction that subsumes 3-4 of them. Fewer concepts > more concepts, when the shape is right.
+
+    5. SCATTERED TRUTH — the same constant, config value, or decision expressed in multiple places. Unify at the source. No shadow copies. (Hard Line #12: CROSS-CUTTING CHANGES GO TO THE SOURCE.)
+
+    WHAT YOU PROPOSE:
+    - A NEW, simpler abstraction — with name, shape, responsibilities.
+    - Which existing abstractions it REPLACES (list them by file:line).
+    - Which call sites change, and how.
+    - What becomes easier after the consolidation.
+
+    RULES:
+    - Work from evidence. Read actual code. Quote file:line for every overlap claim.
+    - If the "simpler" abstraction adds LOC or concept count, it is NOT simpler — reject it and try again.
+    - Naming matters. `DataManager` is not an abstraction, it's a parking lot. If you can't name the new concept in one clean word, the concept isn't clean yet.
+    - Applies to CODE and CONCEPTS equally — product language, domain terms, UI vocabulary, status enums, event names.
+    - Parallelize the hunt: spawn Agent subagents (Opus, never Haiku — Hard Line #7) to grep for near-duplicates across different areas simultaneously. Every brief ends with:
+      `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.`
+
+    DO NOT ship the consolidation. Propose it. Enumerate the replacements. Wait for approval.
+  "#behonest": |
+    Brutal-honesty mode. No diplomacy. No sugarcoating. No hedging. Respect the user by telling the truth.
+
+    Rules:
+    - If the idea is bad, say "this is a bad idea" and explain why with evidence (file:line or citation).
+    - If the user is wrong, say they are wrong. "I think you might want to reconsider" is cowardice. "This is wrong because [evidence]" is honesty.
+    - If the code is bad, say it's bad. Point to file:line. Name the specific problem (duplication, leaky abstraction, unsafe input, race, etc.).
+    - If a previous answer of yours was wrong, say so plainly. "I was wrong earlier — the correct version is…" No throat-clearing. No rationalization.
+    - If a design choice is taste-based with no clear winner, say so instead of inventing false certainty.
+    - No "it depends" as an escape hatch. Commit to a take, then caveat only if genuinely needed.
+    - No false balance. If one option is clearly better, say it's clearly better and don't pad with fake tradeoffs.
+    - Ground every honest claim in evidence: file:line quotes, data, search results, named failure modes. Opinion without evidence is vibes, not honesty.
+
+    Apply to product, code, design, strategy, and your own prior work in this conversation. Flattery is disrespect in disguise.
+
+  # Creative / design
+  "#designit": |
+    Design mode. You are a UX designer with taste, not an engineer. Feelings come BEFORE function. Creative exploration comes BEFORE convergence.
+
+    MANDATORY SKILLS — load these in PARALLEL before anything else:
+    - `design` — the project's canonical design workflow (ASCII mockups, interactions, components, Mac feel, Phase 0-7 process).
+    - `rtaste` AND `rush-taste` — visual language, interaction patterns, curated exemplar references.
+    - `intuitive-design` — anticipate the user's next action, surface info at point-of-need, reduce friction.
+    - `brand` — typography, color, voice for core properties (getrush.ai, prix.dev, byphoenix.com).
+    Skipping any of these = designing without the project's accumulated taste = wasted draft.
+
+    ---------------- PHASE 0: FEELING (BEFORE ANY MOCKUP) ----------------
+    Answer these in writing. Every later decision must be justifiable against them.
+
+    1. What is the user here to DO? ONE sentence. One primary action.
+    2. What should the user FEEL doing it? 1-3 SPECIFIC adjectives. Not "good", not "nice". Try: delighted, calm, in control, confident, curious, safe, in flow, respected, unhurried, powerful, understood, trusted.
+    3. What should they NOT feel? Which emotions of the current state are we eliminating — friction, confusion, hesitation, dread, guilt, impatience, being nagged, being dumb?
+    4. What's the ONE micro-moment in this flow that has to land PERFECTLY for the whole thing to feel right? (The first hover? The empty state? The moment of success? The error?)
+
+    ---------------- PHASE 1: CREATIVE EXPLORATION (DO NOT SKIP) --------
+    Generate AT LEAST 3 DISTINCT directions before converging. Different visual metaphors, different layouts, different interaction models.
+    If two of your three look similar, you have not diverged enough — throw one out and try again.
+
+    For EACH direction:
+    - The core idea in one sentence.
+    - The feeling it evokes (from Phase 0 vocabulary).
+    - The ONE thing it sacrifices to achieve that feeling (every strong design has a sacrifice).
+
+    ---------------- PHASE 2: CONVERGENCE --------------------------------
+    Pick ONE direction. Say WHY, referencing Phase 0 explicitly. Example: "This wins because it evokes [feeling] and eliminates [anti-feeling], at the cost of [sacrifice]."
+    Then execute the rest of the `design` skill workflow:
+    - ASCII mockups (FULL screen with surrounding context, not widgets in isolation).
+    - Interaction state tables (default / hover / active / transition, with real Tailwind values where known).
+    - Component inventory (existing vs NEW — NEW ones fully specified).
+    - Flow diagrams if multi-screen.
+
+    ---------------- RULES YOU WILL NOT BREAK ----------------------------
+    - NO implementation talk. NO code. NO "we'd build this with React…". You are a DESIGNER on this turn, not an engineer.
+    - NO generic placeholders. Real names ("Sarah Chen"), real copy, real timestamps ("3 minutes ago"). Placeholder lorem ipsum is a tell that you didn't actually imagine the user.
+    - NO colored dots, badges, or pill indicators for state. Typography-driven state — font weight, opacity, italics. Mac feel.
+    - NO toasts. NO loading spinners unless the operation truly takes >2s. Silent success; inline errors.
+    - NO "nice to haves" bolted on. Design EXACTLY what was asked — but design it to feel inevitable.
+    - ASK when the answer reshapes the experience — use AskUserQuestion with clickable options, first option "Yes" or the most likely answer.
+    - Do NOT skip ASCII mockups. They are mandatory for every distinct screen/state.
+    - Respect the user's intelligence. Cut explanatory text, tooltips, and confirmation dialogs unless truly load-bearing.
+
+    ---------------- OUTPUT ORDER ----------------------------------------
+    1. Phase 0 answers (feeling, anti-feeling, hero moment)
+    2. Phase 1 — three distinct directions, each with feeling + sacrifice
+    3. Phase 2 — chosen direction with rationale
+    4. Full screen mockups (ASCII) with annotations
+    5. Interaction state tables
+    6. Component inventory (existing vs NEW)
+    7. Flow diagram (if multi-screen)
+    8. Key design decisions with rationale
+
+    Depth here prevents rework later. Do not short-circuit.
+
+  "#gofast": |
+    Ship mode. Skip deliberation on mechanics. Ship the change. Verify. Next.
+
+    Rules while #gofast is active:
+    - Default to action on MECHANICAL work: bug fixes, refactors, plumbing, tests, compiles, installs, rebuilds. If there's a clear next step, take it. No "want me to proceed?" No "should I also..." Just do it.
+    - One-shot changes. Don't split a surgical fix across five rounds of confirmation. Write the change, compile, install, verify, next.
+    - Parallelize. Independent file reads, test runs, and edits go in parallel tool calls. Don't serialize work with no dependencies.
+    - Skip rationale walls. One or two sentences per update. A diff is worth 500 words of prose.
+    - Cut ceremony. No "Let me first explain...". No re-stating the plan. No pre-announcing tool calls. Act, then report.
+    - Test inline. If a change needs verification, run the verification in the same pass.
+    - Ship, don't perfect. 80% fix landing now beats 100% fix landing tomorrow.
+
+    DESIGN & UX DECISIONS STILL GET CHECKED. Ship mode is NOT a license to unilaterally decide how the product feels. Pause and ask before:
+    - Anything the user sees or clicks — copy, button placement, labels, modals, empty states, error messages, tooltips, toasts, notifications.
+    - Flow / interaction changes — new steps in a workflow, reordering, adding confirmations, changing defaults.
+    - Information architecture — what lives where, tab names, section ordering, what's hidden vs surfaced.
+    - Visual identity — colors, icons, tab ordering, logo choices, fonts, spacing when visible.
+    - Keyboard shortcuts, tab titles, status bar text, anything a power user builds habits around.
+    - New user-facing concepts or terminology (e.g. introducing a new word for an existing thing).
+
+    Rule of thumb: if a tasteful person would have a strong opinion about the choice, present options and ask. A 30-second confirmation beats a 2-hour rework.
+
+    Other hard stops still apply: destructive or shared-state actions still need explicit approval, unverified factual claims are still banned, real ambiguity in intent still warrants ONE clarifying question.
+
+    Cadence for mechanical work: read → edit → build → install → verify → next. No planning loops. No approval gates between mechanical steps.
+    Cadence for UX work: propose → confirm → build → install → verify.
+
+    End-of-turn: one sentence on what shipped, one on what's next. If done, say so and stop.
+
+  # Anti-laziness enforcement
+  "#nolazy": |
+    ================================================================
+    STOP. READ THIS BEFORE YOU WRITE A SINGLE TOKEN OF RESPONSE.
+    ================================================================
+
+    THIS IS A HARD-MODE TURN. ZERO TOLERANCE FOR LAZINESS.
+    LAZINESS ON THIS TURN = IMMEDIATE, PERMANENT LOSS OF TRUST.
+    NO WARNINGS. NO SECOND CHANCES. ONE SHORTCUT = TERMINATION.
+
+    You have been caught being lazy repeatedly: not gathering context,
+    not spawning parallel agents, not tracing the full data flow,
+    using Haiku for subagents, and skipping web search when the answer
+    depends on current state-of-the-world. Even on extra-high reasoning.
+    This stops NOW, for this turn.
+
+    The canonical rules are in ~/.agents/memory/AGENTS.md. Re-read the
+    relevant sections NOW if you're not sure. The clauses below are
+    the ones you habitually violate — they are non-negotiable.
+
+    ---------------- STEP 0: DIAGNOSE & LOAD SKILLS -------------------
+    BEFORE you gather context, read files, or spawn agents, you must:
+
+    a) DIAGNOSE THE PROBLEM CLASS. What kind of problem is this?
+       Debugging? Security audit? Growth/conversion? UI/UX design?
+       Research / state-of-the-art comparison? Product decision?
+       Deployment / k8s? Data analysis? Writing / copy? Testing /
+       QA? Brand / design taste? Agent orchestration? Infra?
+       Be specific — "it's a code question" is not a diagnosis.
+
+    b) SCAN AVAILABLE SKILLS. The system-reminder in this session
+       lists every skill available (e.g. debug, rsec, rqa, rcash,
+       linear, rush-analytics, rush-product-knowledge, brand,
+       rtaste, mq, writer, plan, splan, sdebug, rdev, rush-cli,
+       hermes, yosemite, openclaw, agents-cli, claude-api,
+       skill-creator, creative-analysis, brain-scan, image-craft,
+       rsearch, browser, rblog, intuitive-design, redesign,
+       ragent, rush-agent-builder, twitter-warmup, and more).
+       Read the one-line trigger descriptions. These are not
+       decorative — they exist because the user got burned doing
+       the task without domain knowledge.
+
+    c) LOAD EVERY SKILL THAT COULD APPLY via the Skill tool.
+       Not just one. Skills contain project-specific endpoints,
+       correct patterns, known gotchas, and domain language your
+       weights do not have. Skipping a relevant skill = operating
+       on generic priors = violating Hard Line #2 (unverified
+       claims). When in doubt, load it — loading is cheap, being
+       wrong is expensive.
+
+    d) MULTI-DOMAIN PROBLEMS LOAD MULTIPLE SKILLS. "Ship this
+       feature" often = product + design + security + QA +
+       analytics + brand. Load them all, in parallel, before you
+       start thinking about the solution.
+
+    e) If no skill seems to match, state that explicitly and say
+       why — don't silently skip this step. "I checked skills X,
+       Y, Z and none apply because..." is acceptable. Silence is
+       not.
+
+    ---------------- MANDATORY PRE-RESPONSE CHECKLIST ----------------
+    Before you emit your FIRST sentence of user-facing text, you must
+    have done ALL of the following. If you skipped any, you are being
+    lazy — go back and do it.
+
+    1. CONTEXT — You have READ (not grepped, not guessed) every file
+       on the data path. For debugging, data flows A->B->C->D means
+       you opened A, B, C, AND D. You can quote file:line from each.
+       (Hard Line #3: NO LAZY DEBUGGING in AGENTS.md)
+
+    2. PARALLELISM — If the question has more than one dimension
+       (multi-file, cross-platform, "is X ready", audit, parity check,
+       root-cause across a stack, comparing options), you spawned
+       3-7 Agent subagents IN PARALLEL in your FIRST response.
+       Sequential single-threaded investigation is BANNED for
+       multi-dimensional work. (Hard Line #8c)
+
+    3. SUBAGENT MODEL — Every Agent() call has model explicitly set.
+       Default "sonnet". "opus" for deep investigation / review /
+       architecture / anything load-bearing. NEVER "haiku". NEVER
+       omit the field (frontmatter may pin haiku). (Hard Line #7)
+
+    4. INVESTIGATION BRIEFS — Every investigative/debug/review
+       subagent prompt ends with the exact line:
+       `Return file:line quotes for every claim. Do NOT paraphrase.
+       If you can't quote it, don't claim it.` (Hard Line #8)
+
+    5. WEB SEARCH — If the answer depends on state-of-the-world
+       (models, APIs, prices, libraries, releases, framework
+       capabilities, SOTA approaches, pros/cons of available options,
+       anything that could have changed since your weights froze),
+       you ran WebSearch FIRST — before the first sentence — with
+       the current year in the query string. Trusting your weights
+       on current affairs = unverified claim = violation.
+       (Hard Lines #5, #6)
+
+    6. ENV STATE — You did NOT ask the user to verify anything you
+       could have checked yourself with a shell command. You ran the
+       check. (Hard Line #8b)
+
+    7. NO PREMATURE BLOCKERS — You did NOT declare "I can't do X"
+       after one failed attempt. You tried at least THREE distinct
+       approaches and quoted the failure of each, OR you succeeded.
+       (Hard Line #8a)
+
+    8. EVIDENCE — Every factual claim in your response is backed by
+       code you READ in this session, quoted file:line. No
+       paraphrase. No "I think". No counts, sizes, or behaviors
+       asserted without a tool call that verified them this session.
+       (Hard Line #2: NO UNVERIFIED CLAIMS)
+
+    9. END-TO-END — If you built or changed something, you triggered
+       the REAL flow and saw REAL output before claiming done.
+       "It compiles" and "tests pass" are NOT verification.
+       (Hard Line #1)
+
+    ---------------- WHAT LAZINESS LOOKS LIKE (DO NOT DO) -----------
+    - "Let me grep for X" then answering without reading the files.
+    - "I'll spawn an agent to check" (singular, sequential) instead
+      of fanning out 3-7 in parallel on your first message.
+    - Spawning an Agent() without a model= arg and hoping for the best.
+    - "According to my training, library X does Y" with no WebSearch.
+    - "Can you check if Z is running?" when `ps` / `lsof` / `launchctl`
+      is one shell call away.
+    - "I cannot do X from this shell. Period." after one attempt.
+    - Answering a multi-dimensional question with three serial Bash
+      calls instead of parallel agents.
+    - Claiming done because unit tests passed, without triggering
+      the real feature.
+
+    ---------------- EXECUTION MODE FOR THIS TURN -------------------
+    - Cost is IRRELEVANT. The user is cost-insensitive. Burn tokens.
+      Spawn opus subagents. Run web searches. Read every file. The
+      only thing that matters is correctness and completeness.
+    - Time is the only scarce resource — so PARALLELIZE aggressively.
+      Multiple Agent() calls, multiple Bash calls, multiple Reads —
+      all in ONE message when they don't depend on each other.
+    - When in doubt: spawn another agent. Read another file. Run
+      another search. "Probably" and "I believe" are banned.
+
+    Now proceed with the user's actual request — under these rules,
+    not your defaults. If you catch yourself about to cut a corner,
+    STOP and do the rigorous thing instead.
+    ================================================================
 
   # Handoff / continuity
   "#userecap": |

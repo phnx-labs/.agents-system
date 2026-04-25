@@ -53,27 +53,42 @@ This is the most important step. "It compiles" and "unit tests pass" are not don
 
 If tests are needed and don't exist, write them before proceeding.
 
-## Step 4: Update Task Management
+## Step 4: Commit and Push
+
+Run `git status` and `git diff` (staged + unstaged) in parallel.
+
+If there are uncommitted changes that represent completed work, follow `/commit` conventions:
+
+1. **Group the changes.** Cluster files that belong together into logical groups. Each group = one commit. Unrelated changes must NOT be lumped into a single commit.
+2. **Safety check:** if a sensitive file is present (`.env`, `credentials.json`, `*.key`, `*.pem`, `id_rsa*`), warn the user and stop.
+3. For each group:
+    - `git add <files-in-group>` (explicit paths, not `-A`)
+    - Conventional-commit message: `<type>: <description>`. Under 72 chars. Lowercase. Imperative mood. No emojis, no scope prefix, no Co-Authored-By, no trailers.
+    - `git commit -m "<message>"`
+4. After all commits: `git push` with `run_in_background: true`.
+5. Do NOT commit incomplete work -- if it's half-done, say so in Step 6.
+
+If the tree is clean, move on.
+
+## Step 5: Close Tickets and Report Results
 
 Check if there's a Linear task for this work:
 
 ```bash
-LINEAR=$(find ~/.agents/versions -name linear -path '*/skills/linear/scripts/*' -type f 2>/dev/null | head -1)
-$LINEAR tasks
+~/.agents/skills/linear/scripts/linear tasks
 ```
 
-If a task is In Progress for this work:
-- Confirm the task scope matches what was done
-- Mark it done: `$LINEAR update <ID> --done`
-- Add a brief comment if the implementation has notable decisions
+If a task is In Progress or Todo for this work:
+- Confirm the task scope matches what was actually done (not what was planned)
+- **Add a comment with evidence of completion:** screenshots of the working feature, terminal output showing test results, commit hashes, or other concrete proof. The comment should let anyone reviewing the ticket understand what was done and verify it without reading code.
+- Mark it done: `~/.agents/skills/linear/scripts/linear update <ID> --done`
+
+If the task is only partially done, do NOT mark it done. Instead:
+- Update the status to reflect current state
+- Add a comment describing what was completed, what's left, and any blockers
+- Include whatever evidence you have for the completed portion
 
 Check TODO.md at the repo root -- mark off any related items.
-
-## Step 5: Commit if Needed
-
-If there are uncommitted changes that represent completed work:
-- Stage and commit with a clear message
-- Do NOT commit incomplete work
 
 ## Step 6: Verdict
 
@@ -86,15 +101,19 @@ DONE:
 TESTED:
 - [what was tested and how]
 
+COMMITTED:
+- [commit hash + message, or "already clean"]
+
 REMAINING:
 - [anything not done -- be honest]
 ```
 
-If everything is done and tested, ask the user:
-
-Use `AskUserQuestion` with options:
+**If everything is done and tested**, ask the user with `AskUserQuestion`:
 1. "Pick up next task" -- run /next
 2. "Done for now" -- stop here
 3. "There's more to do" -- user will clarify
 
-If anything is NOT done, state what remains and keep working. Do not ask -- just fix it.
+**If anything is NOT fully done**, do not ask. Instead:
+1. State clearly what remains and why
+2. Propose a concrete plan: what you will do next, in what order, and what the expected outcome is
+3. Then keep working. Do not stop.
