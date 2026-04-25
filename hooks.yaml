@@ -1,33 +1,42 @@
 # Hook lifecycle event registration
-# agents-cli reads this to register hooks in settings.json
-# Hooks without entries here are file-only (copied but not registered)
+# agents-cli reads this to register hooks in settings.json / hooks.json.
+# Hooks without entries here are file-only (copied but not registered).
+#
+# Script paths are relative to ~/.agents/hooks/.
+# For claude/codex, `events` are used as-is. For gemini, UserPromptSubmit
+# is translated to BeforeAgent by the registrar (gemini has no native
+# UserPromptSubmit event).
+#
+# Prompt-rewriting works only on claude. codex + gemini can only APPEND
+# via additionalContext — the shortcut token stays in the prompt, the
+# expansion is appended as dev context. Acceptable degradation.
 
 linear-tasks:
-  script: linear-tasks.sh
+  script: 03-linear-inject-tasks-context.sh
   events: [SessionStart]
   timeout: 15
   agents: [claude]
 
 expand-promptcuts:
-  script: expand-promptcuts.sh
+  script: 02-expand-prompt-user-shortcuts.sh
   events: [UserPromptSubmit]
   timeout: 5
-  agents: [claude]
+  agents: [claude, codex, gemini]
 
 expand-bang-commands:
-  script: expand-bang-commands.py
+  script: 02-expand-prompt-bang-commands.py
   events: [UserPromptSubmit]
   timeout: 10
-  agents: [claude]
-
-claude-dev-stop-gate:
-  script: claude-dev-stop-gate.sh
-  events: [Stop]
-  timeout: 5
-  agents: [claude]
+  agents: [claude, codex, gemini]
 
 stop-completion-gate:
-  script: stop-completion-gate.sh
+  script: 00-agent-verify-work-complete.sh
   events: [Stop]
   timeout: 10
+  agents: [claude]
+
+git-clean-tree-gate:
+  script: 01-git-require-clean-tree.sh
+  events: [Stop]
+  timeout: 5
   agents: [claude]
