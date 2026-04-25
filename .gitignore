@@ -75,3 +75,4 @@ linear.json
 /ledger/
 /teams/agents/
 /teams/registry.json
+!/teams/config.json
