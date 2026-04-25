@@ -63,3 +63,14 @@ skills/.system/
 *~
 __pycache__/
 linear.json
+/.repos/
+
+# Runtime state, caches, and live process tracking
+/.cli-version-cache.json
+/.models-cache.json
+/cache/
+/cloud/
+/drive/
+/swarmify/
+/ledger/
+/teams/agents/
