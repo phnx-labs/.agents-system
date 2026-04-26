@@ -33,6 +33,7 @@ skills/rush-writer/
 
 # Machine-specific environment (secrets, hosts, paths)
 .environment
+secrets
 
 # Local state files
 *.log

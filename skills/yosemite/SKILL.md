@@ -138,7 +138,7 @@ ssh muqsit@spark "kubectl create configmap openclaw-{name}-config \
       }
     ],
     \"defaults\": {
-      \"model\": \"openai-codex/gpt-5.4\"
+      \"model\": \"openrouter/moonshotai/kimi-k2.6\"
     }
   },
   \"browser\": {

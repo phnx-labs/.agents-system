@@ -10,8 +10,9 @@ Commands:
     tasks               List/view/board tasks
     update              Modify an issue (status, comment)
     create              Create a new issue
+    cycles              List cycles for the team
 
-Config: ~/.agents/linear.json
+Config: ~/.linear-cli/config.json
 """
 
 from __future__ import annotations
@@ -26,7 +27,10 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-CONFIG_PATH = Path.home() / ".agents" / "linear.json"
+__version__ = "0.1.2"
+
+CONFIG_PATH = Path.home() / ".linear-cli" / "config.json"
+LEGACY_CONFIG_PATH = Path.home() / ".agents" / "linear.json"
 API_URL = "https://api.linear.app/graphql"
 
 
@@ -37,6 +41,12 @@ API_URL = "https://api.linear.app/graphql"
 def load_config() -> dict:
     if CONFIG_PATH.exists():
         return json.loads(CONFIG_PATH.read_text())
+    if LEGACY_CONFIG_PATH.exists():
+        cfg = json.loads(LEGACY_CONFIG_PATH.read_text())
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_PATH.write_text(json.dumps(cfg, indent=2) + "\n")
+        print(f"Migrated config: {LEGACY_CONFIG_PATH} -> {CONFIG_PATH}", file=sys.stderr)
+        return cfg
     return {}
 
 
@@ -1167,6 +1177,7 @@ def main():
         prog="linear",
         description="Task management CLI for AI agent teams",
     )
+    parser.add_argument("--version", action="version", version=f"linear-cli {__version__}")
     sub = parser.add_subparsers(dest="command")
 
     # setup
@@ -1176,7 +1187,7 @@ def main():
 
     # tasks (list + view + board)
     p_tasks = sub.add_parser("tasks", help="List tasks, view details, or show team board")
-    p_tasks.add_argument("identifier", nargs="?", help="Issue identifier for detail view (e.g. GR-42)")
+    p_tasks.add_argument("identifier", nargs="?", help="Issue identifier for detail view (e.g. ANT-42)")
     p_tasks.add_argument("--agent", help="Filter by agent label (e.g. --agent claude)")
     p_tasks.add_argument("--all", action="store_true", help="Ignore default agent filter, show all")
     p_tasks.add_argument("--board", action="store_true", help="Team board grouped by agent")
@@ -1187,7 +1198,7 @@ def main():
 
     # update (all mutations on an issue)
     p_update = sub.add_parser("update", help="Update an issue (status, comment)")
-    p_update.add_argument("identifier", help="Issue identifier (e.g. GR-42)")
+    p_update.add_argument("identifier", help="Issue identifier (e.g. ANT-42)")
     status_group = p_update.add_mutually_exclusive_group()
     status_group.add_argument("--done", action="store_true", help="Mark Done")
     status_group.add_argument("--pickup", action="store_true", help="Mark In Progress")
