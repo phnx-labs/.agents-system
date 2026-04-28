@@ -75,3 +75,6 @@ linear.json
 /swarmify/
 /ledger/
 /teams/
+
+# Local planning notes (not for upstream)
+/.plans/

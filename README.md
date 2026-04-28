@@ -1,6 +1,6 @@
 # .agents-system
 
-> Curated upstream config for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli).
+> The **system repo** for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli) — defines the system-level, core, built-in skills, commands, hooks, rules, MCP configs, permissions, and profiles that ship with the tool.
 
 <p align="center">
   <img src=".assets/claude.png" height="60" alt="Claude" style="margin: 0 10px;">
@@ -8,9 +8,18 @@
   <img src=".assets/gemini.png" height="60" alt="Gemini" style="margin: 0 10px;">
 </p>
 
-This repo holds the slash commands, skills, hooks, MCP server configs, instruction rules, permission groups, and model profiles that `agents-cli` syncs into Claude, Codex, Gemini, Cursor, and OpenCode.
+## What this is
 
-`agents-cli` clones it to `~/.agents-system/` and symlinks the resources into each agent's home (`~/.claude/`, `~/.codex/`, `~/.gemini/`, etc.).
+`agents-cli` is layered. There are two repos with the same shape but different roles:
+
+| Repo | Role | Owner | Edited by |
+|---|---|---|---|
+| `~/.agents-system/` (this one) | **System** — core/built-in resources shipped and curated by `agents-cli`. The defaults every install gets. | Maintainers | Upstream PRs |
+| `~/.agents/` | **User** — your personal additions and overrides. | You | You, synced via `agents push`/`pull` |
+
+Resources resolve in this order at sync time: **project > user > system**. So anything you put in `~/.agents/commands/foo.md` overrides `~/.agents-system/commands/foo.md`, and a project-local `agents.yaml` overrides both.
+
+`agents-cli` clones this repo to `~/.agents-system/` and symlinks the resolved resources into each agent's home (`~/.claude/`, `~/.codex/`, `~/.gemini/`, etc.).
 
 ## Quick start
 
