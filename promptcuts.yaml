@@ -84,6 +84,18 @@ shortcuts:
 
     FORBIDDEN: fallback logic, "just in case" guards, patching symptoms (Hard Line #4: NO FALLBACKS / NO BAND-AIDS). Fix the root cause or don't fix anything.
 
+  "#yousure": |
+    Stop and verify what you just claimed. Three-step process:
+
+    STEP 1 — SELF-REFLECT (now, before spawning anything):
+    Reread your last response. List every factual claim you made. For each one, read the actual code right now and verify it. Be brutally honest — mark each claim as VERIFIED (with file:line proof) or WRONG (with what the code actually says). Do not defend your prior answer — investigate it like someone else wrote it.
+
+    STEP 2 — SWARM VERIFY (after step 1):
+    Spawn codex and gemini agents via swarm. Give them the full context: what the user asked, what you claimed, and the relevant file paths. Do NOT share your step 1 results or your conclusions — we don't want to bias their analysis. Ask them to independently verify the claims by reading the code themselves and arriving at their own conclusions.
+
+    STEP 3 — SYNTHESIZE (after swarm returns):
+    Compare your self-reflection (step 1) with the independent swarm results (step 2). Where all three agree, that's the answer. Where they disagree, read the disputed code one more time and resolve with evidence, not majority vote. Present the final verified answer with file:line citations for every claim.
+
   # Thinking modifiers
   "#godeep": |
     Deep-think mode. Time is not scarce. Correctness is. A thorough answer in 5 minutes beats a shallow one in 30 seconds.

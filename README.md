@@ -1,6 +1,6 @@
-# .agents
+# .agents-system
 
-> Dotfiles for AI coding agents.
+> Curated upstream config for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli).
 
 <p align="center">
   <img src=".assets/claude.png" height="60" alt="Claude" style="margin: 0 10px;">
@@ -8,174 +8,123 @@
   <img src=".assets/gemini.png" height="60" alt="Gemini" style="margin: 0 10px;">
 </p>
 
-**This is a config repo.** It holds slash commands, MCP servers, skills, hooks, memory files, and permissions for your AI coding agents. Fork it, customize it, sync it across machines.
+This repo holds the slash commands, skills, hooks, MCP server configs, instruction rules, permission groups, and model profiles that `agents-cli` syncs into Claude, Codex, Gemini, Cursor, and OpenCode.
 
-Two tools consume this repo:
-- **[agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli)** — Syncs this config to Claude, Codex, Gemini, Cursor, OpenCode
-- **[Swarmify](https://github.com/muqsitnawaz/swarmify)** — VS Code extension + MCP server for multi-agent orchestration
+`agents-cli` clones it to `~/.agents-system/` and symlinks the resources into each agent's home (`~/.claude/`, `~/.codex/`, `~/.gemini/`, etc.).
 
-## Quick Start
+## Quick start
 
 ```bash
-# Install agents-cli
 npm install -g @swarmify/agents-cli
-
-# Pull default config (auto-clones on first run)
-agents pull
-
-# Check what's installed
-agents status
+agents pull          # clones this repo to ~/.agents-system on first run
+agents view          # show what's installed
 ```
 
-To use your own config, fork this repo then:
+To use your own fork, set the upstream and re-pull:
 
 ```bash
-agents repo add gh:username/.agents
+agents repo add gh:your-handle/.agents-system
 agents pull
 ```
 
-## What's In Here
+## What's tracked
 
 ```
-.agents/
-  commands/        # Slash commands (/debug, /plan, /swarm, etc.)
-  skills/          # Reusable capabilities (image-craft, writer, etc.)
-  mcp/             # MCP server configurations
-  hooks/           # Prompt preprocessing scripts
-  memory/          # Agent instructions (CLAUDE.md, GEMINI.md)
-  permissions/     # Permission presets for sandboxed execution
+.agents-system/
+  commands/        # slash commands  (/debug, /plan, /swarm, ...)
+  skills/          # persistent capabilities (image-craft, writer, debug, ...)
+  rules/           # AGENTS.md + reusable rule fragments and presets
+  hooks/           # prompt preprocessing + lifecycle scripts (+ hooks.yaml)
+  mcp/             # MCP server configurations (one YAML per server)
+  permissions/     # permission groups + sets for sandboxed execution
+  profiles/        # host-CLI + endpoint + model bundles (Kimi, DeepSeek, ...)
+  promptcuts.yaml  # shortcut tokens expanded inline by hooks
+  scripts/         # repo maintenance scripts
+  .githooks/       # pre-commit validation
 ```
 
-| Resource | What It Does |
-|----------|--------------|
-| Commands | `/debug` does root cause analysis, `/swarm` spawns parallel agents |
-| Skills | Domain expertise — writing, image generation, codebase exploration |
-| MCP servers | Tools agents can use (filesystem, memory, GitHub, etc.) |
-| Memory | Instructions that shape agent behavior across sessions |
-| Permissions | Pre-approved tool patterns for specific workflows |
+Each directory has its own README explaining what lives there.
 
-## Why Multiple Agents?
+## Local-only (gitignored)
 
-Different models have different strengths:
+`agents-cli` writes a lot of state into `~/.agents-system/` that should never be committed. The `.gitignore` excludes:
 
-| Agent | Best For |
-|-------|----------|
-| Claude | Planning, synthesis, multi-step reasoning |
-| Codex | Fast implementation, surgical edits |
-| Gemini | Research depth, multi-system analysis |
-| Cursor | Debugging, tracing through codebases |
+- `agents.yaml`, `meta.yaml`, `config.json`, `aliases.json`, `prompts.json` — local state
+- `versions/`, `shims/`, `repos/`, `packages/`, `agents/` — installed CLIs and resolvers
+- `sessions/`, `cron/`, `jobs/`, `runs/`, `routines/`, `swarm/`, `swarmify/`, `cloud/`, `ledger/`, `teams/`, `drive/`, `drives/`, `cache/`, `backups/`, `logs/` — runtime state
+- `secrets/`, `.environment` — machine-specific credentials and host info
+- Private skills (e.g. `skills/rush-*`, `skills/dispatch/`, `skills/proof-loop/`)
+- `*.log`, `*.pid`, OS files (`.DS_Store`)
 
-Running them in parallel means each does what it's best at. The `/swarm` command orchestrates this.
+Anything not in those buckets is tracked and synced.
 
 ## Commands
 
-### Single-Agent
+Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`, with `$ARGUMENTS` replaced by whatever the user typed after the slash. See `commands/README.md` for the full list and authoring guide.
+
+### Single-agent
 
 | Command | Purpose |
 |---------|---------|
-| `/plan` | Design features and plan implementation |
-| `/debug` | Systematic root cause analysis |
-| `/clean` | Remove technical debt, consolidate code |
-| `/design` | UX design -- ASCII mockups, interactions, components |
-| `/redesign` | Redesign existing screens -- screenshot in, proposals out |
-| `/product` | Think like a product engineer -- user value over technical elegance |
-| `/recap` | Summarize current situation -- facts first, hypotheses with grounding |
-| `/spawn` | Spawn a single subagent with full context |
-| `/tasks` | Pull and display Linear tasks from the active sprint |
+| `/plan` | Plan a feature with mockups, diagrams, evidence before code |
+| `/debug` | Root-cause analysis with full evidence chain |
+| `/design` / `/redesign` | UX design with ASCII mockups; before/after for existing screens |
+| `/product` | User-value framing over technical elegance |
+| `/recap` | Summarize state — facts first, hypotheses grounded |
+| `/clean` | Remove tech debt, consolidate duplicates |
+| `/done` / `/next` / `/continue` | Verify task complete; pick up next; resume work |
+| `/tasks` | Pull active Linear tasks |
+| `/commit` | Stage, conventional commit, push in background |
+| `/spawn` | Single subagent with full context |
+| `/security` | Multi-perspective security audit |
+| `/rdev` | Dispatch a Linear issue to a remote coding agent |
+| `/image-nbp` / `/video-k3z` / `/simagine` | Visual asset generation entry points |
 
-### Swarm (Multi-Agent)
+### Swarm (multi-agent)
 
-Spawn independent agents to verify findings or work in parallel:
+Spawn independent agents in parallel for verification or distribution.
 
 | Command | Purpose |
 |---------|---------|
 | `/swarm` | Distribute tasks across parallel agents |
 | `/splan` | Planning with swarm consensus |
-| `/sdebug` | 2-3 agents independently verify root cause |
-| `/sconfirm` | Lightweight verification of findings |
-| `/sclean` | Parallel cleanup across different areas |
-| `/stest` | Parallel testing (auth, data, API, UI, errors) |
-| `/srecap` | Recap with swarm -- agents gather evidence before handoff |
+| `/sdebug` | Independent root-cause verification |
+| `/sconfirm` | Lightweight cross-check of findings |
+| `/sclean` | Parallel cleanup across areas |
+| `/stest` | Parallel testing by category |
+| `/srecap` | Multiple agents gather evidence before handoff |
 
-Swarm commands require [agents-mcp](https://www.npmjs.com/package/@swarmify/agents-mcp) for orchestration.
+Swarm commands require [`@swarmify/agents-mcp`](https://www.npmjs.com/package/@swarmify/agents-mcp).
 
-## Project-Level Version Pinning
+## Rules
 
-Pin agent CLI versions per-project with `.agents-version`:
-
-```yaml
-# .agents-version
-claude: 2.0.65
-codex: 0.98.0
-```
-
-When you run `claude` in that directory, the shim:
-1. Finds `.agents-version` (walks up to root)
-2. Uses the pinned version
-3. Auto-installs if not present
-
-Falls back to your global default if no `.agents-version` found.
-
-**Multiple versions:**
-```yaml
-claude:
-  - 2.0.65   # default
-  - 2.1.37
-```
-
-## Structure
-
-```
-.agents/
-  commands/             # Slash commands (.md)
-  skills/               # Reusable agent capabilities
-  hooks/                # Prompt preprocessing
-  memory/               # Agent instructions (CLAUDE.md, etc.)
-  permissions/          # Permission presets
-  .githooks/            # Pre-commit validation
-```
-
-Local-only (gitignored):
-```
-  meta.yaml             # User defaults, installed versions
-  agents.yaml           # Local state
-  versions/             # Installed CLI binaries
-  shims/                # Version-switching shims
-```
-
-Commands are calibrated per model. Codex needs explicit planning phases. Claude leverages built-in reasoning. Gemini optimized for analysis.
-
-## Ecosystem
-
-This repo is the prompts layer. Full stack:
-
-| Layer | Component | Purpose |
-|-------|-----------|---------|
-| Orchestration | [agents-mcp](https://www.npmjs.com/package/@swarmify/agents-mcp) | MCP server for spawning sub-agents |
-| IDE | [agents-ext](https://marketplace.visualstudio.com/items?itemName=swarmify.swarm-ext) | Full-screen agent tabs in VS Code |
-| Config | [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli) | Sync commands, MCP servers, skills |
-| Prompts | This repo | Model-calibrated slash commands |
-
-## Customization
-
-Fork this repo, edit commands, sync across machines:
-
-```bash
-vim ~/.agents/commands/debug.md
-cd ~/.agents && git commit -am "customize debug" && git push
-
-# On another machine
-agents pull
-```
+`rules/AGENTS.md` is the canonical instruction file. `agents-cli` syncs it as `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, or `AGENTS.md` per agent. `rules/presets/` and `rules/rules/` hold modular fragments for `@import`-style composition. See `rules/README.md`.
 
 ## Hooks
 
-Prompt preprocessing in `hooks/`:
+`hooks.yaml` registers scripts in `hooks/` against agent lifecycle events (`SessionStart`, `UserPromptSubmit`, etc.). The two most visible hooks expand `#shortcut` tokens (via `promptcuts.yaml`) and execute inline `` `! cmd` `` bang commands. See `hooks/README.md`.
 
-- `expand-promptcuts.sh` - Text shortcuts from `promptcuts.yaml`
-- `expand-bang-commands.py` - Execute `` `! command` `` inline
-- `linear-tasks.sh` - Inject Linear task queue on session start
-- `permission-handler.sh` - Auto-approve tool patterns from permissions/
+## Project-level version pinning
+
+Pin agent CLI versions per project with an `agents.yaml` at the repo root:
+
+```yaml
+agents:
+  claude: 2.1.118
+  codex: 0.98.0
+```
+
+Shims in `~/.agents-system/shims/` walk up from the cwd, resolve the version, and exec the right binary. Falls back to the user default in `~/.agents-system/agents.yaml`.
+
+## Customization
+
+Fork, edit, push, pull on the next machine:
+
+```bash
+vim ~/.agents-system/commands/debug.md
+cd ~/.agents-system && git commit -am "customize debug" && git push
+agents pull   # on the other machine
+```
 
 ## License
 
