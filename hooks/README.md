@@ -1,21 +1,49 @@
 # Hooks
 
-This folder contains the behavior scripts that customize how your agents read prompts and handle parts of a session. If prompting feels different from plain Codex or Claude,\
-the reason often starts here.
+Scripts that customize how agents read prompts and handle parts of a session. If behavior feels different from plain Codex or Claude, it usually starts here.
 
-The two hooks most people notice are:
+The two most visible:
 
-- `02-expand-prompt-user-shortcuts.sh` expands shortcut tokens into fuller instructions or context.
-- `02-expand-prompt-bang-commands.py` executes backticked bang commands like `!pwd` and injects the result into the prompt flow.
+- `02-expand-prompt-user-shortcuts.sh` — expands `#shortcut` tokens via `promptcuts.yaml`.
+- `02-expand-prompt-bang-commands.py` — runs inline `` `!cmd` `` and injects the result.
 
-Some other hooks in this folder are more operational. They still affect agent behavior, but they are less visible in normal day-to-day prompting.
+Other hooks are operational (session-start context, completion gates, etc.).
 
-Look here when:
+## Manifest schema (`../hooks.yaml`)
+
+```yaml
+my-hook:
+  script: 02-my-hook.sh
+  events: [UserPromptSubmit]
+  timeout: 5
+  matches:                 # optional pre-filters; AND together
+    prompt_contains: "#"
+  enabled: true            # default; set false to disable a system hook from user side
+```
+
+- `script` — path relative to this dir.
+- `events` — lifecycle events to register on.
+- `timeout` — seconds.
+- `matches` — `prompt_contains`, `prompt_matches`, `tool_name`, `tool_args_match`, `cwd_includes`, `project_has`, `git_dirty`. All AND together. Empty/missing → always fires.
+- `enabled` — set `false` in user `~/.agents/hooks.yaml` to disable a system-shipped hook.
+- `agents` — **deprecated**. The capability table decides which agents register the hook; the field is parsed for back-compat but ignored.
+
+## Layering
+
+System (`~/.agents-system/hooks.yaml`) and user (`~/.agents/hooks.yaml`) merge with **user wins on key collision**. Same name in user repo overrides the system entry wholesale.
+
+## Promptcuts
+
+`promptcuts.yaml` is data for the expand-promptcuts hook. Layered the same way:
+
+- `~/.agents-system/hooks/promptcuts.yaml` — system-shipped defaults (`#checkit`, `#rethink`, …)
+- `~/.agents/hooks/promptcuts.yaml` — your shortcuts; user keys win
+
+## Look here when
 
 - a shortcut did not expand
 - a bang command did not run
-- extra context appeared in a prompt
+- a system-shipped hook fires that you want to disable (use `enabled: false` in user repo)
 - agent behavior feels customized in a way that is not obvious
 
-For debugging, the scripts in this folder are the implementations. `../hooks.yaml` shows which ones are wired into agent lifecycle events, and the installed agent config shows\
-what is active right now.
+The scripts here are the implementations. `../hooks.yaml` shows which are wired into lifecycle events. The installed agent config (e.g. `~/.claude/settings.json`) shows what is currently active.

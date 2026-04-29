@@ -1,21 +1,19 @@
 #!/bin/bash
-# Expands prompt shortcuts defined in ~/.agents/promptcuts.yaml
+# Expands prompt shortcuts defined in promptcuts.yaml.
 #
 # Per-agent protocol:
 #   claude  — prints <user-prompt-submit-hook> wrapper; REPLACES prompt
 #   codex   — prints JSON with additionalContext; APPENDS (token stays)
 #   gemini  — prints JSON with additionalContext; APPENDS (token stays)
 #
-# Replace-mode is claude-only by design: codex/gemini hooks can only
-# append context, never rewrite the submitted prompt.
+# Layered lookup (user wins on key collision):
+#   ~/.agents/hooks/promptcuts.yaml         (user shortcuts)
+#   ~/.agents-system/hooks/promptcuts.yaml  (system-shipped defaults)
 #
-# Central file at ~/.agents/promptcuts.yaml survives agents-cli version
-# upgrades (which replace per-agent config dirs).
-
-PROMPTCUTS_FILE="$HOME/.agents/promptcuts.yaml"
+# This file lives in the system repo; the user repo can override individual
+# shortcuts by adding the same key to its own promptcuts.yaml.
 
 INPUT_JSON=$(cat)
-[ ! -f "$PROMPTCUTS_FILE" ] && exit 0
 
 python3 - "$INPUT_JSON" <<'PY'
 import json, os, sys, yaml
@@ -30,11 +28,25 @@ event = data.get("hook_event_name", "")
 if not prompt:
     sys.exit(0)
 
-path = os.path.expanduser("~/.agents/promptcuts.yaml")
-try:
-    with open(path) as f:
-        shortcuts = (yaml.safe_load(f) or {}).get("shortcuts", {}) or {}
-except Exception:
+home = os.path.expanduser("~")
+paths = [
+    os.path.join(home, ".agents-system", "hooks", "promptcuts.yaml"),  # system defaults
+    os.path.join(home, ".agents", "hooks", "promptcuts.yaml"),         # user overrides
+]
+
+shortcuts = {}
+for p in paths:
+    try:
+        with open(p) as f:
+            data_yaml = (yaml.safe_load(f) or {}).get("shortcuts", {}) or {}
+            # Later layers (user) override earlier layers (system).
+            shortcuts.update(data_yaml)
+    except FileNotFoundError:
+        continue
+    except Exception:
+        continue
+
+if not shortcuts:
     sys.exit(0)
 
 matched = None
