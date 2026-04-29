@@ -1,5 +1,7 @@
 # Profiles
 
+> Layered with `~/.agents/profiles/`. Same name in your user repo wins; everything else unions in.
+
 A profile is a host CLI + endpoint + model + auth bundle. It lets you run an alternate model (Kimi, DeepSeek, Qwen, GLM, MiniMax) through an existing agent CLI by swapping the base URL, model name, and credential.
 
 ## File format

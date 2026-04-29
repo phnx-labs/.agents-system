@@ -1,5 +1,7 @@
 # Permissions
 
+> Layered with `~/.agents/permissions/`. Same name in your user repo wins; everything else unions in.
+
 Canonical YAML permission rules that `agents-cli` translates into each agent's native format (Claude `settings.json`, OpenCode `opencode.jsonc`, Codex `config.toml`).
 
 See [`AGENTS.md`](./AGENTS.md) for the full rule syntax, the cross-agent translation table, and authoring guidance — that's the reference.

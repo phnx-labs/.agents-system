@@ -47,7 +47,7 @@ agents pull
   mcp/             # MCP server configurations (one YAML per server)
   permissions/     # permission groups + sets for sandboxed execution
   profiles/        # host-CLI + endpoint + model bundles (Kimi, DeepSeek, ...)
-  promptcuts.yaml  # shortcut tokens expanded inline by hooks
+  hooks/promptcuts.yaml  # shortcut tokens expanded inline by hooks (system defaults)
   scripts/         # repo maintenance scripts
   .githooks/       # pre-commit validation
 ```
@@ -107,11 +107,11 @@ Swarm commands require [`@swarmify/agents-mcp`](https://www.npmjs.com/package/@s
 
 ## Rules
 
-`rules/AGENTS.md` is the canonical instruction file. `agents-cli` syncs it as `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, or `AGENTS.md` per agent. `rules/presets/` and `rules/rules/` hold modular fragments for `@import`-style composition. See `rules/README.md`.
+`rules/AGENTS.md` is the canonical instruction file. `agents-cli` syncs it as `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, or `AGENTS.md` per agent. `rules/presets/` and `rules/default/` hold modular fragments for `@import`-style composition. See `rules/README.md`.
 
 ## Hooks
 
-`hooks.yaml` registers scripts in `hooks/` against agent lifecycle events (`SessionStart`, `UserPromptSubmit`, etc.). The two most visible hooks expand `#shortcut` tokens (via `promptcuts.yaml`) and execute inline `` `! cmd` `` bang commands. See `hooks/README.md`.
+`hooks.yaml` registers scripts in `hooks/` against agent lifecycle events (`SessionStart`, `UserPromptSubmit`, etc.). The two most visible hooks expand `#shortcut` tokens (via `hooks/promptcuts.yaml`) and execute inline `` `! cmd` `` bang commands. The user repo can override or disable any system-shipped hook by adding the same key to `~/.agents/hooks.yaml` — `enabled: false` disables it entirely. See `hooks/README.md`.
 
 ## Project-level version pinning
 
@@ -123,7 +123,7 @@ agents:
   codex: 0.98.0
 ```
 
-Shims in `~/.agents-system/shims/` walk up from the cwd, resolve the version, and exec the right binary. Falls back to the user default in `~/.agents-system/agents.yaml`.
+Shims in `~/.agents-system/shims/` walk up from the cwd, resolve the version, and exec the right binary. Falls back to the user default in `~/.agents/agents.yaml`.
 
 ## Customization
 

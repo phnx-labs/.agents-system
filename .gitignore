@@ -4,8 +4,7 @@ versions/
 shims/
 repos/
 runs/
-cron/
-jobs/
+routines/
 drives/
 packages/
 swarm/
@@ -13,6 +12,8 @@ agents/
 backups/
 growth/
 logs/
+factory/
+ledger/
 
 # Local-only permissions (machine-specific, not synced)
 permissions/groups/00-local.yaml
@@ -73,8 +74,10 @@ linear.json
 /cloud/
 /drive/
 /swarmify/
-/ledger/
 /teams/
 
 # Local planning notes (not for upstream)
 /.plans/
+
+# Background sync state (lock + status markers)
+/.fetch/

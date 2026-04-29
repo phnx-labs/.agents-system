@@ -1,5 +1,7 @@
 # MCP servers
 
+> Layered with `~/.agents/mcp/`. Same name in your user repo wins; everything else unions in.
+
 One YAML file per MCP server. `agents-cli` reads these and registers each server with whichever agents are installed (Claude, Codex, Gemini, etc.).
 
 ## File format
