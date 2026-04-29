@@ -1,5 +1,7 @@
 # Rules
 
+> Layered with `~/.agents/rules/`. Same name in your user repo wins; everything else unions in.
+
 This directory stores the persistent instruction files that agents-cli syncs into each agent runtime.
 
 Files and folders:
