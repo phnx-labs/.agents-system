@@ -1,5 +1,7 @@
 # Skills
 
+> Layered with `~/.agents/skills/`. Same name in your user repo wins; everything else unions in.
+
 Skills give agents domain expertise they can load on demand. Each skill is a directory with a `SKILL.md` file containing instructions, workflows, and context for a specific capability.
 
 ## How Skills Work
@@ -96,22 +98,17 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 
 | Skill | What It Does |
 |-------|-------------|
-| `brain-scan/` | Neural engagement analysis using Meta TRIBE v2 brain simulation. Predicts how a human brain responds to text, audio, or video content across Language, Attention, Emotion, Memory, and Default Mode regions. |
-| `creative-analysis/` | Multi-dimensional creative analysis for any medium. Combines subjective craft analysis (visual, composition, prose, word choice) with neural data from brain-scan. |
 | `image-craft/` | Expert prompt engineering for image generation across styles: editorial photography, logos, posters, product shots, illustrations. |
 | `memician/` | Create culturally resonant memes and viral social content. Compresses cultural tensions into minimal words. |
-| `visual-styles/` | Visual style reference library for consistent image generation. |
-| `writer/` | Professional writing craft across formats: product launches, landing pages, essays, blog posts, social posts, newsletters. |
 
 ### Productivity & Ops
 
 | Skill | What It Does |
 |-------|-------------|
-| `browser/` | Drive websites via remote browser relay (OpenClaw) or local Chrome (agent-browser). Tab isolation, screenshots, form filling. |
-| `linear/` | Task management CLI for AI agent teams. Query work queues, update status, manage sprints via Linear. |
+| `browser/` | Drive a browser to automate websites — picks among direct CDP, browser-harness, agent-browser, or a remote relay depending on what the project has set up. |
+| `higgsfield/` | Generate images and videos via Higgsfield AI through a browser session. |
 | `mq/` | Query large markdown, HTML, and PDF files without reading entire documents. Probe structure first, extract surgically. |
-| `openclaw/` | Manage OpenClaw agents on remote machines. Configure workspaces, cron jobs, heartbeats, and Telegram gateway. |
-| `sessions/` | List and load named sessions across agent versions. |
+| `reflect/` | Recall feedback, corrections, and constraints from the current conversation before iterating. |
 
 ### Agent Infrastructure
 
