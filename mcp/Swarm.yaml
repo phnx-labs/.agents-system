@@ -1,6 +1,0 @@
-name: Swarm
-transport: stdio
-command: npx
-args:
-  - -y
-  - '@swarmify/agents-mcp@latest'
