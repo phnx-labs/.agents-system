@@ -1,5 +1,7 @@
 # Commands
 
+> Layered with `~/.agents/commands/`. Same name in your user repo wins; everything else unions in.
+
 Slash commands are prompt templates. Type `/debug the auth flow` and the command file expands into a full debugging methodology prompt, with your text replacing `$ARGUMENTS`.
 
 ## How Commands Work
@@ -44,8 +46,7 @@ These run in your current session:
 - `/recap` - Summarize current situation with facts, hypotheses (grounded in evidence), and next steps
 
 **Task Management**
-- `/tasks` - Pull Linear tasks assigned to you in the current sprint
-- `/next` - Verify current task is done, then pick up next from Linear
+- `/issues` - Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
 - `/continue` - Resume a previous task with context recovery
 
 **Delegation**
@@ -62,7 +63,6 @@ These spawn multiple agents in parallel:
 - `/sclean` - Parallel cleanup across different code areas
 - `/stest` - Parallel testing by category (auth, data, API, UI, errors)
 - `/srecap` - Multiple agents gather evidence before handoff
-- `/simagine` - Parallel creative exploration for visual assets
 
 Swarm commands require the [Swarm MCP server](https://www.npmjs.com/package/@swarmify/agents-mcp) for orchestration.
 

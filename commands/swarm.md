@@ -55,19 +55,19 @@ Before creating a distribution plan, Claude MUST identify integration points and
 
 1. **Grep for integration points** - Find where similar features store config, define types, etc.
    ```
-   grep -r "user.yaml" → found harness/config/user.go
-   grep -r "\.rush/" → found existing path patterns
+   grep -r "user.yaml" → found pkg/config/user.go
+   grep -r "\.appname/" → found existing path patterns
    ```
 
 2. **Read only key files** - The ones that define patterns/contracts agents must follow
    ```
-   read harness/config/user.go → saw UserConfig struct, understood the pattern
+   read pkg/config/user.go → saw UserConfig struct, understood the pattern
    ```
 
 3. **Include specific paths in agent prompts** - Not vague instructions
    ```
    BAD:  "Store local model config somewhere"
-   GOOD: "Add LocalModelEnabled field to UserConfig struct in harness/config/user.go:15"
+   GOOD: "Add LocalModelEnabled field to UserConfig struct in pkg/config/user.go:15"
    ```
 
 ### What to Identify
@@ -81,11 +81,11 @@ Before creating a distribution plan, Claude MUST identify integration points and
 
 ```
 # Quick grep
-grep "user.yaml" → harness/config/user.go, rush/cli/internal/cli/auth_reader.go
-grep "\.rush/agents" → found per-agent config pattern
+grep "user.yaml" → pkg/config/user.go, cmd/cli/internal/cli/auth_reader.go
+grep "\.appname/agents" → found per-agent config pattern
 
 # Read key file
-read harness/config/user.go → UserConfig struct with TrustedDirectories, etc.
+read pkg/config/user.go → UserConfig struct with TrustedDirectories, etc.
 
 # Result: Agent prompt includes
 "Extend UserConfig in harness/config/user.go to add UseLocalModel bool field"
@@ -226,7 +226,7 @@ Action: Show distribution plan with boundary contracts, get approval, then spawn
 
 **User provides requirements only:**
 ```
-User: /swarm Add Sentry instrumentation to all catch blocks in rush/app
+User: /swarm Add Sentry instrumentation to all catch blocks in src/app
 Action: Use Claude SubAgent (Explore) to find files, show distribution plan, get approval, spawn
 ```
 

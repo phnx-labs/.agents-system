@@ -25,7 +25,7 @@ The transcript shows what the previous session *intended*. Verify what actually 
 - `git status`, `git log --oneline -20`, `git diff` — what's committed, what's in flight
 - Read the files the session touched and confirm the changes are still there
 - Check for TODOs, FIXMEs, half-edited functions, failing tests
-- If the session referenced a Linear issue, check its current state via the `linear` skill
+- If the session referenced an issue (Linear / GitHub / Jira / etc.), check its current state via `/issues` or the relevant tracker skill
 
 Quote file:line evidence when summarizing — don't paraphrase from memory.
 
