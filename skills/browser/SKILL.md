@@ -1,153 +1,129 @@
 ---
 name: browser
-description: Drive any website via agent-browser CLI or a remote browser relay (e.g. OpenClaw). Use when automating browser interactions, filling forms, clicking buttons, or taking screenshots.
+description: Drive a browser to automate websites — fill forms, click buttons, take screenshots, scrape pages. Picks among direct CDP, the browser-harness Python lib, the agent-browser CLI, or a remote browser relay depending on what the project has set up.
 argument-hint: "[url]"
-allowed-tools: Bash(agent-browser*), Bash(sleep*), Bash(ssh*), Bash(openclaw*), Bash(*/env.sh*)
+allowed-tools: Bash(agent-browser*), Bash(python3*), Bash(node*), Bash(sleep*)
 user-invocable: true
 ---
 
 # Browser Automation
 
-Two browser tools available. Choose based on where the browser runs.
+Several ways to drive a browser. Pick whichever the project already has set up — they all end up speaking CDP to a real Chrome.
 
-| Scenario | Tool | Why |
-|----------|------|-----|
-| Browser on **remote server** | Remote browser relay | Stable relay, persistent sessions, bypasses Cloudflare |
-| Browser on **local machine** | agent-browser | Direct CDP control, local Chrome profiles |
-| Need auth tokens from browser | agent-browser | Can eval JS to extract tokens from page context |
+## Pick a tool
 
-**Default: Remote browser relay.** More stable, avoids Cloudflare blocks, relay persists across sessions.
+| Tool | When |
+|------|------|
+| **CDP directly** (Playwright / Puppeteer / raw websocket) | Project already uses Playwright or Puppeteer. Fewest moving parts, full API surface. |
+| **[browser-harness](https://github.com/browser-use/browser-harness)** | Preferred for agent-driven workflows. Tiny Python core (~600 lines) on top of CDP, plus an `agent-workspace/` where the agent writes its own site-specific helpers as it learns. Self-healing. |
+| **[agent-browser](https://github.com/phnx-labs/agent-browser)** | Single-file CLI wrapper. Good for quick shell-driven tasks; one process per command. |
+| **Remote browser relay** | If the team runs a shared relay (e.g. OpenClaw) — useful for keeping logins on a server and bypassing Cloudflare. May not be set up; don't assume. |
 
-## Environment
+**Default order to try:** CDP directly → browser-harness → agent-browser → remote relay. Stop at the first one the project supports.
 
-!`${CLAUDE_SKILL_DIR}/env.sh block`
+Headless vs headed is a per-task choice (passed as a flag or option), not a property of the skill. Pick headed when you need to see the page, watch a flow, or debug; headless for unattended scrapes and CI.
 
-## Remote Browser (Preferred)
+## Direct CDP (Playwright / Puppeteer)
 
-### Command Pattern
+If the repo has Playwright or Puppeteer in `package.json` / `requirements.txt`, just use it.
 
-Use the **command prefix** from the environment block above, followed by the browser subcommand. Example:
+```python
+# Playwright (Python)
+from playwright.sync_api import sync_playwright
 
-```bash
-ssh <user>@<host> "PATH=<pathprefix>:$PATH openclaw browser <command>"
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)   # headless=False to watch
+    page = browser.new_page()
+    page.goto("https://example.com")
+    page.screenshot(path="out.png")
+    browser.close()
 ```
 
-### Tab Isolation (CRITICAL)
-
-The browser is shared across multiple agents. **NEVER use `navigate`** — it replaces the active tab and destroys another agent's in-progress work.
-
-**Three rules:**
-
-1. **`open`, never `navigate`** — start every task with `openclaw browser open <url>`. This creates a new tab and returns a target ID. Save it.
-2. **`focus` before interact** — before screenshot/click/type, always `openclaw browser focus <targetId>` first.
-3. **`close` when done** — clean up with `openclaw browser close <targetId>`.
-
-```bash
-# CORRECT: isolated tab workflow
-openclaw browser open 'https://example.com'       # returns target ID, e.g. 3EB5FF70...
-openclaw browser focus 3EB5FF70                    # focus YOUR tab (prefix match works)
-openclaw browser snapshot --labels                 # snapshot YOUR tab
-openclaw browser click e42                         # interact with YOUR tab
-openclaw browser screenshot                        # screenshot YOUR tab
-openclaw browser close 3EB5FF70                    # cleanup when done
-
-# WRONG: hijacks whatever tab is active
-openclaw browser navigate 'https://example.com'    # NEVER DO THIS
+```javascript
+// Playwright (Node)
+const { chromium } = require('playwright');
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage();
+await page.goto('https://example.com');
+await page.screenshot({ path: 'out.png' });
+await browser.close();
 ```
 
-**Why:** If Agent A is waiting for image generation and Agent B runs `navigate`, Agent A's tab is replaced and the generation is lost.
+Use this when the project already standardizes on it. Don't introduce Playwright/Puppeteer just for an ad-hoc task.
 
-### Core Commands
+## browser-harness
 
-```bash
-# Tab management
-openclaw browser open <url>              # open URL in NEW tab (returns target ID)
-openclaw browser tabs                    # list all open tabs with IDs
-openclaw browser focus <targetId>        # switch to tab (prefix match)
-openclaw browser close <targetId>        # close tab
+[browser-use/browser-harness](https://github.com/browser-use/browser-harness) — tiny CDP harness designed to be driven by an LLM. Install per its README. Once set up:
 
-# Page interaction (always focus your tab first)
-openclaw browser snapshot --labels       # get element refs for clicking/typing
-openclaw browser click <ref>             # click element by ref
-openclaw browser type <ref> 'text'       # type into element by ref
-openclaw browser select <ref> 'Option'   # select dropdown option
-openclaw browser press Enter             # press key
-openclaw browser press 'Meta+a'          # key combo
+- Core lives in `src/browser_harness/` (don't edit).
+- The agent writes site-specific helpers into `agent-workspace/agent_helpers.py` and `agent-workspace/domain-skills/<site>/`.
+- Each helper captures a real browser workflow with the actual selectors observed at runtime.
+- `SKILL.md` in the harness repo has the standard usage patterns.
 
-# Capture
-openclaw browser screenshot              # screenshot active tab (MEDIA: path)
-openclaw browser evaluate --fn '(el) => el.textContent' --ref 7
+When using it, follow the harness's own SKILL.md for command shape — that file is the source of truth, and it evolves.
 
-# Wait
-openclaw browser wait --text "Done"      # wait for text to appear
+## agent-browser CLI
 
-# Download
-openclaw browser download <ref>          # click ref and save download
-```
-
-### Workflow Pattern
-
-1. `open` target URL (save the target ID)
-2. `focus` your target ID
-3. `snapshot --labels` to see page structure and get refs
-4. `click` / `type` / `select` using refs from snapshot
-5. `snapshot --labels` again after actions (refs change!)
-6. `close` your target ID when done
-
-### Key Behaviors
-
-- **Refs are ephemeral** — they change after every page mutation. Always re-snapshot before clicking if the page has changed.
-- **Contenteditable fields** — `type` works via the relay. If typing doesn't work, try `click` first to focus, then `type`.
-- **Page navigation on click** — some SPAs navigate on click. If URL changes unexpectedly, re-open and re-snapshot.
-
-### Troubleshooting
+[phnx-labs/agent-browser](https://github.com/phnx-labs/agent-browser) — a single-binary CLI for one-shot browser steps from the shell.
 
 ```bash
-# If commands timeout, restart the daemon
-openclaw daemon restart
-
-# If relay is disconnected, restart browser
-openclaw browser stop && openclaw browser start
-
-# Check if relay extension is connected
-openclaw browser tabs    # should list open tabs
+# Open and interact (headless by default; pass --headed when you need to see it)
+agent-browser open <url>
+agent-browser snapshot --labels             # element refs for click/type
+agent-browser click <ref>
+agent-browser type <ref> 'text'
+agent-browser screenshot                    # capture viewport
+agent-browser eval --fn '() => document.title'
+agent-browser wait --text "Done"
 ```
 
-## agent-browser (Local Fallback)
-
-For local browser automation when the remote relay isn't needed.
-
-### Always Use Real Chrome + Headed Mode
-
-Never use default Chromium — many sites block it. Always pass `--executable-path` to real Chrome and `--headed`.
-
-### Profile = Skill Name
-
-Profiles persist logins: `~/.agent-browser/profiles/<skill-name>`
-
-### Launch Template
+Profiles persist cookies/logins between runs — name the profile after the skill that drives it:
 
 ```bash
 agent-browser \
-  --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --profile ~/.agent-browser/profiles/<skill-name> \
-  open "<URL>" --headed 2>&1
+  open "<URL>"
 ```
 
-### Set Viewport After Launch
+For sites that block default Chromium, point at real Chrome:
 
 ```bash
-agent-browser set viewport 1440 900 2>&1
+--executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ```
 
-### Rich Text Editors
+## Remote browser relay (optional)
 
-Standard `fill`/`type` commands fail on contenteditable / ProseMirror editors. Use `execCommand('insertText')` via `agent-browser eval`.
+Some teams run a relay so the browser lives on a server (persistent sessions, shared logins, Cloudflare-friendly IP). The interface looks the same — `open`, `focus`, `snapshot`, `click`, `screenshot` — but tab discipline matters because multiple agents share one browser:
 
-### Read Site-Specific Skills First
+- `open` a new tab; never `navigate` (it replaces whatever tab is active and trashes another agent's state).
+- `focus` your tab before every interaction.
+- `close` your tab when you're done.
 
-If a skill exists for the target site (e.g. `/higgsfield`), read it before doing anything.
+Only use a relay if the project documents one. Don't reach for it as a default.
 
-### Screenshots Are Your Eyes
+## Workflow pattern (any tool)
 
-Always screenshot after navigation, after submitting, and while waiting for generation.
+1. **Open** the target URL.
+2. **Snapshot** to see structure and get refs.
+3. **Click / type / select** using refs from the snapshot.
+4. **Re-snapshot** after every action — refs are ephemeral.
+5. **Screenshot** liberally; screenshots are your eyes.
+6. Close the tab/browser when done.
+
+## Rich text editors
+
+`type` typically fails on contenteditable / ProseMirror. Use `execCommand('insertText')` via the tool's eval / evaluate primitive:
+
+```bash
+# agent-browser
+agent-browser eval --fn '() => document.execCommand("insertText", false, "your text")'
+```
+
+```python
+# Playwright
+page.evaluate('() => document.execCommand("insertText", false, "your text")')
+```
+
+## Site-specific skills first
+
+If a skill exists for the target site (e.g. `linear`, `higgsfield`, etc.), read it before driving the page raw — it'll already encode the selectors and known quirks.
