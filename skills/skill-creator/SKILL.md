@@ -103,8 +103,8 @@ Standard helper script supporting both single-var and block modes:
 source ~/.agents/.environment 2>/dev/null
 
 if [ "$1" = "block" ]; then
-  USER="${BROWSER_SSH_USER:-muqsit}"
-  HOST="${BROWSER_SSH_HOST:-mac-mini}"
+  USER="${BROWSER_SSH_USER:-your-user}"
+  HOST="${BROWSER_SSH_HOST:-your-host}"
   PATHPFX="${BROWSER_SSH_PATH:-/opt/homebrew/bin}"
   BROWSER_CMD="${BROWSER_CMD:-openclaw browser}"
   cat <<EOF
@@ -132,10 +132,10 @@ Each machine gets its own `~/.agents/.environment` (gitignored):
 
 ```bash
 # Agent environment — machine-specific values
-OPENCLAW_USER=muqsit
-OPENCLAW_HOST=mac-mini
-OPENCLAW_PATH=/opt/homebrew/bin:/Users/muqsit/.agents/shims
-TELEGRAM_CHAT_ID=6078999250
+OPENCLAW_USER=<your-username>
+OPENCLAW_HOST=<your-mac-hostname>
+OPENCLAW_PATH=/opt/homebrew/bin:${HOME}/.agents-system/shims
+TELEGRAM_CHAT_ID=<your-chat-id>
 ```
 
 ## Sync Workflow
@@ -155,11 +155,11 @@ This copies to `~/.claude/skills/<skill-name>/` where Claude Code reads it.
 # 1. Commit and push from local
 cd ~/.agents && git add skills/<name> && git commit -m "feat: ..." && git push
 
-# 2. Pull on mac-mini
-ssh muqsit@mac-mini "cd ~/.agents && git pull"
+# 2. Pull on remote host
+ssh $OPENCLAW_USER@$OPENCLAW_HOST "cd ~/.agents && git pull"
 
 # 3. Install to target agent
-ssh muqsit@mac-mini "PATH=...:$PATH agents skills add ~/.agents/skills/<name> --agents codex -y"
+ssh $OPENCLAW_USER@$OPENCLAW_HOST "PATH=...:$PATH agents skills add ~/.agents/skills/<name> --agents codex -y"
 ```
 
 ## Writing Good Skills

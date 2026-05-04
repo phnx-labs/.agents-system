@@ -29,7 +29,7 @@ Read the `/browser` skill first for general browser automation guidelines.
 
 ```bash
 # PROFILE must be your agent's browser profile name (paul, emma, sergey, etc.)
-OC="PATH=/opt/homebrew/bin:/Users/muqsit/.agents/shims:$PATH openclaw browser --browser-profile PROFILE"
+OC="PATH=/opt/homebrew/bin:${HOME}/.agents-system/shims:$PATH openclaw browser --browser-profile PROFILE"
 ```
 
 ### Remote Agents (Claude via SSH)

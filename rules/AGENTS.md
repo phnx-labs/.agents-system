@@ -31,7 +31,7 @@ echo "Waiting 45s for generation..."; sleep 45; echo "Checking now..."
 **Long waits (2+ min)** — echo sleeve with `run_in_background: true`:
 ```bash
 # run_in_background: true
-ssh muqsit@spark "rsync -avz src/ dest/ && echo 'RSYNC COMPLETE — start vLLM server now'"
+ssh user@host "rsync -avz src/ dest/ && echo 'RSYNC COMPLETE — start vLLM server now'"
 ```
 The echo at the end fires when the command finishes. Claude gets notified automatically with a built-in reminder of what to do next. No polling. No user nudging. One line.
 

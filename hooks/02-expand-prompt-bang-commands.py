@@ -9,7 +9,7 @@ Two forms:
 
 Examples:
   "List files in `! ls agents`"  -> "List files in `agent1.md agent2.md`"
-  "Check `!pwd`"                 -> "Check `/Users/muqsit/project`"
+  "Check `!pwd`"                 -> "Check `/home/user/project`"
   "Output: `!echo hello`"        -> "Output: `hello`"
   "CSS rule: `!important`"       -> "CSS rule: `!important`"  (literal — bare word)
   "Ruby bang: `!foo`"            -> "Ruby bang: `!foo`"        (literal — bare word)

@@ -1,7 +1,7 @@
 ---
 name: agents-cli
 description: "Manage AI coding agent CLIs with agents-cli. Triggers on: 'agents add', 'agents use', 'agents pull', 'agents push', installing agent versions, syncing agent config, switching between agent versions, managing MCP servers, or when user mentions the agents-cli tool."
-author: muqsitnawaz
+author: phnx-labs
 version: 2.0.0
 ---
 

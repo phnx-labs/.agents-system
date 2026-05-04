@@ -6,8 +6,8 @@
 source ~/.agents/.environment 2>/dev/null
 
 if [ "$1" = "block" ]; then
-  USER="${BROWSER_SSH_USER:-muqsit}"
-  HOST="${BROWSER_SSH_HOST:-mac-mini}"
+  USER="${BROWSER_SSH_USER:-your-user}"
+  HOST="${BROWSER_SSH_HOST:-your-host}"
   PATHPFX="${BROWSER_SSH_PATH:-/opt/homebrew/bin}"
   BROWSER_CMD="${BROWSER_CMD:-openclaw browser}"
   cat <<EOF
