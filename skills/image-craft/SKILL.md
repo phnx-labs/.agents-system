@@ -82,7 +82,7 @@ The specific vocabulary within each slot changes dramatically by use case. See s
 
 ### Step 5: Generate
 
-Load the `/higgsfield` skill for the full generation workflow. Use OpenClaw browser commands via SSH with `--browser-profile claude` to open higgsfield.ai, set aspect ratio, type prompt, and click Generate.
+Load the `/browser-generate` skill for the full generation workflow. Use OpenClaw browser commands via SSH with `--browser-profile claude` to open higgsfield.ai, set aspect ratio, type prompt, and click Generate.
 
 **Model selection:**
 - `nano-banana-pro` (default) — high-quality, professional, client-facing work

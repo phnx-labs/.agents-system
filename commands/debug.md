@@ -56,7 +56,19 @@ Before proposing ANY fix, verify:
 
 If you can't answer all three, you haven't found the root cause yet. Keep reading.
 
-## Phase 5: Fix
+## Phase 5: Verify with Team (Optional)
+
+For complex bugs spanning multiple services, files, or architectural layers, verify your root cause independently before fixing:
+
+1. Create a team with `agents teams create debug-<topic>`
+2. Add 1-2 teammates in `--mode plan` (read-only) with different agent types
+3. Give each the symptoms and code paths to investigate — do NOT share your hypothesis
+4. Compare findings after they complete
+5. If they converge, proceed with high confidence. If they diverge, re-read the disputed areas.
+
+Skip this for simple, localized bugs (single file, obvious fix).
+
+## Phase 6: Fix
 
 Propose the fix at the SOURCE, not at the symptom. If data arrives in the wrong format, fix where it's created — don't add a transformer where it's consumed.
 

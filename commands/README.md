@@ -30,20 +30,24 @@ Skills are **persistent capabilities** - they load into context and stay active,
 
 Use a command when you want a specific methodology applied once. Use a skill when you need ongoing capability with tools and context.
 
-## Single-Agent Commands
+## Commands
 
-These run in your current session:
+These run in your current session, with optional team augmentation for complex scopes:
 
 **Planning & Design**
-- `/plan` - Feature planning with mandatory artifacts (mockups, diagrams, state machines). Forces grounded discussion.
+- `/plan` - Feature planning with mandatory artifacts (mockups, diagrams, state machines). Forces grounded discussion. For large features, automatically validates with a team.
 - `/design` - UX design with ASCII mockups and interaction flows
 - `/redesign` - Improve existing screens with before/after proposals
 - `/product` - Think like a product engineer - user value over technical elegance
 
 **Debugging & Maintenance**
-- `/debug` - Systematic root cause analysis. Maps the full data path, reads every file in the chain, builds evidence.
-- `/clean` - Remove tech debt, consolidate duplicate code, clean up patterns
-- `/recap` - Summarize current situation with facts, hypotheses (grounded in evidence), and next steps
+- `/debug` - Systematic root cause analysis. Maps the full data path, reads every file in the chain, builds evidence. For complex bugs, verifies with independent teammates.
+- `/clean` - Remove tech debt, consolidate duplicate code, clean up patterns. For large codebases, parallelizes scanning across areas.
+- `/recap` - Summarize current situation with facts, hypotheses (grounded in evidence), and next steps. Automatically spawns teams for actionable items.
+- `/test` - Identify critical paths and validate them. For complex scopes, distributes testing across a team.
+
+**Audit & Security**
+- `/audit` - Multi-perspective audit by spawning a team of agents, each playing a different attacker or defender role
 
 **Task Management**
 - `/issues` - Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
@@ -52,19 +56,18 @@ These run in your current session:
 **Delegation**
 - `/spawn` - Spawn a single subagent with full context for one task
 
-## Swarm Commands
+## Team Augmentation
 
-These spawn multiple agents in parallel:
+Several commands automatically use `agents teams` when the scope is complex:
 
-- `/swarm` - Distribute tasks across agents. Shows plan, waits for approval, then spawns.
-- `/splan` - Planning with swarm consensus (2-3 agents verify approach)
-- `/sdebug` - Independent root cause verification (agents debug separately, compare findings)
-- `/sconfirm` - Lightweight verification of findings
-- `/sclean` - Parallel cleanup across different code areas
-- `/stest` - Parallel testing by category (auth, data, API, UI, errors)
-- `/srecap` - Multiple agents gather evidence before handoff
+- `/debug` — Verifies root cause with independent teammates for multi-service bugs
+- `/plan` — Validates approach with independent planners for large features
+- `/clean` — Parallelizes scanning across frontend/backend/shared/docs for large codebases
+- `/test` — Distributes testing across areas for complex scopes
+- `/recap` — Spawns teams for 2+ clear, actionable items instead of listing them
+- `/audit` — Always uses teams; each teammate plays a different threat perspective
 
-Swarm commands require the [Swarm MCP server](https://www.npmjs.com/package/@swarmify/agents-mcp) for orchestration.
+Run `agents teams --help` for team management commands.
 
 ## Creating Commands
 

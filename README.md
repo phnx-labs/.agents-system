@@ -40,7 +40,7 @@ agents pull
 
 ```
 .agents-system/
-  commands/        # slash commands  (/debug, /plan, /swarm, ...)
+  commands/        # slash commands  (/debug, /plan, /audit, ...)
   skills/          # persistent capabilities (image-craft, writer, debug, ...)
   rules/           # AGENTS.md + reusable rule fragments and presets
   hooks/           # prompt preprocessing + lifecycle scripts (+ hooks.yaml)
@@ -81,29 +81,27 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`, wit
 | `/product` | User-value framing over technical elegance |
 | `/recap` | Summarize state — facts first, hypotheses grounded |
 | `/clean` | Remove tech debt, consolidate duplicates |
+| `/test` | Test critical paths — parallel validation for complex scopes |
 | `/done` / `/next` / `/continue` | Verify task complete; pick up next; resume work |
 | `/tasks` | Pull active Linear tasks |
 | `/commit` | Stage, conventional commit, push in background |
 | `/spawn` | Single subagent with full context |
-| `/security` | Multi-perspective security audit |
+| `/audit` | Multi-perspective security audit |
 | `/rdev` | Dispatch a Linear issue to a remote coding agent |
 | `/image-nbp` / `/video-k3z` / `/simagine` | Visual asset generation entry points |
 
-### Swarm (multi-agent)
+### Team augmentation
 
-Spawn independent agents in parallel for verification or distribution.
+Several commands automatically use `agents teams` when the scope is complex:
 
-| Command | Purpose |
-|---------|---------|
-| `/swarm` | Distribute tasks across parallel agents |
-| `/splan` | Planning with swarm consensus |
-| `/sdebug` | Independent root-cause verification |
-| `/sconfirm` | Lightweight cross-check of findings |
-| `/sclean` | Parallel cleanup across areas |
-| `/stest` | Parallel testing by category |
-| `/srecap` | Multiple agents gather evidence before handoff |
+- `/debug` — Verifies root cause with independent teammates for multi-service bugs
+- `/plan` — Validates approach with independent planners for large features
+- `/clean` — Parallelizes scanning across areas for large codebases
+- `/test` — Distributes testing across areas for complex scopes
+- `/recap` — Spawns teams for actionable items instead of listing them
+- `/audit` — Always uses teams; each teammate plays a different threat perspective
 
-Swarm commands require [`@swarmify/agents-mcp`](https://www.npmjs.com/package/@swarmify/agents-mcp).
+Run `agents teams --help` for team management commands.
 
 ## Rules
 

@@ -16,7 +16,7 @@ env:                         # optional env injection
 url: https://...             # for http transport
 ```
 
-The `name` is what shows up as the tool prefix (e.g. `mcp__Swarm__Spawn`). Pick something short and stable.
+The `name` is what shows up as the tool prefix (e.g. `mcp__Linear__GetIssue`). Pick something short and stable.
 
 ## Adding a server
 

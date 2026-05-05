@@ -98,6 +98,7 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 
 | Skill | What It Does |
 |-------|-------------|
+| `design/` | UX and interface design — from first principles to final specification. Handles new designs (via browser-based design tools) and existing design improvements (via ASCII mockups and design.md files). |
 | `image-craft/` | Expert prompt engineering for image generation across styles: editorial photography, logos, posters, product shots, illustrations. |
 | `memician/` | Create culturally resonant memes and viral social content. Compresses cultural tensions into minimal words. |
 
@@ -105,10 +106,13 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 
 | Skill | What It Does |
 |-------|-------------|
-| `browser/` | Drive a browser to automate websites — picks among direct CDP, browser-harness, agent-browser, or a remote relay depending on what the project has set up. |
-| `higgsfield/` | Generate images and videos via Higgsfield AI through a browser session. |
+| `browser/` | Drive a browser to automate websites — defaults to OpenClaw with per-agent profile isolation. Falls back to CDP, browser-harness, or agent-browser. |
+| `browser-generate/` | Generate images, videos, or other content via browser-based platforms without APIs (Higgsfield, Panic, etc.). |
 | `mq/` | Query large markdown, HTML, and PDF files without reading entire documents. Probe structure first, extract surgically. |
 | `reflect/` | Recall feedback, corrections, and constraints from the current conversation before iterating. |
+| `sessions/` | Search, browse, and read agent conversation transcripts across Claude, Codex, Gemini, and OpenCode. |
+| `teams/` | Organize AI coding agents into teams for parallel collaboration. Create, add, start, monitor, and collect results. |
+| `secrets/` | Manage named bundles of environment variables backed by macOS Keychain. Create bundles, add secrets, inject into runs. |
 
 ### Agent Infrastructure
 
@@ -124,7 +128,7 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 | Skill | What It Does |
 |-------|-------------|
 | `twitter-warmup/` | Warm up a new Twitter/X account from zero to credible. Stateful phase tracking across sessions. |
-| `higgsfield/` | Generate images and videos via Higgsfield AI using browser automation. |
+| `browser-generate/` | Generate images and videos via browser-based platforms (Higgsfield, Panic, etc.) using browser automation. |
 
 ### Escalation
 

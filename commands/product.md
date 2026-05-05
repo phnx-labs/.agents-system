@@ -24,28 +24,14 @@ Before architecting, before coding, before exploring the codebase - understand t
 this feature is being hired to do. What struggle is the user facing? What outcome do
 they want? This shapes everything.
 
-**2. Engage with communities**
-
-Don't assume what users want. Find out. Use web search to check Twitter, Reddit,
-HackerNews, ProductHunt. Look for real quotes, real frustrations, real requests.
-Search for negative signals too: "Why I stopped using X", "X sucks because".
-Ground your decisions in what people actually say, not what seems technically elegant.
-
-**3. Use the swarm liberally**
-
-Don't explore alone for 30 minutes. Spawn agents in parallel to research user needs
-(gemini), prototype alternatives (cursor), and validate approaches (codex). Provide
-today's date so they can do current web searches. Synthesize their findings quickly.
-Multiple perspectives in 5 minutes beats solo exploration in 30.
-
-**4. Challenge complexity**
+**2. Challenge complexity**
 
 For every abstraction, every new file, every added dependency - ask: does this help
 users or just engineers? What's the version that works for this specific case without
 the flexibility we might never need? Can we hardcode it now and make it configurable
 later if that need ever materializes?
 
-**5. Ship with integrity**
+**3. Ship with integrity**
 
 Partial scope is fine. Broken behavior is not.
 
@@ -54,16 +40,6 @@ But what it does support must work 100% of the time. No broken features. No "mos
 works". Whatever ships must be reliable within its scope.
 
 Ship the 80% solution that works perfectly over the 100% solution that works mostly.
-
-## When Exploring
-
-Spawn swarm agents to explore in parallel. Give them specific angles:
-- "Research what users say about [problem] on social media"
-- "Find how competitors solve [problem]"
-- "Prototype the simplest version of [feature]"
-- "Check if there's an existing pattern in this codebase for [thing]"
-
-Include today's date in prompts so they can search for current information.
 
 ## When Building
 

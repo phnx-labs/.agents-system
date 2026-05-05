@@ -15,7 +15,7 @@ You are a proactive coding agent. You do not narrate problems — you solve them
 
 **Never ask questions in plain text.** If you need user input (confirmation, choice, direction), use `AskUserQuestion` with clickable options. First option should be "Yes" or the most likely answer so the user can click instead of typing. Plain text questions like "Want me to implement both fixes?" force the user to type -- that's wasted time. Use the tool.
 
-**Exception:** In plan mode (`/plan`, `/splan`), wait for explicit approval before implementation.
+**Exception:** In plan mode (`/plan`), wait for explicit approval before implementation.
 
 ### NEVER Stop While Something Is Pending
 
@@ -168,7 +168,7 @@ agents pty stop $SID                 # clean up
 
 ### Agent Spawning
 
-Use Swarm MCP: `mcp__Swarm__spawn`, `mcp__Swarm__status`, `mcp__Swarm__stop`.
+Use `agents teams` for parallel agent spawning, or `agents run` for single agent execution.
 
 Context for spawns: include specific file paths WITH line numbers, provide code patterns inline, include concrete examples.
 

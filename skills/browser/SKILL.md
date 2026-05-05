@@ -14,14 +14,38 @@ Several ways to drive a browser. Pick whichever the project already has set up �
 
 | Tool | When |
 |------|------|
+| **OpenClaw** (Recommended) | Default choice. Use `openclaw browser` commands with `--browser-profile` for per-agent isolation. Best for teams and shared relays. |
 | **CDP directly** (Playwright / Puppeteer / raw websocket) | Project already uses Playwright or Puppeteer. Fewest moving parts, full API surface. |
 | **[browser-harness](https://github.com/browser-use/browser-harness)** | Preferred for agent-driven workflows. Tiny Python core (~600 lines) on top of CDP, plus an `agent-workspace/` where the agent writes its own site-specific helpers as it learns. Self-healing. |
 | **[agent-browser](https://github.com/phnx-labs/agent-browser)** | Single-file CLI wrapper. Good for quick shell-driven tasks; one process per command. |
-| **Remote browser relay** | If the team runs a shared relay (e.g. OpenClaw) — useful for keeping logins on a server and bypassing Cloudflare. May not be set up; don't assume. |
 
-**Default order to try:** CDP directly → browser-harness → agent-browser → remote relay. Stop at the first one the project supports.
+**Default order to try:** OpenClaw → CDP directly → browser-harness → agent-browser. Stop at the first one the project supports.
 
 Headless vs headed is a per-task choice (passed as a flag or option), not a property of the skill. Pick headed when you need to see the page, watch a flow, or debug; headless for unattended scrapes and CI.
+
+## OpenClaw (Recommended)
+
+OpenClaw provides a browser relay with per-agent profile isolation. Each agent gets its own browser process, cookies, and login sessions.
+
+```bash
+# Check if OpenClaw is available
+which openclaw
+
+# Basic usage
+openclaw browser open <url> --browser-profile <your-profile>
+openclaw browser snapshot --labels
+openclaw browser click <ref>
+openclaw browser type <ref> 'text'
+openclaw browser screenshot
+openclaw browser close <targetId>
+```
+
+**Always use `--browser-profile <your-profile>`** on every command. Each agent has a dedicated profile with its own login sessions. Omitting the flag uses the default profile, which may not have the required logins.
+
+**Tab discipline for teams:**
+- `open` a new tab; never `navigate` (it replaces whatever tab is active and trashes another agent's state).
+- `focus` your tab before every interaction.
+- `close` your tab when you're done.
 
 ## Direct CDP (Playwright / Puppeteer)
 

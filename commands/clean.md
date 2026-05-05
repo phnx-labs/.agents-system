@@ -30,6 +30,18 @@ Search for cleanup opportunities in this priority order:
 6. **Naming/organization** - Confusing names, illogical file organization,
    inconsistent conventions.
 
+## Parallel Scan (Optional)
+
+For large codebases (>50 files), parallelize the scan across areas:
+
+1. Identify major areas: Frontend, Backend, Shared, Docs
+2. Create a team with `agents teams create clean-<topic>`
+3. Add one teammate per area with the priority list above
+4. Start the team and collect findings
+5. Synthesize cross-cutting concerns (duplicates spanning areas, scattered configs)
+
+Skip this for small codebases — scan directly yourself.
+
 ## Verify
 
 For each finding, verify it's actually an issue. Read the code. Confirm your

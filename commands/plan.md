@@ -76,6 +76,18 @@ For behavior with multiple scenarios - table REQUIRED:
 Only AFTER creating artifacts, list design questions. Each question must reference
 the artifact and explain what changes based on the answer.
 
+## Validation (Optional)
+
+For large features or architectural changes, validate your plan before finalizing:
+
+1. Create a team with `agents teams create plan-<topic>`
+2. Add 1-2 teammates in `--mode plan` with different agent types
+3. Share the feature description and key files — do NOT share your proposed approach
+4. Compare their independent plans with yours
+5. Incorporate any edge cases, simpler approaches, or missed touch points they identified
+
+Skip this for small, well-understood changes.
+
 ## Output Format
 
 ### Feature: [Name]

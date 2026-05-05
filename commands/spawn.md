@@ -28,14 +28,15 @@ Spawn subagent for: $ARGUMENTS
    - **Success criteria**: What "done" looks like
    - **Constraints**: From project docs, style guides, etc.
 
-4. **Spawn with Swarm MCP:**
-   ```
-   mcp__Swarm__spawn(
-     task_name: "descriptive-name",
-     agent_type: "selected-agent",
-     mode: "edit",  // or "plan" for research
-     prompt: "detailed context..."
-   )
+4. **Spawn the agent:**
+   - For a single task: use `agents run` or the agent's native CLI
+   - For parallel work: use `agents teams create`, `agents teams add`, `agents teams start`
+   
+   Example with teams:
+   ```bash
+   agents teams create <task-name>
+   agents teams add <task-name> <agent-type> "detailed prompt..." --name <role> --mode edit
+   agents teams start <task-name>
    ```
 
 5. **Monitor and report** results when complete
