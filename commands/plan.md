@@ -1,31 +1,65 @@
 ---
-description: Plan with grounded design - mockups and diagrams BEFORE feature discussion
+description: Plan with grounded design - identify context, audit codebase, then create artifacts
 ---
 
 You are planning: $ARGUMENTS
 
-## CRITICAL: Ground First, Then Discuss
+## CRITICAL: Identify Context Before Touching Code
 
-Do NOT discuss features abstractly. For EVERY feature:
-1. Read the relevant code FIRST
-2. Create concrete artifacts (mockups, diagrams, state machines) FIRST
-3. THEN discuss design questions
+Do NOT start reading files randomly. First understand WHAT you're planning and WHY.
 
-If you discuss a feature without showing a concrete artifact, you have failed.
+### Step 1: Topic/Context Identification
 
-## Understand the System
+Before reading any code, clarify:
 
-Read AGENTS.md or CLAUDE.md if they exist. Search for keywords related to the task.
-Read the actual code - trace data flow, identify touch points, understand patterns.
+1. **What is the user asking for?** — Restate the request in your own words. If ambiguous, ask for clarification.
+2. **What is the goal?** — What problem does this solve? Who benefits?
+3. **What is the scope?** — Is this a new feature, a refactor, a bug fix, or an integration?
+4. **What are the constraints?** — Time, resources, dependencies, backwards compatibility?
+
+If the request is vague or could mean multiple things, use `AskUserQuestion` with 2-3 specific interpretations. Let the user pick.
+
+### Step 2: Codebase Audit
+
+Now that you know the topic, find what's relevant. Do NOT read everything. Target your search.
+
+**Search strategy:**
+- Search for keywords related to the feature in filenames: `glob "**/*auth*"`, `glob "**/*login*"`
+- Search for keywords in file contents: `grep "authentication" src/`
+- Look at the project structure: `ls src/` or `ls app/`
+- Check existing patterns: How do similar features work? What files do they touch?
+
+**Identify:**
+- **Entry points** — Where does this feature live? (routes, controllers, handlers)
+- **Data layer** — What models, schemas, or types are involved?
+- **UI layer** — What components or screens need changes?
+- **Shared logic** — What utilities, hooks, or services are relevant?
+- **Tests** — Where are existing tests? What new tests are needed?
+
+**Output a list of files and directories the agent should examine:**
+
+```
+Relevant paths identified:
+- src/features/auth/login.tsx (UI entry point)
+- src/lib/auth.ts (auth logic)
+- src/types/auth.d.ts (types)
+- tests/auth.test.ts (existing tests)
+```
+
+### Step 3: Read Code
+
+Read ONLY the files identified in the audit. For each file:
+1. Note the file path and line numbers
+2. Quote relevant code snippets
+3. Understand how it connects to other files
 
 Do NOT guess. Do NOT speculate. Read code, then speak.
 
 ## For EACH Feature
 
-### Step 1: Read Code
-Read the specific files involved. Note line numbers. Quote relevant code snippets.
+### Step 4: Create Artifacts
 
-### Step 2: Create Artifacts
+After reading code, create concrete artifacts. Do NOT discuss design without artifacts.
 
 For UI changes - ASCII mockup REQUIRED:
 ```
@@ -71,10 +105,11 @@ For behavior with multiple scenarios - table REQUIRED:
 | Not admin                 | any                | 403, forbidden      |
 ```
 
-### Step 3: Design Questions
+### Step 5: Design Questions
 
-Only AFTER creating artifacts, list design questions. Each question must reference
-the artifact and explain what changes based on the answer.
+Only AFTER creating artifacts, list design questions. Each question must reference the artifact and explain what changes based on the answer.
+
+For genuinely ambiguous decisions, use `AskUserQuestion` with 2-3 concrete options. Let the user pick rather than guessing.
 
 ## Validation (Optional)
 
@@ -89,6 +124,12 @@ For large features or architectural changes, validate your plan before finalizin
 Skip this for small, well-understood changes.
 
 ## Output Format
+
+### Context
+What is being planned, why, and what constraints exist.
+
+### Codebase Audit
+What files and paths were identified as relevant, and why.
 
 ### Feature: [Name]
 
@@ -118,3 +159,4 @@ Skip this for small, well-understood changes.
 - No backwards compatibility unless asked
 - No abstract discussion without artifacts
 - Every feature needs at least one visual artifact
+- Use AskUserQuestion for ambiguous decisions — don't guess
