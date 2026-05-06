@@ -37,6 +37,7 @@ This injects credentials as shell variables. Known accounts:
 |---------|------------------|------------------|
 | Grafana (getrush.grafana.net) | `$GRAFANA_USERNAME` | `$GRAFANA_PASSWORD` |
 | Cloudflare | `$CLOUDFLARE_USERNAME` | `$CLOUDFLARE_PASSWORD` |
+| Supabase | `$SUPABASE_USERNAME` | `$SUPABASE_PASSWORD` |
 
 Always snapshot the page first — if the session is still alive in the profile, skip login entirely. Only log in when you land on a login wall.
 
