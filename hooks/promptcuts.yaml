@@ -66,15 +66,14 @@ shortcuts:
     - Cite each finding to its teammate + file:line.
 
     DO NOT IMPLEMENT after rethinking. Present findings. Wait for direction.
-  "#debugit": |
-    Root-cause mode. NO guessing. NO fix until the cause is proven with evidence.
-
-    Execution plan (follow in order):
-    1. Load the `sdebug` skill (or `debug` for single-agent) — it encodes the project's debugging workflow.
-    2. Trace the full data path end-to-end. If data flows A → B → C → D, open A, B, C, AND D. Quote file:line from each. Skipping files in the middle is how you misdiagnose (Hard Line #3: NO LAZY DEBUGGING).
-    3. Spawn parallel agents for independent verification (parallelize — Hard Line #8c):
-       - Codex agent via `agents teams` — reproduce the bug from scratch
-       - Gemini agent via `agents teams` — cross-check the data flow independently
+      "#debugit": |
+        Root-cause mode. NO guessing. NO fix until the cause is proven with evidence.
+  
+        Execution plan (follow in order):
+        1. Load the `debug` skill — it encodes the project's debugging workflow.
+        2. Trace the full data path end-to-end. If data flows A → B → C → D, open A, B, C, AND D. Quote file:line from each. Skipping files in the middle is how you misdiagnose (Hard Line #3: NO LAZY DEBUGGING).
+        3. Spawn parallel agents for independent verification (parallelize — Hard Line #11):
+           - Codex agent via `agents teams` — reproduce the bug from scratch       - Gemini agent via `agents teams` — cross-check the data flow independently
        - Opus Agent subagent — deep review of the suspected module
        Every agent prompt MUST end with the exact line:
        `Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't claim it.`
@@ -128,10 +127,9 @@ shortcuts:
 
     4. ABSTRACTION BLOAT — too many small wrappers, adapters, layers each doing 10% of a job. If there are 5 abstractions for one concern, propose a SINGLE cleaner abstraction that subsumes 3-4 of them. Fewer concepts > more concepts, when the shape is right.
 
-    5. SCATTERED TRUTH — the same constant, config value, or decision expressed in multiple places. Unify at the source. No shadow copies. (Hard Line #12: CROSS-CUTTING CHANGES GO TO THE SOURCE.)
-
-    WHAT YOU PROPOSE:
-    - A NEW, simpler abstraction — with name, shape, responsibilities.
+          5. SCATTERED TRUTH — the same constant, config value, or decision expressed in multiple places. Unify at the source. No shadow copies. (Hard Line #15: CROSS-CUTTING CHANGES GO TO THE SOURCE.)
+    
+          WHAT YOU PROPOSE:    - A NEW, simpler abstraction — with name, shape, responsibilities.
     - Which existing abstractions it REPLACES (list them by file:line).
     - Which call sites change, and how.
     - What becomes easier after the consolidation.
@@ -167,10 +165,9 @@ shortcuts:
     MANDATORY SKILLS — load these in PARALLEL before anything else:
     - `design` — the project's canonical design workflow (ASCII mockups, interactions, components, Mac feel, Phase 0-7 process).
     - `rtaste` AND `rush-taste` — visual language, interaction patterns, curated exemplar references.
-    - `intuitive-design` — anticipate the user's next action, surface info at point-of-need, reduce friction.
-    - `brand` — typography, color, voice for core properties (getrush.ai, prix.dev, byphoenix.com).
-    Skipping any of these = designing without the project's accumulated taste = wasted draft.
-
+          - `intuitive-design` — anticipate the user's next action, surface info at point-of-need, reduce friction.
+          - `brand` — typography, color, voice for your core properties.
+          Skipping any of these = designing without the project's accumulated taste = wasted draft.
     ---------------- PHASE 0: FEELING (BEFORE ANY MOCKUP) ----------------
     Answer these in writing. Every later decision must be justifiable against them.
 
@@ -260,12 +257,11 @@ shortcuts:
     You have been caught being lazy repeatedly: not gathering context,
     not spawning parallel agents, not tracing the full data flow,
     using Haiku for subagents, and skipping web search when the answer
-    depends on current state-of-the-world. Even on extra-high reasoning.
-    This stops NOW, for this turn.
-
-    The canonical rules are in ~/.agents/memory/AGENTS.md. Re-read the
-    relevant sections NOW if you're not sure. The clauses below are
-    the ones you habitually violate — they are non-negotiable.
+          depends on current state-of-the-world. Even on extra-high reasoning.
+          This stops NOW, for this turn.
+    
+          The canonical rules are in ~/.agents-system/rules/AGENTS.md. Re-read the
+          relevant sections NOW if you're not sure. The clauses below are    the ones you habitually violate — they are non-negotiable.
 
     ---------------- STEP 0: DIAGNOSE & LOAD SKILLS -------------------
     BEFORE you gather context, read files, or spawn agents, you must:
@@ -277,16 +273,13 @@ shortcuts:
        QA? Brand / design taste? Agent orchestration? Infra?
        Be specific — "it's a code question" is not a diagnosis.
 
-    b) SCAN AVAILABLE SKILLS. The system-reminder in this session
-       lists every skill available (e.g. debug, rsec, rqa, rcash,
-       linear, rush-analytics, rush-product-knowledge, brand,
-       rtaste, mq, writer, plan, splan, sdebug, rdev, rush-cli,
-       hermes, yosemite, openclaw, agents-cli, claude-api,
-       skill-creator, creative-analysis, brain-scan, image-craft,
-       rsearch, browser, rblog, intuitive-design, redesign,
-       ragent, rush-agent-builder, twitter-warmup, and more).
-       Read the one-line trigger descriptions. These are not
-       decorative — they exist because the user got burned doing
+          b) SCAN AVAILABLE SKILLS. The system-reminder in this session
+             lists every skill available (e.g. debug, linear,
+             rush-product-knowledge, mq, writer, plan, rdev, rush-cli,
+             hermes, yosemite, openclaw, agents-cli, claude-api,
+             creative-analysis, brain-scan, image-craft, browser,
+             redesign, and more).
+             Read the one-line trigger descriptions. These are not       decorative — they exist because the user got burned doing
        the task without domain knowledge.
 
     c) LOAD EVERY SKILL THAT COULD APPLY via the Skill tool.
@@ -317,15 +310,14 @@ shortcuts:
        you opened A, B, C, AND D. You can quote file:line from each.
        (Hard Line #3: NO LAZY DEBUGGING in AGENTS.md)
 
-    2. PARALLELISM — If the question has more than one dimension
-       (multi-file, cross-platform, "is X ready", audit, parity check,
-       root-cause across a stack, comparing options), you spawned
-       3-7 Agent subagents IN PARALLEL in your FIRST response.
-       Sequential single-threaded investigation is BANNED for
-       multi-dimensional work. (Hard Line #8c)
-
-    3. SUBAGENT MODEL — Every Agent() call has model explicitly set.
-       Default "sonnet". "opus" for deep investigation / review /
+          2. PARALLELISM — If the question has more than one dimension
+             (multi-file, cross-platform, "is X ready", audit, parity check,
+             root-cause across a stack, comparing options), you spawned
+             3-7 Agent subagents IN PARALLEL in your FIRST response.
+             Sequential single-threaded investigation is BANNED for
+             multi-dimensional work. (Hard Line #11)
+    
+          3. SUBAGENT MODEL — Every Agent() call has model explicitly set.       Default "sonnet". "opus" for deep investigation / review /
        architecture / anything load-bearing. NEVER "haiku". NEVER
        omit the field (frontmatter may pin haiku). (Hard Line #7)
 
@@ -343,17 +335,16 @@ shortcuts:
        on current affairs = unverified claim = violation.
        (Hard Lines #5, #6)
 
-    6. ENV STATE — You did NOT ask the user to verify anything you
-       could have checked yourself with a shell command. You ran the
-       check. (Hard Line #8b)
-
-    7. NO PREMATURE BLOCKERS — You did NOT declare "I can't do X"
-       after one failed attempt. You tried at least THREE distinct
-       approaches and quoted the failure of each, OR you succeeded.
-       (Hard Line #8a)
-
-    8. EVIDENCE — Every factual claim in your response is backed by
-       code you READ in this session, quoted file:line. No
+          6. ENV STATE — You did NOT ask the user to verify anything you
+             could have checked yourself with a shell command. You ran the
+             check. (Hard Line #10)
+    
+          7. NO PREMATURE BLOCKERS — You did NOT declare "I can't do X"
+             after one failed attempt. You tried at least THREE distinct
+             approaches and quoted the failure of each, OR you succeeded.
+             (Hard Line #9)
+    
+          8. EVIDENCE — Every factual claim in your response is backed by       code you READ in this session, quoted file:line. No
        paraphrase. No "I think". No counts, sizes, or behaviors
        asserted without a tool call that verified them this session.
        (Hard Line #2: NO UNVERIFIED CLAIMS)

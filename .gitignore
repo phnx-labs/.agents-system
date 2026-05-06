@@ -70,6 +70,8 @@ linear.json
 # Runtime state, caches, and live process tracking
 /.cli-version-cache.json
 /.models-cache.json
+/rotate-stamp-*.json
+/bin/
 /cache/
 /cloud/
 /drive/

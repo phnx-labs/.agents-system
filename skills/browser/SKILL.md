@@ -35,7 +35,7 @@ This injects credentials as shell variables. Known accounts:
 
 | Service | Username variable | Password variable |
 |---------|------------------|------------------|
-| Grafana (getrush.grafana.net) | `$GRAFANA_USERNAME` | `$GRAFANA_PASSWORD` |
+| Grafana (<your-grafana-hostname>) | `$GRAFANA_USERNAME` | `$GRAFANA_PASSWORD` |
 | Cloudflare | `$CLOUDFLARE_USERNAME` | `$CLOUDFLARE_PASSWORD` |
 | Supabase | `$SUPABASE_USERNAME` | `$SUPABASE_PASSWORD` |
 
@@ -43,7 +43,7 @@ Always snapshot the page first — if the session is still alive in the profile,
 
 ```bash
 eval "$(agents secrets export browser-accounts --plaintext)"
-openclaw browser open 'https://grafana.com/auth/sign-in' --browser-profile claude-infra
+openclaw browser open 'https://grafana.com/auth/sign-in' --browser-profile <your-profile>
 # focus, snapshot, then:
 openclaw browser type <email-ref> "$GRAFANA_USERNAME"
 openclaw browser type <password-ref> "$GRAFANA_PASSWORD"

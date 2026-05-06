@@ -7,7 +7,7 @@
 ```
 Agent (LLM)
   |
-  | exec: "openclaw browser open https://example.com --browser-profile paul"
+  | exec: "openclaw browser open https://example.com --browser-profile <your-profile>"
   v
 OpenClaw Gateway (Node.js)
   |
@@ -33,7 +33,7 @@ OpenClaw launches the configured browser executable with CDP flags:
 ```
 /path/to/browser \
   --remote-debugging-port=18805 \
-  --user-data-dir=~/.openclaw/browser/paul/user-data
+  --user-data-dir=~/.openclaw/browser/<your-profile>/user-data
 ```
 
 This is a real browser in normal mode — not headless, not test mode. Login sessions, cookies, and extensions persist across restarts.

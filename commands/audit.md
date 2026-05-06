@@ -105,7 +105,7 @@ Or leave the team intact if the user wants to follow up on specific findings (`a
 
 ## When NOT to Use This
 
-- The user wants a security review of one PR or one diff — use `/audit-review` (built-in) instead.
+- The user wants a security review of one PR or one diff — use `/audit` (built-in) instead.
 - The user wants to fix vulnerabilities, not just find them — run `/audit` first to surface them, then create a team with `agents teams` to remediate.
 - The codebase is tiny (one file, a few hundred lines) — a single subagent will do, no team needed.
 

@@ -82,13 +82,17 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`, wit
 | `/recap` | Summarize state — facts first, hypotheses grounded |
 | `/clean` | Remove tech debt, consolidate duplicates |
 | `/test` | Test critical paths — parallel validation for complex scopes |
-| `/done` / `/next` / `/continue` | Verify task complete; pick up next; resume work |
-| `/tasks` | Pull active Linear tasks |
+| `/continue` | Resume previous work with context recovery |
 | `/commit` | Stage, conventional commit, push in background |
 | `/spawn` | Single subagent with full context |
 | `/audit` | Multi-perspective security audit |
-| `/rdev` | Dispatch a Linear issue to a remote coding agent |
-| `/image-nbp` / `/video-k3z` / `/simagine` | Visual asset generation entry points |
+| `/issues` | Work with the project's issue tracker (Linear, GitHub Issues, Jira, etc.) |
+| `/image` | Generate images via the image-craft skill |
+| `/mq` | Query large docs without reading everything |
+| `/reflect` | Recall feedback and constraints before rewriting |
+| `/secrets` | Manage named bundles of environment variables (Keychain-backed) |
+| `/sessions` | Search and browse agent conversation transcripts |
+| `/teams` | Arrange agents into teams for parallel execution |
 
 ### Team augmentation
 

@@ -120,23 +120,8 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 |-------|-------------|
 | `agents-cli/` | Manage AI coding agent CLIs. Install versions, sync configs, switch between agents, manage MCP servers. |
 | `mcporter/` | MCP server CLI for managing Model Context Protocol servers. |
-| `skill-creator/` | Meta-skill for creating and improving other skills. Documents SKILL.md structure, env injection, and sync workflow. |
-| `reflect/` | Recall all feedback, corrections, and constraints from the current conversation before rewriting. Prevents iterative drift. |
 
-### Growth & Outreach
-
-| Skill | What It Does |
-|-------|-------------|
-| `twitter-warmup/` | Warm up a new Twitter/X account from zero to credible. Stateful phase tracking across sessions. |
-| `browser-generate/` | Generate images and videos via browser-based platforms (Higgsfield, Panic, etc.) using browser automation. |
-
-### Escalation
-
-| Skill | What It Does |
-|-------|-------------|
-| `phone-call/` | Last-resort escalation. Call the human when critically blocked. |
-
-## Further Reading
+||## Further Reading
 
 - [Claude Code Skills Documentation](https://code.claude.com/docs/en/skills)
 - [Essential Claude Code Skills and Commands](https://batsov.com/articles/2026/03/11/essential-claude-code-skills-and-commands/)

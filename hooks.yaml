@@ -34,9 +34,3 @@ stop-completion-gate:
   events: [Stop]
   timeout: 10
   agents: [claude]
-
-git-clean-tree-gate:
-  script: 01-git-require-clean-tree.sh
-  events: [Stop]
-  timeout: 5
-  agents: [claude]
