@@ -23,6 +23,32 @@ Several ways to drive a browser. Pick whichever the project already has set up â
 
 Headless vs headed is a per-task choice (passed as a flag or option), not a property of the skill. Pick headed when you need to see the page, watch a flow, or debug; headless for unattended scrapes and CI.
 
+## Account Credentials
+
+Before navigating to any site that requires a login, load the `browser-accounts` bundle:
+
+```bash
+eval "$(agents secrets export browser-accounts --plaintext)"
+```
+
+This injects credentials as shell variables. Known accounts:
+
+| Service | Username variable | Password variable |
+|---------|------------------|------------------|
+| Grafana (getrush.grafana.net) | `$GRAFANA_USERNAME` | `$GRAFANA_PASSWORD` |
+| Cloudflare | `$CLOUDFLARE_USERNAME` | `$CLOUDFLARE_PASSWORD` |
+
+Always snapshot the page first â€” if the session is still alive in the profile, skip login entirely. Only log in when you land on a login wall.
+
+```bash
+eval "$(agents secrets export browser-accounts --plaintext)"
+openclaw browser open 'https://grafana.com/auth/sign-in' --browser-profile claude-infra
+# focus, snapshot, then:
+openclaw browser type <email-ref> "$GRAFANA_USERNAME"
+openclaw browser type <password-ref> "$GRAFANA_PASSWORD"
+openclaw browser press Enter
+```
+
 ## OpenClaw (Recommended)
 
 OpenClaw provides a browser relay with per-agent profile isolation. Each agent gets its own browser process, cookies, and login sessions.
