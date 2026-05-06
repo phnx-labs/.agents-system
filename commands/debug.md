@@ -10,14 +10,20 @@ The root cause is NEVER where the error appears. It's upstream. Your job is to t
 
 **The #1 debugging mistake: reading 2 files and guessing.** If data flows A -> B -> C -> D and the error shows in D, you MUST read A, B, C, AND D. Not "the important ones." ALL of them. Skipping files is how you misdiagnose, propose wrong fixes, and introduce new bugs.
 
-## Phase 1: Extract Clues
+## Phase 1: Extract Clues (Start from Zero)
+
+**Do NOT trust the user's diagnosis.** They may be wrong about what's broken, where it broke, or why. Start your own investigation from scratch.
 
 Dissect every piece of evidence available:
 - Error messages, stack traces, log output — extract file names, line numbers, variable values
+- **Logs: read them ALL.** Every log file, every line, every timestamp. Do not skip "irrelevant" logs. The clue you need is often where you least expect it.
 - Screenshots or user descriptions — what did they see vs what should they see?
 - When did it start? What changed recently? (`git log --oneline -20` if relevant)
+- What has the user already tried? (Don't assume it was correct — verify it yourself)
 
 Write down: **What should happen** vs **What actually happens.**
+
+**Rule:** If you find yourself saying "the user said it's X," stop. Verify X yourself by reading the code and logs. Users are often wrong about root causes.
 
 ## Phase 2: Map the Data Path
 
