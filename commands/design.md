@@ -28,14 +28,14 @@ Write down your answers. These are your design constraints.
 
 Read these files (if they exist):
 - `AGENTS.md` or `CLAUDE.md` — Look for "Design Language", "Decision Framework", "UI Principles"
-- `harness-ui/README.md` — Component patterns, color palette, typography
+- A design-system / component-library README if the project ships one
 - Existing components related to this feature in `src/components/`
 
 Note what you learned. Your design must speak the same visual language as the rest of the app.
 
 ### Core Principles (if no docs exist)
 
-- **Mac feel** — Silent success, inline errors, no toasts, no loading unless critical
+- **Quiet UI** — silent success, inline errors, no toasts, no loading unless critical (adopt the platform's native feel)
 - **Needs not wants** — What does user actually need here?
 - **Intention over convention** — Don't add because "others have it"
 - **Typography-driven state** — Font weight and opacity, not colored dots
@@ -174,7 +174,7 @@ When multiple approaches exist:
 ## When in Doubt
 
 - Simpler is better
-- Mac feel: silent success, inline errors
+- Quiet UI: silent success, inline errors
 - Typography over color for state
 - One action per screen when possible
 - White space is your friend

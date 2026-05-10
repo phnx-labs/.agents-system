@@ -27,10 +27,9 @@ agents secrets export production .env
 
 ## Security
 
-- Secrets are stored in macOS Keychain by default (never touch disk in plaintext)
+- Secrets are stored in macOS Keychain (never touch disk in plaintext); macOS-only today
 - Use `--reveal` sparingly and carefully
 - Separate bundles per environment (dev, staging, production)
-- Can sync with 1Password for portability
 
 ## Usage in Agent Runs
 

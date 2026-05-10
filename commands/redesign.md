@@ -30,7 +30,7 @@ THEN, if the user hasn't clearly stated what bothers them, share your diagnosis 
 
 Before looking outside the app, look INSIDE it. Read:
 - `AGENTS.md` or `CLAUDE.md` - Look for "Design Language", "Decision Framework", "UI Principles"
-- `harness-ui/README.md` - Component patterns, color palette, typography
+- A design-system / component-library README if the project ships one
 - The actual source code of the screen being redesigned (find it via Grep/Glob)
 - **2-3 neighboring screens** in the app that the user interacts with before/after this one
 
@@ -47,7 +47,7 @@ Note what you found. "The main app uses X pattern but this screen does Y instead
 NOW look outside. Search the web for how well-designed apps handle this same screen/pattern:
 - Apps known for great design (Linear, Raycast, Arc, Notion, Figma)
 - Specific patterns relevant to what's being redesigned (login screens, settings pages, dashboards, etc.)
-- macOS-native patterns if it's a desktop app
+- Platform-native patterns if it's a desktop app (macOS, Windows, GTK, etc.)
 
 Summarize 2-3 interesting patterns you found. Don't dump links — describe what they do and why it works.
 
