@@ -41,14 +41,12 @@ agents pull
 ```
 .agents-system/
   commands/        # slash commands  (/debug, /plan, /audit, ...)
-  skills/          # persistent capabilities (image-craft, writer, debug, ...)
+  skills/          # persistent capabilities (agents-cli, browser, teams, ...)
   rules/           # AGENTS.md + reusable rule fragments and presets
   hooks/           # prompt preprocessing + lifecycle scripts (+ hooks.yaml)
-  mcp/             # MCP server configurations (one YAML per server)
-  permissions/     # permission groups + sets for sandboxed execution
+  permissions/     # permission groups + presets for sandboxed execution
   profiles/        # host-CLI + endpoint + model bundles (Kimi, DeepSeek, ...)
   hooks/promptcuts.yaml  # shortcut tokens expanded inline by hooks (system defaults)
-  scripts/         # repo maintenance scripts
   .githooks/       # pre-commit validation
 ```
 
