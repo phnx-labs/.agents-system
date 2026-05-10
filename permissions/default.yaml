@@ -192,8 +192,10 @@ allow:
   # rm, mv, cp, chmod, chown, ln, mkdir, touch are deliberately not auto-approved
   # so they fall through to a user prompt.
   - "Bash(curl:*)"
+  - "Bash(wget:*)"
   - "Bash(http:*)"
   - "Bash(httpie:*)"
+  - "Bash(find:*)"
   - "Bash(ping:*)"
   - "Bash(dig:*)"
   - "Bash(host:*)"
@@ -2062,7 +2064,7 @@ allow:
   - "Edit(~/.agents/*)"
   - "Edit(~/.agents/**)"
 deny:
-  # Sandbox-only deny list. Applied when AGENTS_PERMISSION_SET=sandbox.
+  # Sandbox-only deny list. Applied when AGENTS_PERMISSION_PRESET=sandbox.
   #
   # Philosophy: the pod is ephemeral and non-root. Only block operations whose
   # blast radius escapes the pod (remote git state, credentials that unlock
@@ -2082,9 +2084,7 @@ deny:
   - "Read(~/.claude/*.json)"
   - "Edit(~/.claude/*.json)"
 deny:
-  - "Bash(find:*)"
   - "Bash(sudo:*)"
-  - "Bash(wget:*)"
   - "Bash(timeout:*)"
 
   # Credential files — never allow agents to read or write these.

@@ -1,7 +1,5 @@
 deny:
-  - "Bash(find:*)"
   - "Bash(sudo:*)"
-  - "Bash(wget:*)"
   - "Bash(timeout:*)"
 
   # Credential files — never allow agents to read or write these.
