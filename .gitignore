@@ -1,19 +1,19 @@
 # Local-only directories (not synced to repo)
-sessions/
-versions/
-shims/
-repos/
-runs/
-routines/
-drives/
-packages/
-swarm/
-agents/
-backups/
-growth/
-logs/
-factory/
-ledger/
+/sessions/
+/versions/
+/shims/
+/repos/
+/runs/
+/routines/
+/drives/
+/packages/
+/swarm/
+/agents/
+/backups/
+/growth/
+/logs/
+/factory/
+/ledger/
 
 # Local-only permissions (machine-specific, not synced)
 permissions/groups/00-local.yaml
@@ -24,8 +24,8 @@ permissions/default.yml
 #   skills/your-private-skill/
 
 # Machine-specific environment (secrets, hosts, paths)
-.environment
-secrets
+/.environment
+/secrets
 
 # Local state files
 *.log
