@@ -61,11 +61,16 @@ linear.json
 # Runtime state, caches, and live process tracking
 /.cli-version-cache.json
 /.models-cache.json
+/.migrated
 /rotate-stamp-*.json
 /bin/
+/browser/
 /cache/
 /cloud/
 /drive/
+/helpers/
+/state/
+/subagents/
 /swarmify/
 /teams/
 
