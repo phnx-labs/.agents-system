@@ -1,6 +1,6 @@
 # .agents-system
 
-> The **system repo** for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli) — defines the system-level, core, built-in skills, commands, hooks, rules, MCP configs, permissions, and profiles that ship with the tool.
+> The **system repo** for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli) — defines the system-level, core, built-in skills, commands, hooks, rules, and permissions that ship with the tool.
 
 <p align="center">
   <img src=".assets/claude.png" height="60" alt="Claude" style="margin: 0 10px;">
@@ -41,14 +41,11 @@ agents pull
 ```
 .agents-system/
   commands/        # slash commands  (/debug, /plan, /audit, ...)
-  skills/          # persistent capabilities (image-craft, writer, debug, ...)
+  skills/          # persistent capabilities (agents-cli, browser, teams, ...)
   rules/           # AGENTS.md + reusable rule fragments and presets
   hooks/           # prompt preprocessing + lifecycle scripts (+ hooks.yaml)
-  mcp/             # MCP server configurations (one YAML per server)
-  permissions/     # permission groups + sets for sandboxed execution
-  profiles/        # host-CLI + endpoint + model bundles (Kimi, DeepSeek, ...)
+  permissions/     # permission groups + presets for sandboxed execution
   hooks/promptcuts.yaml  # shortcut tokens expanded inline by hooks (system defaults)
-  scripts/         # repo maintenance scripts
   .githooks/       # pre-commit validation
 ```
 
@@ -62,7 +59,7 @@ Each directory has its own README explaining what lives there.
 - `versions/`, `shims/`, `repos/`, `packages/`, `agents/` — installed CLIs and resolvers
 - `sessions/`, `cron/`, `jobs/`, `runs/`, `routines/`, `swarm/`, `swarmify/`, `cloud/`, `ledger/`, `teams/`, `drive/`, `drives/`, `cache/`, `backups/`, `logs/` — runtime state
 - `secrets/`, `.environment` — machine-specific credentials and host info
-- Private skills (e.g. `skills/rush-*`, `skills/dispatch/`, `skills/proof-loop/`)
+- Private skills (whatever paths your fork's `.gitignore` lists)
 - `*.log`, `*.pid`, OS files (`.DS_Store`)
 
 Anything not in those buckets is tracked and synced.
@@ -87,9 +84,6 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`, wit
 | `/spawn` | Single subagent with full context |
 | `/audit` | Multi-perspective security audit |
 | `/issues` | Work with the project's issue tracker (Linear, GitHub Issues, Jira, etc.) |
-| `/image` | Generate images via the image-craft skill |
-| `/mq` | Query large docs without reading everything |
-| `/reflect` | Recall feedback and constraints before rewriting |
 | `/secrets` | Manage named bundles of environment variables (Keychain-backed) |
 | `/sessions` | Search and browse agent conversation transcripts |
 | `/teams` | Arrange agents into teams for parallel execution |
