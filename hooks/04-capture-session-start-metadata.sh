@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SessionStart hook: capture {session_id, cwd, pid, ts} for the running
-# agent process. Consumers read ~/.agents-system/state/sessions/$PPID.json
+# agent process. Consumers read ~/.agents/.cache/state/sessions/$PPID.json
 # to recover the live session UUID — AGENT_SESSION_ID env var goes stale
 # when a user exits and reruns the agent in the same terminal.
 #
@@ -22,7 +22,7 @@ try:
 except Exception:
     pass' 2>/dev/null || true)"
 
-state_dir="$HOME/.agents-system/state/sessions"
+state_dir="$HOME/.agents/.cache/state/sessions"
 mkdir -p "$state_dir"
 
 # $PPID = the agent process that spawned this hook. One file per running agent.
