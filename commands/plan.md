@@ -73,7 +73,33 @@ Read EVERY file identified above. For each:
 
 The plan must be grounded in what the code actually does, not what you assume it does.
 
-## Step 5: Create Artifacts
+## Step 5: Inventory Existing Primitives
+
+**Before designing anything new, catalog what already exists:**
+
+- **UI Components** — buttons, modals, forms, layouts, cards already in the codebase
+- **Design tokens** — colors, spacing, typography from tailwind config or design system
+- **Utilities** — helpers, hooks, services that solve similar problems
+- **Patterns** — how do similar features handle state, errors, loading, validation?
+
+```
+Existing primitives to reuse:
+- components/ui/Button.tsx — primary, secondary, destructive variants
+- components/ui/Modal.tsx — standard modal with close behavior
+- hooks/useForm.ts — form state + validation
+- lib/api.ts:fetchWithAuth() — authenticated API calls
+```
+
+**The default is REUSE, not invent.** If a component, pattern, or utility exists that does 80% of what you need, extend it — don't create a parallel implementation.
+
+**Before proposing ANY new primitive** (component, hook, utility, pattern), use `AskUserQuestion`:
+- "This feature needs X. I found similar primitive Y in the codebase. Should I: (1) Extend Y to support this case, (2) Create new primitive X, (3) Let me look for other options?"
+
+Only create new primitives when:
+1. Nothing similar exists, AND
+2. The user explicitly approves
+
+## Step 6: Create Artifacts
 
 After reading code, create concrete artifacts. **No discussion without artifacts.**
 
@@ -149,7 +175,7 @@ Frontend -> User: show success
 | Email taken | existing email | 400, email_taken |
 | Weak password | "123" | 400, weak_password |
 
-## Step 6: Early Design Review (Recommended for Medium+ Features)
+## Step 7: Early Design Review (Recommended for Medium+ Features)
 
 Before finalizing, get independent review from 1-2 agents:
 
@@ -175,7 +201,7 @@ After they complete:
 **Skip for:** Small, well-understood changes with clear patterns.
 **Use for:** New features, architectural changes, unfamiliar areas.
 
-## Step 7: Design Questions
+## Step 8: Design Questions
 
 Only AFTER creating artifacts, list genuine uncertainties. Each must:
 - Reference which artifact it affects
@@ -189,6 +215,9 @@ What you learned from web search. Key insights that inform the design.
 
 ### Codebase Audit
 Files read with line numbers. How they connect.
+
+### Existing Primitives
+Components, hooks, utilities, patterns to reuse. What each provides.
 
 ### Feature: [Name]
 
@@ -224,3 +253,5 @@ What reviewers found. What was incorporated.
 - Every UI feature needs user flow + mockups
 - Use AskUserQuestion for ambiguous decisions
 - Web search before designing — your training is stale
+- **Reuse over invent** — extend existing primitives, don't create parallel ones
+- **Ask before creating new primitives** — new components/hooks/utils need user approval
