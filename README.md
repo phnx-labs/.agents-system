@@ -62,7 +62,7 @@ Each directory has its own README explaining what lives there.
 - `versions/`, `shims/`, `repos/`, `packages/`, `agents/` — installed CLIs and resolvers
 - `sessions/`, `cron/`, `jobs/`, `runs/`, `routines/`, `swarm/`, `swarmify/`, `cloud/`, `ledger/`, `teams/`, `drive/`, `drives/`, `cache/`, `backups/`, `logs/` — runtime state
 - `secrets/`, `.environment` — machine-specific credentials and host info
-- Private skills (e.g. `skills/rush-*`, `skills/dispatch/`, `skills/proof-loop/`)
+- Private skills (whatever paths your fork's `.gitignore` lists)
 - `*.log`, `*.pid`, OS files (`.DS_Store`)
 
 Anything not in those buckets is tracked and synced.

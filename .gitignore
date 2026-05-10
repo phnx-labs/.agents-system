@@ -20,17 +20,8 @@ permissions/groups/00-local.yaml
 permissions/default.yml
 
 # Private skills (local only, not version controlled)
-skills/linkedin-writer/
-skills/x-writer/
-skills/drift-check/
-skills/growth-check/
-skills/dispatch/
-skills/proof-loop/
-skills/rush-agent-builder/
-skills/rush-analytics/
-skills/rush-product-knowledge/
-skills/rush-taste/
-skills/rush-writer/
+# Add your own private skill paths here in forks:
+#   skills/your-private-skill/
 
 # Machine-specific environment (secrets, hosts, paths)
 .environment

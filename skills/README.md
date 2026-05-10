@@ -106,7 +106,7 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 
 | Skill | What It Does |
 |-------|-------------|
-| `browser/` | Drive a browser to automate websites — defaults to OpenClaw with per-agent profile isolation. Falls back to CDP, browser-harness, or agent-browser. |
+| `browser/` | Drive a browser to automate websites — uses the built-in `agents browser` command with per-agent profile isolation over CDP. |
 | `browser-generate/` | Generate images, videos, or other content via browser-based platforms without APIs (Higgsfield, Panic, etc.). |
 | `mq/` | Query large markdown, HTML, and PDF files without reading entire documents. Probe structure first, extract surgically. |
 | `reflect/` | Recall feedback, corrections, and constraints from the current conversation before iterating. |
