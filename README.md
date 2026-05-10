@@ -1,6 +1,6 @@
 # .agents-system
 
-> The **system repo** for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli) — defines the system-level, core, built-in skills, commands, hooks, rules, MCP configs, permissions, and profiles that ship with the tool.
+> The **system repo** for [agents-cli](https://www.npmjs.com/package/@swarmify/agents-cli) — defines the system-level, core, built-in skills, commands, hooks, rules, and permissions that ship with the tool.
 
 <p align="center">
   <img src=".assets/claude.png" height="60" alt="Claude" style="margin: 0 10px;">
@@ -45,7 +45,6 @@ agents pull
   rules/           # AGENTS.md + reusable rule fragments and presets
   hooks/           # prompt preprocessing + lifecycle scripts (+ hooks.yaml)
   permissions/     # permission groups + presets for sandboxed execution
-  profiles/        # host-CLI + endpoint + model bundles (Kimi, DeepSeek, ...)
   hooks/promptcuts.yaml  # shortcut tokens expanded inline by hooks (system defaults)
   .githooks/       # pre-commit validation
 ```
@@ -85,9 +84,6 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`, wit
 | `/spawn` | Single subagent with full context |
 | `/audit` | Multi-perspective security audit |
 | `/issues` | Work with the project's issue tracker (Linear, GitHub Issues, Jira, etc.) |
-| `/image` | Generate images via the image-craft skill |
-| `/mq` | Query large docs without reading everything |
-| `/reflect` | Recall feedback and constraints before rewriting |
 | `/secrets` | Manage named bundles of environment variables (Keychain-backed) |
 | `/sessions` | Search and browse agent conversation transcripts |
 | `/teams` | Arrange agents into teams for parallel execution |
