@@ -9,12 +9,12 @@ Every PR must include a session transcript as a GitHub Gist — no exceptions.
 ### Workflow
 
 1. **Export session** — Run `agents sessions --last 50 --markdown` to capture the conversation
-2. **Create gist** — Use `gh gist create`:
+2. **Create a SECRET gist** — Use `gh gist create` *without* `--public`. Session transcripts can leak repo internals, tool output, and infra details; never publish them by default. Use `--public` only when the target repo is itself public AND you've reviewed the transcript for sensitive content.
    ```bash
    agents sessions --last 50 --markdown > /tmp/session-export.md
-   gh gist create /tmp/session-export.md --desc "Session transcript for PR" --public
+   gh gist create /tmp/session-export.md --desc "Session transcript for PR"
    ```
-3. **Attach to PR** — Add the gist URL to the PR description
+3. **Attach to PR** — Add the gist URL to the PR description. Secret gists are URL-only access — anyone with the link can view, but the gist is not indexed or discoverable.
 
 ### PR Description Format
 

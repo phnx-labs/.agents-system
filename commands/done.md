@@ -79,10 +79,10 @@ If on a feature branch:
    ```bash
    gh pr create --title "..." --body "..."
    ```
-3. Export session and attach as gist comment:
+3. Export session and attach as a SECRET gist (never `--public` by default — transcripts can leak repo internals; only use `--public` if the target repo is itself public AND you've reviewed the transcript):
    ```bash
    agents sessions --last 50 --markdown > /tmp/session-export.md
-   GIST_URL=$(gh gist create /tmp/session-export.md --desc "Session transcript for PR" --public | tail -1)
+   GIST_URL=$(gh gist create /tmp/session-export.md --desc "Session transcript for PR" | tail -1)
    gh pr comment --body "## Session Context
    [Session transcript]($GIST_URL)"
    ```

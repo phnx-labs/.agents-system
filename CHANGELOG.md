@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.2] - 2026-05-13
+
+### Security
+- **PR session gist export defaults to secret, not public** (`commands/done.md`, `rules/subrules/git-workflow.md`). Session transcripts can leak repo internals, infra details, tool output, and bundle names. The previous `--public` default published this material to github.com/<user> as anonymously-indexable content. New default omits `--public`, producing a secret (URL-only) gist. Use `--public` explicitly only when the target repo is public AND the transcript has been reviewed for sensitive content.
+
 ## [0.1.1] - 2026-05-10
 
 Public release cleanup. Streamlined commands, improved workflows, better documentation.
