@@ -71,7 +71,11 @@ for file in $STAGED; do
 
     case "$file" in
         */SKILL.md)
-            if ! result=$(validate_yaml_frontmatter "$REPO_ROOT/$file" 2>&1); then
+            frontmatter=$(sed -n '/^---$/,/^---$/p' "$REPO_ROOT/$file" | sed '1d;$d')
+            if [[ -z "$frontmatter" ]]; then
+                echo -e "${RED}✗ Missing YAML frontmatter:${NC} $file"
+                ((ERRORS++))
+            elif ! result=$(validate_yaml_frontmatter "$REPO_ROOT/$file" 2>&1); then
                 echo -e "${RED}✗ Invalid YAML frontmatter:${NC} $file"
                 echo "  $result"
                 ((ERRORS++))
