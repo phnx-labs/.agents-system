@@ -1,6 +1,8 @@
 # agents-cli rules — single default preset
 #
 # Includes all subrules from `<repo>/rules/subrules/`.
+# Linear tickets context is injected by hooks/03-linear-inject-tasks-context.sh.
+# Script/release discipline lives in the `scripts` skill.
 
 presets:
   default:
@@ -14,7 +16,5 @@ presets:
       - operational
       - conventions
       - agents-cli
-      - linear-tickets
       - parallel-teams
-      - scripts-discipline
       - tech-stack

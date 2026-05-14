@@ -1,6 +1,6 @@
 # Conventions
 
-- **Memory file:** `AGENTS.md` is the source of truth. `CLAUDE.md` and `GEMINI.md` should be symlinks to it (or copies synced by agents-cli).
-- **Project scripts:** Deployable projects keep a `scripts/` directory — see `scripts-discipline.md` for the full contract.
-- **Tickets:** Projects with a tracker (Linear, GitHub Issues, Jira) follow ticket discipline — see `linear-tickets.md`.
-- **Parallel work:** Multi-surface changes go through `agents teams` — see `parallel-teams.md`.
+- **Memory file:** `AGENTS.md` is canonical. `CLAUDE.md` and `GEMINI.md` are symlinks (or synced copies).
+- **Project scripts:** Deployable projects keep a `scripts/` directory — invoke the `scripts` skill when touching `scripts/`, `release.sh`, `build.sh`, or deploy/publish flows.
+- **Tickets:** Linear context is injected at session start by the linear hook — read it before starting work, update tickets as you go, close only with proof.
+- **Parallel work:** Multi-surface changes use `agents teams` — see `parallel-teams`.

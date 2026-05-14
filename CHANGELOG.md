@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.3] - 2026-05-13
+
+### Changed
+- **Rules ruleset tightened** to reduce compiled `CLAUDE.md`/`AGENTS.md` size. Prose trimmed across all 11 remaining subrules with no rule numbers dropped.
+- **`rules/subrules/scripts-discipline.md` moved to a skill** at `skills/scripts/SKILL.md`. Agent invokes it when touching `scripts/`, `release.sh`, `build.sh`, or deploy/publish flows instead of carrying the contract in every session.
+
+### Removed
+- **`rules/presets/`** (`cautious.md`, `minimal.md`, `proactive.md`) — `rules/rules.yaml`'s `default` preset is the only one in use.
+- **`rules/subrules/linear-tickets.md`** — `hooks/03-linear-inject-tasks-context.sh` already injects ticket context at session start; the rule was duplicative.
+- **`rules/subrules/scripts-discipline.md`** — see above (moved to skill).
+- **`rules/subrules/workflow-cautious.md`** — not referenced by any active preset.
+- **`rules/subrules/product-mindset.md`** — not referenced by any active preset.
+
+### Note
+Users with `~/.agents/rules/subrules/{linear-tickets,scripts-discipline,workflow-cautious,product-mindset}.md` overrides at the user layer still get those rules — only the system-shipped copies were removed.
+
 ## [0.1.2] - 2026-05-13
 
 ### Security
