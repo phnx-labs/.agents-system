@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4] - 2026-05-14
+
+### Changed
+- **`browser` skill restructured into multi-level subskills** — `SKILL.md` is now a router only; implementation detail moved to dedicated files.
+
+### Added
+- **`skills/browser/browser-use.md`** — full web automation reference updated to the new API (`AGENTS_BROWSER_TASK` env var, `tab add/focus/close`, `done`/`status`, `-t <tabId>` flag).
+- **`skills/browser/electron-use.md`** — Electron desktop app automation: `--browser custom --electron` attach pattern, common gotchas (stale preload, hidden windows, no new tabs, debug port not exposed), `app-skills/` routing.
+
 ## [0.1.3] - 2026-05-13
 
 ### Changed
