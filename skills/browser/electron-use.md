@@ -6,7 +6,7 @@ Attach to a running Electron app via its CDP debug port and automate it using th
 
 | Behavior | Web | Electron |
 |---|---|---|
-| Opening new tabs | `tab add <url>` | Not supported — reuses the existing window |
+| Opening new tabs | `tab add --url <url>` | Not supported — reuses the existing window |
 | Browser type flag | `chrome`, `comet`, etc. | `custom` (skips identity check) |
 | Extra profile flag | — | `--electron` required |
 | Target selection | Any new tab | Picks the visible window; skips internal Electron pages |
@@ -42,7 +42,7 @@ agents browser status    # shows "attached" (not a pid) next to the task
 ## Navigate
 
 ```bash
-agents browser navigate https://app.local/#/settings
+agents browser navigate --url https://app.local/#/settings
 ```
 
 Navigates the existing window in place. Hash-based routing works normally. There is no `tab add` in Electron mode.
@@ -53,7 +53,7 @@ Navigates the existing window in place. Hash-based routing works normally. There
 agents browser refs
 agents browser refs -t <tabId>
 agents browser click <ref>
-agents browser type  <ref> "text"
+agents browser type  <ref> --text "text"
 agents browser press Enter
 agents browser screenshot
 agents browser screenshot -o /tmp/out.png
@@ -65,14 +65,17 @@ agents browser screenshot -o /tmp/out.png
 
 ```bash
 # Discover what the app exposes
-agents browser evaluate 'Object.keys(window)'
-agents browser evaluate 'Object.keys(window.myApp || {})'
+agents browser evaluate --expression 'Object.keys(window)'
+agents browser evaluate --expression 'Object.keys(window.myApp || {})'
 
 # Call an async IPC method
-agents browser evaluate '(async () => await window.myApp.someMethod())()'
+agents browser evaluate --expression '(async () => await window.myApp.someMethod())()'
+
+# For longer scripts, load from a file (no shell-quoting hell)
+agents browser evaluate --file ./probe.js
 
 # Inspect current route
-agents browser evaluate 'location.pathname + location.hash'
+agents browser evaluate --expression 'location.pathname + location.hash'
 ```
 
 ## Target Filter — Pick a Specific Window
@@ -101,7 +104,7 @@ Quick check:
 grep -rn "contextBridge.exposeInMainWorld" <app>/src/preload.ts
 
 # What does the running renderer expose?
-agents browser evaluate 'Object.keys(window.myApp || {})'
+agents browser evaluate --expression 'Object.keys(window.myApp || {})'
 ```
 
 If source has methods the runtime doesn't, restart the process.
