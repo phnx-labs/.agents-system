@@ -12,10 +12,10 @@ agents browser profiles create my-profile -b chrome -e cdp://localhost:9222
 export AGENTS_BROWSER_TASK=$(agents browser start --profile my-profile)
 
 # Navigate and interact
-agents browser tab add https://example.com
+agents browser tab add --url https://example.com
 agents browser refs
 agents browser click <ref>
-agents browser type <ref> "hello"
+agents browser type <ref> --text "hello"
 agents browser screenshot
 agents browser done
 ```
@@ -48,11 +48,11 @@ agents browser stop          # stop without saving to history
 ## Tabs
 
 ```bash
-agents browser tab add <url>        # open URL in new tab (becomes current)
+agents browser tab add --url <url>  # open URL in new tab (becomes current)
 agents browser tabs                 # list open tabs
 agents browser tab focus <tabId>    # switch to tab (by ID, prefix, or URL substring)
 agents browser tab close [tabId]    # close specific tab, or all if omitted
-agents browser navigate <url>       # navigate current tab in place (no new tab)
+agents browser navigate --url <url> # navigate current tab in place (no new tab)
 ```
 
 ## DOM Interaction
@@ -62,10 +62,10 @@ agents browser refs                       # interactive element refs for current
 agents browser refs -t <tabId>            # refs for a specific tab
 agents browser click <ref>                # click element
 agents browser click <ref> -t <tabId>     # click in specific tab
-agents browser type  <ref> "text"         # type into element
+agents browser type  <ref> --text "text"  # type into element
 agents browser press Enter                # press key (Enter, Tab, Escape, …)
 agents browser hover <ref>                # hover over element
-agents browser scroll <deltaX> <deltaY>   # scroll page
+agents browser scroll --dx 0 --dy 1000    # scroll down 1000px (negatives scroll up/left)
 ```
 
 Refs are ephemeral — re-run `refs` after every action.
@@ -73,15 +73,16 @@ Refs are ephemeral — re-run `refs` after every action.
 ## Screenshots & Evaluation
 
 ```bash
-agents browser screenshot                      # capture current tab
-agents browser screenshot -t <tabId>           # specific tab
-agents browser screenshot -o /tmp/out.png      # save to path
+agents browser screenshot                                      # capture current tab (auto-saves under sessions/<task>/)
+agents browser screenshot -t <tabId>                           # specific tab
+agents browser screenshot -o /tmp/out.png                      # save to path
 
-agents browser evaluate "document.title"       # run JS in current tab, return result
-agents browser evaluate "..." -t <tabId>       # specific tab
+agents browser evaluate --expression "document.title"          # run JS in current tab, return result
+agents browser evaluate --expression "..." -t <tabId>          # specific tab
+agents browser evaluate --file ./script.js                     # load JS from a file (avoids shell-quoting hell)
 ```
 
-`evaluate` calls `Runtime.evaluate` with `awaitPromise: true` — async IIFEs work.
+`evaluate` calls `Runtime.evaluate` with `awaitPromise: true` — async IIFEs work. Use `--file` for anything with quotes, backticks, or multi-line content.
 
 ## Console & Errors
 
@@ -137,7 +138,7 @@ Always screenshot first — if the session is still alive in the profile, skip l
 `type` may fail on contenteditable / ProseMirror. Use evaluate:
 
 ```bash
-agents browser evaluate 'document.execCommand("insertText", false, "your text")'
+agents browser evaluate --expression 'document.execCommand("insertText", false, "your text")'
 ```
 
 ## Remote Browsers (SSH)
@@ -145,7 +146,7 @@ agents browser evaluate 'document.execCommand("insertText", false, "your text")'
 ```bash
 agents browser profiles create remote-mac -b comet -e ssh://user@hostname?port=9222
 export AGENTS_BROWSER_TASK=$(agents browser start --profile remote-mac)
-agents browser tab add https://example.com
+agents browser tab add --url https://example.com
 ```
 
 The SSH driver launches the browser on the remote host and tunnels CDP back.
@@ -154,7 +155,7 @@ The SSH driver launches the browser on the remote host and tunnels CDP back.
 
 1. **Create profile** (one-time): `agents browser profiles create …`
 2. **Start**: `export AGENTS_BROWSER_TASK=$(agents browser start --profile <name>)`
-3. **Open tab**: `agents browser tab add <url>`
+3. **Open tab**: `agents browser tab add --url <url>`
 4. **Wait** for page to load (`--state networkidle` or `--selector`)
 5. **Refs** to see clickable elements
 6. **Click / type / press** using refs
