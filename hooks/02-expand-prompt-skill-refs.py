@@ -26,6 +26,12 @@ import sys
 
 SKILL_TOKEN = re.compile(r'(?<![`\w])\$([A-Za-z][A-Za-z0-9_/-]*)')
 
+# Never descend into these directories during skill search
+_PRUNE = frozenset({
+    'node_modules', '.git', '__pycache__', '.venv', 'venv',
+    'dist', 'build', '.cache', '.tox', '.mypy_cache',
+})
+
 
 def find_skill(token: str, search_dirs: list[str]) -> str | None:
     """Return the first directory matching token (relative path or basename)."""
@@ -38,12 +44,14 @@ def find_skill(token: str, search_dirs: list[str]) -> str | None:
         if has_slash:
             # Treat token as a relative path suffix: walk and check if any path ends with it
             for root, dirs, _ in os.walk(base):
+                dirs[:] = [d for d in dirs if d not in _PRUNE]
                 rel = os.path.relpath(root, base)
                 if rel == token or rel.endswith('/' + token):
                     return root
         else:
             # Fuzzy: any directory whose basename matches
             for root, dirs, _ in os.walk(base):
+                dirs[:] = [d for d in dirs if d not in _PRUNE]
                 if os.path.basename(root) == token:
                     return root
 
