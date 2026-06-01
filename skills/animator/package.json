@@ -1,0 +1,27 @@
+{
+  "name": "remotion-shorts",
+  "version": "0.1.0",
+  "description": "Short branded animations and post-production video editing for blog/learn/social embeds.",
+  "license": "MIT",
+  "author": "Muqsit Nawaz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/muqsitnawaz/remotion-shorts.git"
+  },
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.404",
+    "@remotion/google-fonts": "^4.0.460",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "remotion": "^4.0.404"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "^5.6.0"
+  }
+}

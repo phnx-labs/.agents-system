@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.7] - 2026-06-01
+
+### Added
+- **`skills/animator`** — short branded animations + post-production video editing. Renders 4–10s Remotion compositions, plus a CLI for `compose`, `preview`, `list`, `install`. Comes with one example composition (`AgentDispatch`) and a 13-recipe `RECIPES.md` covering ffmpeg trim/speed/silence-cut/music-bed/intro-outro/downscale workflows. Brand primitives (`colors.ts`, `fonts.ts`) are starter tokens — override per project.
+- **`skills/composer`** — sister audio skill. Generates music beds, SFX, and structured arcs via ElevenLabs; masters with ffmpeg (fade-in/out, EBU R128 normalize). Emits `markers.json` sidecar so a video composition can sync hand-offs to musical section boundaries. Ships 10 canonical SFX (boot-hum, room-tone, paper-rustle, typing-soft, etc.) with an `INDEX.md` brand-fit table, plus one example spec (`release-arc.yaml`).
+
 ## [0.1.6] - 2026-05-18
 
 ### Removed

@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# animator — thin CLI for the few operations that are truly canonical.
+#
+# Everything ELSE (trim, speed, silence-cut, music-overlay, concat, crossfade,
+# music-gen via ElevenLabs) the agent writes on the fly using ffmpeg/curl/SVG.
+# Read RECIPES.md for worked examples and brand-locked patterns.
+#
+# Canonical commands:
+#   install         One-time setup: bun install + brew install ffmpeg if missing.
+#   list            Show available Remotion compositions + music beds.
+#   compose <id> [--out <path>] [--props <json>] [--frames N]
+#                   Render a registered Remotion composition. The composition
+#                   IDs and their dimensions are locked — see Root.tsx.
+#   preview <video> [--frames N] [--out <dir>]
+#                   Extract N evenly-spaced JPG keyframes so an agent can
+#                   visually inspect a render. Default 5 frames. The agent
+#                   then Reads each JPG. There is no video-watching tool.
+#
+# For ANYTHING else (cut a clip, speed it up, mix audio, generate music, etc):
+#   Read RECIPES.md and adapt the ffmpeg/curl snippet to your case.
+
+set -euo pipefail
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+OUT_DIR="${SKILL_DIR}/out"
+MUSIC_DIR="${SKILL_DIR}/music"
+
+mkdir -p "$OUT_DIR"
+
+die() { echo "animator: $*" >&2; exit 1; }
+need_ffmpeg() { command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg missing — run 'animator install'"; }
+
+cmd_install() {
+  echo "[animator] one-time setup"
+  if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "  installing ffmpeg via brew"
+    brew install ffmpeg
+  fi
+  if [ ! -d "${SKILL_DIR}/node_modules" ]; then
+    echo "  installing bun deps"
+    (cd "$SKILL_DIR" && bun install)
+  fi
+  echo "[animator] ready"
+}
+
+cmd_list() {
+  echo "Compositions (registered in src/Root.tsx — render with 'animator compose <id>'):"
+  echo "  AgentDispatch       3840x2160 / 8s   agents fanning out from a central node"
+  echo
+  echo "Music beds in ${MUSIC_DIR}:"
+  shopt -s nullglob
+  local beds=("$MUSIC_DIR"/*.mp3 "$MUSIC_DIR"/*.m4a "$MUSIC_DIR"/*.wav)
+  shopt -u nullglob
+  if [ ${#beds[@]} -gt 0 ]; then
+    for f in "${beds[@]}"; do
+      echo "  $(basename "$f")"
+    done
+  else
+    echo "  (none — generate via ElevenLabs Music API, see RECIPES.md)"
+  fi
+}
+
+cmd_compose() {
+  local id="" out="" props=""
+  local extra=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --out) out="$2"; shift 2 ;;
+      --props) props="$2"; shift 2 ;;
+      *) [ -z "$id" ] && id="$1" || extra+=("$1"); shift ;;
+    esac
+  done
+  [ -z "$id" ] && die "compose: missing id (try 'animator list')"
+  [ -z "$out" ] && out="${OUT_DIR}/${id}.mp4"
+
+  echo "[animator] rendering $id at 4K -> $out"
+  local args=(bunx remotion render src/index.ts "$id" "$out" --crf 18)
+  [ -n "$props" ] && args+=(--props="$props")
+  args+=("${extra[@]}")
+  (cd "$SKILL_DIR" && "${args[@]}")
+  echo "[animator] done: $out"
+  echo "[animator] verify with: animator preview \"$out\""
+}
+
+cmd_preview() {
+  need_ffmpeg
+  [ $# -lt 1 ] && die "preview: missing input video"
+  local input="$1"; shift
+  local frames=5 out_dir=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --frames) frames="$2"; shift 2 ;;
+      --out) out_dir="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  [ ! -f "$input" ] && die "preview: '$input' not found"
+  local base; base=$(basename "$input" .${input##*.})
+  [ -z "$out_dir" ] && out_dir="${OUT_DIR}/preview/${base}"
+  mkdir -p "$out_dir"
+  rm -f "$out_dir"/frame-*.jpg
+
+  local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$input")
+  echo "[animator] $input is ${dur}s — extracting $frames frames"
+  local i=0
+  while [ "$i" -lt "$frames" ]; do
+    local t
+    if [ "$frames" -eq 1 ]; then
+      t=$(awk -v d="$dur" 'BEGIN{print d * 0.5}')
+    else
+      t=$(awk -v d="$dur" -v i="$i" -v n="$frames" 'BEGIN{print d * (i / (n - 1)) * 0.99}')
+    fi
+    ffmpeg -y -ss "$t" -i "$input" -frames:v 1 -q:v 2 "$out_dir/frame-${i}.jpg" -loglevel error
+    echo "  frame-${i}.jpg @ ${t}s"
+    i=$((i + 1))
+  done
+  echo "[animator] preview saved: $out_dir/"
+  echo "[animator] Read each JPG to verify — you cannot watch the MP4"
+}
+
+
+main() {
+  [ $# -lt 1 ] && { sed -n '2,/^$/p' "$0" | sed 's/^# //'; exit 0; }
+  local cmd="$1"; shift
+  case "$cmd" in
+    install) cmd_install "$@" ;;
+    list) cmd_list "$@" ;;
+    compose) cmd_compose "$@" ;;
+    preview) cmd_preview "$@" ;;
+    -h|--help|help) sed -n '2,/^$/p' "$0" | sed 's/^# //'; exit 0 ;;
+    *) die "unknown: $cmd. For trim/speed/audio/etc, see RECIPES.md and write the ffmpeg yourself." ;;
+  esac
+}
+
+main "$@"

@@ -1,0 +1,862 @@
+#!/usr/bin/env bash
+# composer — audio composition CLI (ElevenLabs + ffmpeg post).
+#
+# Generates music beds, sound effects, and structured arcs via ElevenLabs;
+# chains and masters via ffmpeg. Writes every generation to takes/ with a
+# timestamp suffix (NEVER overwrites). A take is promoted to canonical via
+# `composer pick`, which copies it to canonical/ and chmods it read-only.
+#
+# Canonical commands:
+#   list                    Show canonical, takes, archive — for music and sfx.
+#   music <slug> --mood "<prompt>" [--duration <sec>]
+#                           Generate a music bed via ElevenLabs /v1/music.
+#                           Writes music/takes/<slug>--<ts>.mp3.
+#                           Duration clamped to 3..600 seconds.
+#   sfx <slug> --text "<prompt>" [--duration <sec>] [--loop]
+#                           Generate a sound effect via /v1/sound-generation.
+#                           Writes sfx/takes/<slug>--<ts>.mp3.
+#                           Duration clamped to 0.5..30 seconds.
+#                           --loop produces a seamlessly loopable clip.
+#   score <slug> --spec <spec.yaml>
+#                           Compose a structured arc via ElevenLabs
+#                           composition_plan. Single generation, named sections
+#                           at known timestamps. Writes:
+#                             music/takes/<slug>--<ts>.mp3
+#                             music/takes/<slug>--<ts>.markers.json
+#                             music/takes/<slug>--<ts>.plan.json
+#                           markers.json drives video sync.
+#   chain <out.mp3> <in1.mp3> <in2.mp3> [...] [--crossfade <sec>]
+#                           Concat 2+ audio clips with crossfade between each
+#                           pair. Default 1.5s tri/tri.
+#   master <in.mp3> [<out.mp3>] [--fade-in <s>] [--fade-out <s>] [--lufs <db>]
+#                           fade-in + fade-out + EBU R128 normalize. Defaults:
+#                           fade-in 1.5, fade-out 2.5, target -16 LUFS. If
+#                           <out.mp3> is omitted, derives a take filename.
+#   probe <audio> [--by-section]
+#                           Analyze an audio file with ffmpeg. Emits structured
+#                           JSON: loudness (LUFS, LRA, true peak), levels
+#                           (RMS peak/mean, peak dB, noise floor), density
+#                           (silence ratio + count at -40/-30/-20 dB).
+#                           --by-section requires a sibling .markers.json and
+#                           probes each section separately — use to verify
+#                           a generated score actually delivered the arc.
+#                           Use BEFORE generating to-match: probe the
+#                           reference, then write a spec tuned to it.
+#   peaks <audio> [--section <name>] [--window <sec>] [--markers <path>]
+#                           Find peak entrance time(s) per section. Uses
+#                           astats=reset=<window> (default 50ms) to get
+#                           RMS-over-time, computes baseline from each
+#                           section's first 250ms, finds first window >2dB
+#                           above baseline = peak entrance. Reports drift
+#                           from section start in ms.
+#                           If --section omitted: all sections in the
+#                           sibling .markers.json (or whole file if none).
+#   align <audio> --section <name> [--to-time <sec>] [--markers <path>]
+#                           Surgical trim: shift the named section's content
+#                           so its peak entrance lands at the section's start
+#                           time (or --to-time if specified). Trims leading
+#                           drift, pads matching silence at the tail so total
+#                           duration is preserved. Writes a new take to
+#                           takes/<base>-aligned--<ts>.mp3.
+#   pick <take-slug>        Promote a take to canonical:
+#                             music/takes/<take-slug>.mp3 -> music/canonical/<base>.mp3
+#                           or sfx/takes/<take-slug>.mp3 -> sfx/canonical/<base>.mp3.
+#                           <base> is the slug stem (everything before '--').
+#                           A prior canonical with the same base is moved to
+#                           _archive/ with a timestamp so nothing is lost.
+#                           The new canonical is chmod 444 (read-only).
+#
+# Spec format (YAML): see specs/release-arc.yaml.
+# For video editing, ffmpeg-overlay, Remotion compositions: use the sibling animator skill.
+
+set -euo pipefail
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MUSIC_DIR="${SKILL_DIR}/music"
+SFX_DIR="${SKILL_DIR}/sfx"
+SPECS_DIR="${SKILL_DIR}/specs"
+
+mkdir -p \
+  "${MUSIC_DIR}/takes" "${MUSIC_DIR}/canonical" "${MUSIC_DIR}/_archive" \
+  "${SFX_DIR}/takes" "${SFX_DIR}/canonical" "${SFX_DIR}/_archive"
+
+die() { echo "composer: $*" >&2; exit 1; }
+need_ffmpeg() { command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg missing — install with 'brew install ffmpeg'"; }
+
+_timestamp() { date +%Y%m%d-%H%M%S; }
+_json_escape() { python3 -c 'import json,sys; sys.stdout.write(json.dumps(sys.stdin.read()))'; }
+_clamp_num() { awk -v v="$1" -v lo="$2" -v hi="$3" 'BEGIN{ if (v<lo) v=lo; if (v>hi) v=hi; print v }'; }
+
+# Split a take filename like "release-arc-v1--20260515-145600" into the base slug "release-arc-v1".
+_base_slug() {
+  local s="$1"
+  # strip extension if present, then split on '--'
+  s="${s%.mp3}"; s="${s%.markers.json}"; s="${s%.plan.json}"
+  echo "${s%%--*}"
+}
+
+# Print a fixed-width table row for `list`.
+_row() { printf "  %-46s %8s   %s\n" "$1" "$2" "$3"; }
+
+cmd_list() {
+  echo "Music — canonical (locked, ship-ready):"
+  local found=0
+  shopt -s nullglob
+  for f in "${MUSIC_DIR}/canonical"/*.mp3; do
+    local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$f" 2>/dev/null || echo "?")
+    local has_markers=""; [ -f "${f%.mp3}.markers.json" ] && has_markers="+ markers"
+    _row "$(basename "$f")" "${dur}s" "$has_markers"
+    found=1
+  done
+  [ "$found" -eq 0 ] && echo "  (none — pick a take with 'composer pick <take-slug>')"
+
+  echo
+  echo "Music — takes (regenerated, awaiting pick):"
+  found=0
+  for f in "${MUSIC_DIR}/takes"/*.mp3; do
+    local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$f" 2>/dev/null || echo "?")
+    _row "$(basename "${f%.mp3}")" "${dur}s" ""
+    found=1
+  done
+  [ "$found" -eq 0 ] && echo "  (none — generate with 'composer score' or 'composer music')"
+
+  echo
+  echo "SFX — canonical:"
+  found=0
+  for f in "${SFX_DIR}/canonical"/*.mp3; do
+    local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$f" 2>/dev/null || echo "?")
+    _row "$(basename "$f")" "${dur}s" ""
+    found=1
+  done
+  [ "$found" -eq 0 ] && echo "  (none)"
+
+  echo
+  echo "SFX — takes:"
+  found=0
+  for f in "${SFX_DIR}/takes"/*.mp3; do
+    local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$f" 2>/dev/null || echo "?")
+    _row "$(basename "${f%.mp3}")" "${dur}s" ""
+    found=1
+  done
+  [ "$found" -eq 0 ] && echo "  (none)"
+
+  echo
+  echo "Specs in ${SPECS_DIR}:"
+  found=0
+  for f in "${SPECS_DIR}"/*.yaml "${SPECS_DIR}"/*.json; do
+    echo "  $(basename "$f")"
+    found=1
+  done
+  [ "$found" -eq 0 ] && echo "  (none)"
+  shopt -u nullglob
+  return 0
+}
+
+cmd_music() {
+  local slug="" mood="" duration="20" model="music_v1"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --mood) mood="$2"; shift 2 ;;
+      --duration) duration="$2"; shift 2 ;;
+      --model) model="$2"; shift 2 ;;
+      *) [ -z "$slug" ] && slug="$1" || die "music: unexpected arg '$1'"; shift ;;
+    esac
+  done
+  [ -z "$slug" ] && die "music: missing <slug>"
+  [ -z "$mood" ] && die "music: missing --mood (describe instrumentation + tempo + what NOT to include)"
+  duration=$(_clamp_num "$duration" 3 600)
+  local ms; ms=$(awk -v d="$duration" 'BEGIN{ printf "%d", d*1000 }')
+  local ts; ts=$(_timestamp)
+  local out="${MUSIC_DIR}/takes/${slug}--${ts}.mp3"
+  local prompt_json model_json
+  prompt_json=$(printf %s "$mood" | _json_escape)
+  model_json=$(printf %s "$model" | _json_escape)
+  local body="{\"prompt\":${prompt_json},\"music_length_ms\":${ms},\"model_id\":${model_json}}"
+  echo "[composer] /v1/music ${duration}s '$mood' -> ${out}"
+  local code
+  code=$(agents secrets exec elevenlabs -- bash -c "curl -sS -X POST 'https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128' \
+    -H \"xi-api-key: \$ELEVENLABS_API_KEY\" \
+    -H 'Content-Type: application/json' \
+    -d '$(printf %s "$body" | sed "s/'/'\\\\''/g")' \
+    -o '$out' -w '%{http_code}'")
+  if [ "$code" != "200" ]; then
+    local detail; detail=$(head -c 400 "$out" 2>/dev/null || true)
+    rm -f "$out"
+    die "music gen failed (HTTP $code): $detail"
+  fi
+  local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$out")
+  echo "[composer] ok ${dur}s (take: $(basename "${out%.mp3}"))"
+}
+
+cmd_sfx() {
+  local slug="" text="" duration="2" loop="false" influence="0.4"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --text) text="$2"; shift 2 ;;
+      --duration) duration="$2"; shift 2 ;;
+      --loop) loop="true"; shift ;;
+      --influence) influence="$2"; shift 2 ;;
+      *) [ -z "$slug" ] && slug="$1" || die "sfx: unexpected arg '$1'"; shift ;;
+    esac
+  done
+  [ -z "$slug" ] && die "sfx: missing <slug>"
+  [ -z "$text" ] && die "sfx: missing --text"
+  duration=$(_clamp_num "$duration" 0.5 30)
+  local ts; ts=$(_timestamp)
+  local out="${SFX_DIR}/takes/${slug}--${ts}.mp3"
+  local text_json; text_json=$(printf %s "$text" | _json_escape)
+  local body="{\"text\":${text_json},\"duration_seconds\":${duration},\"loop\":${loop},\"prompt_influence\":${influence},\"model_id\":\"eleven_text_to_sound_v2\"}"
+  echo "[composer] /v1/sound-generation ${duration}s loop=${loop} '$text' -> ${out}"
+  local code
+  code=$(agents secrets exec elevenlabs -- bash -c "curl -sS -X POST 'https://api.elevenlabs.io/v1/sound-generation?output_format=mp3_44100_128' \
+    -H \"xi-api-key: \$ELEVENLABS_API_KEY\" \
+    -H 'Content-Type: application/json' \
+    -d '$(printf %s "$body" | sed "s/'/'\\\\''/g")' \
+    -o '$out' -w '%{http_code}'")
+  if [ "$code" != "200" ]; then
+    local detail; detail=$(head -c 400 "$out" 2>/dev/null || true)
+    rm -f "$out"
+    die "sfx gen failed (HTTP $code): $detail"
+  fi
+  local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$out")
+  echo "[composer] ok ${dur}s (take: $(basename "${out%.mp3}"))"
+}
+
+cmd_score() {
+  local slug="" spec=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --spec) spec="$2"; shift 2 ;;
+      *) [ -z "$slug" ] && slug="$1" || die "score: unexpected arg '$1'"; shift ;;
+    esac
+  done
+  [ -z "$slug" ] && die "score: missing <slug>"
+  [ -z "$spec" ] && die "score: missing --spec <path.yaml>"
+  [ -f "$spec" ] || die "score: spec '$spec' not found"
+  local ts; ts=$(_timestamp)
+  local out_mp3="${MUSIC_DIR}/takes/${slug}--${ts}.mp3"
+  local out_markers="${MUSIC_DIR}/takes/${slug}--${ts}.markers.json"
+  local out_plan="${MUSIC_DIR}/takes/${slug}--${ts}.plan.json"
+  local out_err="${MUSIC_DIR}/takes/${slug}--${ts}.err.json"
+
+  python3 - "$spec" "$out_plan" "$out_markers" <<'PY' || die "score: failed to build composition_plan from spec"
+import sys, json, yaml
+spec_path, out_plan, out_markers = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(spec_path) as f:
+    text = f.read()
+try:
+    spec = json.loads(text)
+except Exception:
+    spec = yaml.safe_load(text)
+if 'sections' not in spec or not isinstance(spec['sections'], list) or not spec['sections']:
+    print("spec missing 'sections' array", file=sys.stderr); sys.exit(2)
+g = spec.get('global') or {}
+plan = {
+    'positive_global_styles': list(g.get('positive') or []),
+    'negative_global_styles': list(g.get('negative') or []),
+    'sections': []
+}
+markers = []
+cursor = 0
+total_ms = 0
+for idx, sec in enumerate(spec['sections']):
+    name = sec.get('name') or f'section-{idx}'
+    d = int(sec.get('duration_ms') or 0)
+    if d < 3000 or d > 120000:
+        print(f"section '{name}' duration_ms={d} out of [3000,120000]", file=sys.stderr); sys.exit(3)
+    plan['sections'].append({
+        'section_name': name,
+        'positive_local_styles': list(sec.get('positive') or []),
+        'negative_local_styles': list(sec.get('negative') or []),
+        'duration_ms': d,
+        'lines': sec.get('lines') or [],
+    })
+    markers.append({'name': name, 'start_ms': cursor, 'end_ms': cursor + d, 'duration_ms': d})
+    cursor += d
+    total_ms += d
+with open(out_plan, 'w') as f:
+    json.dump({'composition_plan': plan, 'model_id': 'music_v1'}, f, indent=2)
+with open(out_markers, 'w') as f:
+    json.dump({'total_ms': total_ms, 'sections': markers}, f, indent=2)
+print(f"[score] {len(plan['sections'])} sections, total {total_ms}ms ({total_ms/1000:.1f}s)")
+PY
+
+  local total_s; total_s=$(python3 -c "import json; d=json.load(open('$out_markers')); print(d['total_ms']/1000)")
+  echo "[composer] /v1/music composition_plan -> $(basename "${out_mp3%.mp3}") (${total_s}s)"
+  local code
+  code=$(agents secrets exec elevenlabs -- bash -c "curl -sS -X POST 'https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128' \
+    -H \"xi-api-key: \$ELEVENLABS_API_KEY\" \
+    -H 'Content-Type: application/json' \
+    -d @'$out_plan' \
+    -o '$out_mp3' -w '%{http_code}'")
+  if [ "$code" != "200" ]; then
+    mv "$out_mp3" "$out_err" 2>/dev/null || true
+    local detail; detail=$(head -c 600 "$out_err" 2>/dev/null || true)
+    die "score gen failed (HTTP $code): $detail"
+  fi
+  local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$out_mp3")
+  echo "[composer] ok ${dur}s"
+  python3 -c "import json; d=json.load(open('$out_markers'));
+print('  sections:')
+[print(f'    {s[\"name\"]:<10} {s[\"start_ms\"]/1000:>6.2f}s -> {s[\"end_ms\"]/1000:>6.2f}s  ({s[\"duration_ms\"]/1000:.1f}s)') for s in d['sections']]"
+  echo "[composer] pick this take with: composer pick $(basename "${out_mp3%.mp3}")"
+}
+
+cmd_chain() {
+  need_ffmpeg
+  local crossfade="1.5" out=""
+  local inputs=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --crossfade) crossfade="$2"; shift 2 ;;
+      *) if [ -z "$out" ]; then out="$1"; else inputs+=("$1"); fi; shift ;;
+    esac
+  done
+  [ -z "$out" ] && die "chain: missing <out.mp3>"
+  [ "${#inputs[@]}" -lt 2 ] && die "chain: need at least 2 inputs (got ${#inputs[@]})"
+  for f in "${inputs[@]}"; do [ -f "$f" ] || die "chain: '$f' not found"; done
+  mkdir -p "$(dirname "$out")"
+  local args=()
+  for f in "${inputs[@]}"; do args+=(-i "$f"); done
+  local graph="" prev="0:a" n="${#inputs[@]}"
+  for ((j=1; j<n; j++)); do
+    local label="a$((j-1))$j"
+    graph+="[${prev}][${j}:a]acrossfade=d=${crossfade}:c1=tri:c2=tri[${label}];"
+    prev="${label}"
+  done
+  graph="${graph%;}"
+  echo "[composer] chain ${n} clips, crossfade ${crossfade}s -> $out"
+  set +e
+  ffmpeg -hide_banner -nostats -loglevel error -y "${args[@]}" -filter_complex "$graph" -map "[${prev}]" -c:a libmp3lame -b:a 192k "$out" 2>&1 | grep -vE 'frames left in the queue|Conversion failed|inadequate AVFrame plane padding|Error submitting audio frame|Error encoding a frame|Task finished with error code|Terminating thread with return code' || true
+  set -e
+  [ -f "$out" ] || die "chain: output missing"
+  local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$out")
+  echo "[composer] ok ${dur}s"
+}
+
+cmd_master() {
+  need_ffmpeg
+  local fadein="1.5" fadeout="2.5" lufs="-16"
+  local in="" out=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --fade-in) fadein="$2"; shift 2 ;;
+      --fade-out) fadeout="$2"; shift 2 ;;
+      --lufs) lufs="$2"; shift 2 ;;
+      *) if [ -z "$in" ]; then in="$1"; elif [ -z "$out" ]; then out="$1"; else die "master: extra arg '$1'"; fi; shift ;;
+    esac
+  done
+  [ -z "$in" ] && die "master: missing <in.mp3>"
+  [ -f "$in" ] || die "master: '$in' not found"
+  if [ -z "$out" ]; then
+    # Derive a take filename so we never overwrite.
+    local base; base=$(basename "${in%.mp3}")
+    local stem="${base%%--*}"
+    local ts; ts=$(_timestamp)
+    # If the source itself was a take, slot under takes/. Otherwise just sibling.
+    if [[ "$in" == *"/takes/"* ]]; then
+      out="${MUSIC_DIR}/takes/${stem}-mastered--${ts}.mp3"
+    else
+      out="${MUSIC_DIR}/takes/${stem}-mastered--${ts}.mp3"
+    fi
+  fi
+  local dur_in; dur_in=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$in")
+  local fadeout_start; fadeout_start=$(awk -v d="$dur_in" -v f="$fadeout" 'BEGIN{ s=d-f; if (s<0) s=0; print s }')
+  mkdir -p "$(dirname "$out")"
+  echo "[composer] master ${in} -> ${out} (fade-in ${fadein}s, fade-out ${fadeout}s @ ${fadeout_start}s, target ${lufs} LUFS)"
+  set +e
+  ffmpeg -hide_banner -nostats -loglevel error -y -i "$in" \
+    -af "afade=t=in:st=0:d=${fadein},afade=t=out:st=${fadeout_start}:d=${fadeout},loudnorm=I=${lufs}:TP=-1.5:LRA=11" \
+    -c:a libmp3lame -b:a 192k "$out" 2>&1 | grep -vE 'frames left in the queue|Conversion failed|inadequate AVFrame plane padding|Error submitting audio frame|Error encoding a frame|Task finished with error code|Terminating thread with return code' || true
+  set -e
+  [ -f "$out" ] || die "master: output missing"
+  local dur; dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$out")
+  echo "[composer] ok ${dur}s (take: $(basename "${out%.mp3}"))"
+}
+
+cmd_probe() {
+  need_ffmpeg
+  local audio="" by_section="false"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --by-section) by_section="true"; shift ;;
+      *) [ -z "$audio" ] && audio="$1" || die "probe: unexpected arg '$1'"; shift ;;
+    esac
+  done
+  [ -z "$audio" ] && die "probe: missing <audio>"
+  [ -f "$audio" ] || die "probe: '$audio' not found"
+
+  # Single python3 driver: runs ffmpeg ebur128 + astats + silencedetect (at
+  # 3 thresholds), parses the output, and writes a structured JSON blob to
+  # stdout. If --by-section AND a sibling .markers.json exists, also slice
+  # the audio per section and emit a per-section snapshot — the agent can
+  # then verify the spec actually delivered the promised arc.
+  python3 - "$audio" "$by_section" <<'PY'
+import sys, subprocess, re, json, os, tempfile, shutil
+
+audio = sys.argv[1]
+by_section = sys.argv[2] == "true"
+
+def run(cmd):
+    return subprocess.run(cmd, capture_output=True, text=True).stderr
+
+def ffprobe_dur(path):
+    out = subprocess.run(
+        ["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",path],
+        capture_output=True, text=True).stdout.strip()
+    try: return float(out)
+    except: return None
+
+def parse_ebur128(stderr):
+    m = {}
+    for line in stderr.splitlines():
+        s = line.strip()
+        if s.startswith("I:"):    m["integrated_lufs"] = float(s.split()[1])
+        elif s.startswith("LRA:") and "low" not in s and "high" not in s:
+            m["lra"] = float(s.split()[1])
+        elif s.startswith("LRA low:"):  m["lra_low"]  = float(s.split()[2])
+        elif s.startswith("LRA high:"): m["lra_high"] = float(s.split()[2])
+        elif s.startswith("Peak:"):
+            try: m["true_peak_dbfs"] = float(s.split()[1])
+            except: pass
+    return m
+
+def parse_astats(stderr):
+    m = {}
+    for line in stderr.splitlines():
+        s = line.strip()
+        # ffmpeg 8.x emits "Peak level dB: -1.749312" once after the Overall section
+        if "Peak level dB:" in s:    m["peak_db"] = float(s.split(":")[1].strip())
+        elif "RMS level dB:" in s:   m["rms_mean_db"] = float(s.split(":")[1].strip())
+        elif "RMS peak dB:" in s:    m["rms_peak_db"] = float(s.split(":")[1].strip())
+        elif "Noise floor dB:" in s: m["noise_floor_db"] = float(s.split(":")[1].strip())
+        elif "Dynamic range:" in s:  m["dynamic_range_db"] = float(s.split(":")[1].strip())
+        elif "Flat factor:" in s:    m["flat_factor"] = float(s.split(":")[1].strip())
+        elif "Number of samples:" in s:
+            try: m["sample_count"] = int(float(s.split(":")[1].strip()))
+            except: pass
+    return m
+
+def parse_silence(stderr, threshold_db):
+    # silence_start / silence_end pairs
+    silences = []
+    cur_start = None
+    for line in stderr.splitlines():
+        m1 = re.search(r"silence_start:\s*(-?[0-9.]+)", line)
+        m2 = re.search(r"silence_end:\s*(-?[0-9.]+)\s*\|\s*silence_duration:\s*(-?[0-9.]+)", line)
+        if m1: cur_start = float(m1.group(1))
+        if m2 and cur_start is not None:
+            silences.append({"start": cur_start, "end": float(m2.group(1)), "duration": float(m2.group(2))})
+            cur_start = None
+    return silences
+
+def probe_slice(path, start=None, end=None):
+    # If start/end provided, create a sliced temp file. Otherwise probe directly.
+    slice_path = path
+    tmpdir = None
+    if start is not None and end is not None:
+        tmpdir = tempfile.mkdtemp()
+        slice_path = os.path.join(tmpdir, "slice.wav")
+        subprocess.run(
+            ["ffmpeg","-hide_banner","-loglevel","error","-y","-ss",str(start),"-to",str(end),
+             "-i",path,"-c:a","pcm_s16le",slice_path],
+            check=False, capture_output=True)
+    try:
+        dur = ffprobe_dur(slice_path)
+        # ebur128
+        e_err = run(["ffmpeg","-hide_banner","-nostats","-i",slice_path,
+                     "-af","ebur128=peak=true","-f","null","-"])
+        eb = parse_ebur128(e_err)
+        # astats
+        a_err = run(["ffmpeg","-hide_banner","-nostats","-i",slice_path,
+                     "-af","astats=metadata=1:reset=0,ametadata=mode=print:key=lavfi.astats.Overall",
+                     "-f","null","-"])
+        a = parse_astats(a_err)
+        # silencedetect at three thresholds for a density curve
+        density = {}
+        for th in (-40, -30, -20):
+            s_err = run(["ffmpeg","-hide_banner","-nostats","-i",slice_path,
+                         "-af",f"silencedetect=noise={th}dB:d=0.25","-f","null","-"])
+            silences = parse_silence(s_err, th)
+            total_silence = sum(s["duration"] for s in silences)
+            density[f"silence_ratio_at_{th}dB"] = round(total_silence / dur, 3) if dur else None
+            density[f"silence_count_at_{th}dB"] = len(silences)
+        return {
+            "duration_s": round(dur, 3) if dur else None,
+            "loudness": eb,
+            "levels": a,
+            "density": density,
+        }
+    finally:
+        if tmpdir: shutil.rmtree(tmpdir, ignore_errors=True)
+
+result = {
+    "file": audio,
+    "overall": probe_slice(audio),
+}
+
+if by_section:
+    # Look for a sibling .markers.json
+    base, _ = os.path.splitext(audio)
+    markers_path = base + ".markers.json"
+    if os.path.exists(markers_path):
+        with open(markers_path) as f:
+            markers = json.load(f)
+        result["sections"] = []
+        for sec in markers.get("sections", []):
+            s = sec["start_ms"] / 1000.0
+            e = sec["end_ms"] / 1000.0
+            snap = probe_slice(audio, start=s, end=e)
+            snap["name"] = sec["name"]
+            snap["start_s"] = s
+            snap["end_s"] = e
+            result["sections"].append(snap)
+    else:
+        result["sections_note"] = f"no markers file at {markers_path} — re-run without --by-section, or provide a sibling .markers.json"
+
+def sanitize(o):
+    import math
+    if isinstance(o, float):
+        if math.isnan(o) or math.isinf(o): return None
+        return o
+    if isinstance(o, dict): return {k: sanitize(v) for k, v in o.items()}
+    if isinstance(o, list): return [sanitize(v) for v in o]
+    return o
+
+print(json.dumps(sanitize(result), indent=2))
+PY
+}
+
+cmd_pick() {
+  [ $# -lt 1 ] && die "pick: missing <take-slug>  (e.g. 'release-arc-v1--20260515-145600')"
+  local take_slug="$1"
+  # Locate the take across music/takes and sfx/takes
+  local src=""
+  local kind=""
+  if [ -f "${MUSIC_DIR}/takes/${take_slug}.mp3" ]; then
+    src="${MUSIC_DIR}/takes/${take_slug}.mp3"; kind="music"
+  elif [ -f "${SFX_DIR}/takes/${take_slug}.mp3" ]; then
+    src="${SFX_DIR}/takes/${take_slug}.mp3"; kind="sfx"
+  else
+    die "pick: take '${take_slug}.mp3' not found in music/takes/ or sfx/takes/"
+  fi
+  local base; base=$(_base_slug "$take_slug")
+  local canon_dir="${SKILL_DIR}/${kind}/canonical"
+  local archive_dir="${SKILL_DIR}/${kind}/_archive"
+  local canon="${canon_dir}/${base}.mp3"
+  # If an existing canonical exists, archive it with a timestamp.
+  if [ -f "$canon" ]; then
+    chmod u+w "$canon" 2>/dev/null || true
+    local ts; ts=$(_timestamp)
+    local archived="${archive_dir}/${base}--prev-canonical-${ts}.mp3"
+    mv "$canon" "$archived"
+    # Also archive sidecars if present.
+    [ -f "${canon%.mp3}.markers.json" ] && mv "${canon%.mp3}.markers.json" "${archived%.mp3}.markers.json"
+    [ -f "${canon%.mp3}.plan.json" ] && mv "${canon%.mp3}.plan.json" "${archived%.mp3}.plan.json"
+    echo "[composer] archived prior canonical -> $(basename "$archived")"
+  fi
+  cp "$src" "$canon"
+  # Copy sidecars (markers, plan) if they exist alongside the take.
+  local src_markers="${MUSIC_DIR}/takes/${take_slug}.markers.json"
+  local src_plan="${MUSIC_DIR}/takes/${take_slug}.plan.json"
+  [ -f "$src_markers" ] && cp "$src_markers" "${canon%.mp3}.markers.json"
+  [ -f "$src_plan" ] && cp "$src_plan" "${canon%.mp3}.plan.json"
+  chmod 444 "$canon"
+  [ -f "${canon%.mp3}.markers.json" ] && chmod 444 "${canon%.mp3}.markers.json"
+  [ -f "${canon%.mp3}.plan.json" ] && chmod 444 "${canon%.mp3}.plan.json"
+  echo "[composer] picked ${kind}/canonical/${base}.mp3 (locked read-only)"
+  [ -f "${canon%.mp3}.markers.json" ] && echo "[composer]   + ${base}.markers.json (for video sync)"
+}
+
+# Find a sibling markers.json given an audio path, with suffix-stripping
+# fallbacks (so mastered/synced/aligned/etc takes can still locate the
+# original generation's markers).
+_find_markers() {
+  local audio="$1"
+  local explicit="${2:-}"
+  if [ -n "$explicit" ]; then
+    [ -f "$explicit" ] || { echo "" ; return 0; }
+    echo "$explicit"; return 0
+  fi
+  local stem="${audio%.mp3}"
+  # Direct sibling
+  [ -f "${stem}.markers.json" ] && { echo "${stem}.markers.json"; return 0; }
+  # Strip trailing -mastered / -synced / -aligned suffix groups
+  local base="$(basename "$stem")"
+  local dir="$(dirname "$audio")"
+  # Walk back: strip one '-<word>' suffix at a time until a markers file is found
+  while [[ "$base" == *-* ]]; do
+    base="${base%-*}"
+    if [ -f "${dir}/${base}.markers.json" ]; then
+      echo "${dir}/${base}.markers.json"; return 0
+    fi
+    # Also try truncating any "--<timestamp>" off if present
+    local sans_ts="${base%%--*}"
+    if [ "$sans_ts" != "$base" ]; then
+      # Try matching by glob for the original timestamped take
+      local match
+      match=$(ls "${dir}/${sans_ts}--"*.markers.json 2>/dev/null | head -1 || true)
+      if [ -n "$match" ]; then echo "$match"; return 0; fi
+    fi
+  done
+  echo ""
+}
+
+cmd_peaks() {
+  need_ffmpeg
+  local audio="" section="" window="0.05" markers_arg=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --section) section="$2"; shift 2 ;;
+      --window) window="$2"; shift 2 ;;
+      --markers) markers_arg="$2"; shift 2 ;;
+      *) [ -z "$audio" ] && audio="$1" || die "peaks: unexpected arg '$1'"; shift ;;
+    esac
+  done
+  [ -z "$audio" ] && die "peaks: missing <audio>"
+  [ -f "$audio" ] || die "peaks: '$audio' not found"
+  local markers; markers=$(_find_markers "$audio" "$markers_arg")
+
+  python3 - "$audio" "$section" "$window" "$markers" <<'PY'
+import sys, subprocess, re, json, os, tempfile, shutil, math
+
+audio, section_filter, window, markers_path = sys.argv[1], sys.argv[2], float(sys.argv[3]), sys.argv[4]
+
+def run(cmd):
+    return subprocess.run(cmd, capture_output=True, text=True).stderr
+
+def ffprobe_dur(path):
+    out = subprocess.run(
+        ["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",path],
+        capture_output=True, text=True).stdout.strip()
+    try: return float(out)
+    except: return None
+
+def rms_curve(path, start=None, end=None, window=0.05):
+    """Return list of (pts_time, rms_db) within optional [start,end] window."""
+    tmpdir = tempfile.mkdtemp()
+    try:
+        meta_path = os.path.join(tmpdir, "rms.txt")
+        cmd = ["ffmpeg","-hide_banner","-loglevel","error","-y"]
+        if start is not None: cmd += ["-ss", str(start)]
+        if end is not None:   cmd += ["-to", str(end)]
+        cmd += ["-i", path,
+                "-af", f"astats=metadata=1:reset={window},ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file={meta_path}",
+                "-f", "null", "-"]
+        subprocess.run(cmd, capture_output=True)
+        events = []
+        cur_t = None
+        with open(meta_path) as f:
+            for line in f:
+                m = re.match(r'frame:.*pts_time:([0-9.]+)', line)
+                if m: cur_t = float(m.group(1)); continue
+                m = re.match(r'lavfi.astats.Overall.RMS_level=(-?[0-9.eE+-]+|-?inf)', line)
+                if m and cur_t is not None:
+                    raw = m.group(1)
+                    if raw in ('inf','-inf'): continue
+                    try: events.append((cur_t, float(raw)))
+                    except: pass
+                    cur_t = None
+        return events
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+def analyze_window(events, baseline_window=0.25, jump_db=2.0):
+    """Find peak entrance (first window > baseline + jump_db) and absolute peak."""
+    if not events:
+        return None
+    # Baseline from first <baseline_window> seconds
+    baseline_samples = [db for t, db in events if t <= baseline_window]
+    if not baseline_samples:
+        baseline_samples = [events[0][1]]
+    baseline = sum(baseline_samples) / len(baseline_samples)
+    threshold = baseline + jump_db
+    entrance_t = None
+    for t, db in events:
+        if t > baseline_window and db > threshold:
+            entrance_t = t
+            break
+    peak_t, peak_db = max(events, key=lambda e: e[1])
+    return {
+        "baseline_rms_db": round(baseline, 2),
+        "entrance_threshold_db": round(threshold, 2),
+        "peak_entrance_offset_s": round(entrance_t, 3) if entrance_t is not None else None,
+        "peak_entrance_offset_ms": int(entrance_t * 1000) if entrance_t is not None else None,
+        "peak_max_rms_db": round(peak_db, 2),
+        "peak_max_offset_s": round(peak_t, 3),
+    }
+
+result = {"file": audio, "window_s": window}
+markers = None
+if markers_path and os.path.exists(markers_path):
+    with open(markers_path) as f:
+        markers = json.load(f)
+    result["markers"] = markers_path
+
+sections_out = []
+if markers:
+    for sec in markers.get("sections", []):
+        if section_filter and sec["name"] != section_filter:
+            continue
+        s, e = sec["start_ms"] / 1000.0, sec["end_ms"] / 1000.0
+        events = rms_curve(audio, start=s, end=e, window=window)
+        ana = analyze_window(events) or {}
+        ana["name"] = sec["name"]
+        ana["start_s"] = s
+        ana["end_s"] = e
+        # Absolute timestamps (for caller convenience)
+        if ana.get("peak_entrance_offset_s") is not None:
+            ana["peak_entrance_abs_s"] = round(s + ana["peak_entrance_offset_s"], 3)
+        if ana.get("peak_max_offset_s") is not None:
+            ana["peak_max_abs_s"] = round(s + ana["peak_max_offset_s"], 3)
+        sections_out.append(ana)
+else:
+    # Whole-file mode
+    dur = ffprobe_dur(audio)
+    events = rms_curve(audio, window=window)
+    ana = analyze_window(events) or {}
+    ana["name"] = "whole"
+    ana["start_s"] = 0.0
+    ana["end_s"] = round(dur, 3) if dur else None
+    sections_out.append(ana)
+result["sections"] = sections_out
+print(json.dumps(result, indent=2))
+PY
+}
+
+cmd_align() {
+  need_ffmpeg
+  local audio="" section="" to_time="" markers_arg="" force="false"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --section) section="$2"; shift 2 ;;
+      --to-time) to_time="$2"; shift 2 ;;
+      --markers) markers_arg="$2"; shift 2 ;;
+      --force) force="true"; shift ;;
+      *) [ -z "$audio" ] && audio="$1" || die "align: unexpected arg '$1'"; shift ;;
+    esac
+  done
+  [ -z "$audio" ] && die "align: missing <audio>"
+  [ -f "$audio" ] || die "align: '$audio' not found"
+  [ -z "$section" ] && die "align: missing --section <name>"
+  local markers; markers=$(_find_markers "$audio" "$markers_arg")
+  [ -z "$markers" ] && die "align: no sibling .markers.json found; pass --markers <path>"
+
+  # Resolve section boundaries from markers + measure drift via cmd_peaks logic.
+  # Then build the surgical-trim filter graph.
+  local ts; ts=$(_timestamp)
+  local base; base=$(basename "${audio%.mp3}")
+  local stem="${base%%-aligned*}"
+  local out="${MUSIC_DIR}/takes/${stem}-aligned--${ts}.mp3"
+
+  python3 - "$audio" "$section" "$to_time" "$markers" "$out" "$force" <<'PY'
+import sys, subprocess, json, os, re, tempfile, shutil
+
+audio, section, to_time_arg, markers_path, out_path, force_arg = sys.argv[1:7]
+to_time = float(to_time_arg) if to_time_arg else None
+force = force_arg == "true"
+
+with open(markers_path) as f: markers = json.load(f)
+sec = next((s for s in markers["sections"] if s["name"] == section), None)
+if not sec:
+    print(f"align: section '{section}' not in markers", file=sys.stderr); sys.exit(2)
+sec_start = sec["start_ms"] / 1000.0
+sec_end = sec["end_ms"] / 1000.0
+total_dur_ms = markers.get("total_ms", sec_end * 1000)
+total_dur = total_dur_ms / 1000.0
+
+# Measure drift using same baseline+threshold logic as cmd_peaks
+def rms_events(start, end, window=0.05):
+    tmp = tempfile.mkdtemp()
+    try:
+        mp = os.path.join(tmp, "rms.txt")
+        subprocess.run(
+            ["ffmpeg","-hide_banner","-loglevel","error","-y","-ss",str(start),"-to",str(end),
+             "-i",audio,
+             "-af",f"astats=metadata=1:reset={window},ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file={mp}",
+             "-f","null","-"], capture_output=True)
+        events = []; cur = None
+        with open(mp) as f:
+            for line in f:
+                m = re.match(r'frame:.*pts_time:([0-9.]+)', line)
+                if m: cur = float(m.group(1)); continue
+                m = re.match(r'lavfi.astats.Overall.RMS_level=(-?[0-9.]+)', line)
+                if m and cur is not None:
+                    events.append((cur, float(m.group(1)))); cur = None
+        return events
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+evs = rms_events(sec_start, sec_end)
+if not evs:
+    print("align: failed to measure RMS in section", file=sys.stderr); sys.exit(2)
+baseline = sum(db for t, db in evs if t <= 0.25) / max(1, sum(1 for t, _ in evs if t <= 0.25))
+threshold = baseline + 2.0
+entrance = next((t for t, db in evs if t > 0.25 and db > threshold), None)
+if entrance is None:
+    print("align: no clear peak entrance — section already at peak from t=0, nothing to align", file=sys.stderr); sys.exit(0)
+
+# Compute the shift needed
+target_t = to_time if to_time is not None else sec_start
+drift_within = entrance  # offset INTO the section where peak enters
+# Shift amount: drift_within - (target_t - sec_start)
+shift_seconds = drift_within - (target_t - sec_start)
+if shift_seconds <= 0.05:
+    print(f"align: drift {int(drift_within*1000)}ms already within 50ms tolerance — skipping", file=sys.stderr); sys.exit(0)
+
+# Sanity guard: if the detected "drift" is more than half the section's
+# duration, this almost certainly isn't a build-into-peak — it's a secondary
+# accent inside an already-peaked section. Trimming would destroy the section.
+sec_duration = sec_end - sec_start
+if shift_seconds > 0.3 * sec_duration and not force:
+    pct = int(100 * shift_seconds / sec_duration)
+    print(f"align: detected drift {int(shift_seconds*1000)}ms is {pct}% of section duration ({int(sec_duration*1000)}ms).", file=sys.stderr)
+    print(f"  Above 30% almost always means the section is already at peak and the 'drift'", file=sys.stderr)
+    print(f"  is a secondary accent inside it. Trimming would destroy section content.", file=sys.stderr)
+    print(f"  Skipping. Pass --force to apply the trim anyway.", file=sys.stderr)
+    sys.exit(0)
+
+# Surgical trim: head (0 -> target_t), tail (sec_start + drift_within -> total_dur),
+# pad (silence equal to shift_seconds at the end)
+head_end = target_t
+tail_start = sec_start + drift_within  # the original-audio time that should now play at target_t
+pad_s = shift_seconds
+
+filt = (
+    f"[0]atrim=0:{head_end},asetpts=PTS-STARTPTS[head];"
+    f"[0]atrim={tail_start}:{total_dur},asetpts=PTS-STARTPTS[tail];"
+    f"anullsrc=channel_layout=stereo:sample_rate=44100[silence];"
+    f"[silence]atrim=0:{pad_s},asetpts=PTS-STARTPTS[pad];"
+    f"[head][tail][pad]concat=n=3:v=0:a=1[a]"
+)
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
+res = subprocess.run(
+    ["ffmpeg","-hide_banner","-nostats","-loglevel","error","-y","-i",audio,
+     "-filter_complex",filt,"-map","[a]","-c:a","libmp3lame","-b:a","192k",out_path],
+    capture_output=True, text=True)
+print(f"section '{section}' start={sec_start}s  detected peak entrance at +{int(drift_within*1000)}ms  target={target_t}s")
+print(f"trimmed {int(shift_seconds*1000)}ms from section's leading edge, padded {int(shift_seconds*1000)}ms silence at tail")
+print(f"-> {out_path}")
+PY
+}
+
+main() {
+  [ $# -lt 1 ] && { sed -n '2,/^$/p' "$0" | sed -E 's/^# ?//'; exit 0; }
+  local cmd="$1"; shift
+  case "$cmd" in
+    list) cmd_list "$@" ;;
+    music) cmd_music "$@" ;;
+    sfx) cmd_sfx "$@" ;;
+    score) cmd_score "$@" ;;
+    chain) cmd_chain "$@" ;;
+    master) cmd_master "$@" ;;
+    pick) cmd_pick "$@" ;;
+    probe) cmd_probe "$@" ;;
+    peaks) cmd_peaks "$@" ;;
+    align) cmd_align "$@" ;;
+    -h|--help|help) sed -n '2,/^$/p' "$0" | sed -E 's/^# ?//'; exit 0 ;;
+    *) die "unknown: $cmd (try 'composer help')" ;;
+  esac
+}
+
+main "$@"

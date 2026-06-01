@@ -1,0 +1,81 @@
+slug: release-arc-v1
+# Canonical 40s arc for product release videos. Storyboard cadence:
+#   hook -> premise -> sections + handoffs -> completed dwell -> close.
+# Each section emits a marker in the sidecar JSON so the Remotion composition
+# can sync beats to section boundaries.
+#
+# Style reference: Linear product films, Apple keynote teasers, indie film
+# trailers (moody atmospheric), Trent Reznor's restrained-tension scoring.
+# Modern electronic, confident — NOT ambient piano / meditation / gold-hour.
+#
+# Section boundaries become marker timestamps used by the video composition.
+
+global:
+  positive:
+    - modern electronic film score
+    - agentic forward motion
+    - controlled tension
+    - cinematic, indie film trailer aesthetic with moody and atmospheric textures
+    - confident, restrained, not bombastic
+  negative:
+    - acoustic piano
+    - ambient meditation
+    - gold-hour, nostalgic, contemplative
+    - vocals, choir, sung melody
+    - EDM cliche, festival drop, dubstep
+
+sections:
+  - name: intro
+    duration_ms: 6000
+    positive:
+      - low sub-bass pulse on the void
+      - distant synth pad rising slowly
+      - anticipation, restraint, single tone
+    negative:
+      - drums
+      - melody
+      - any acoustic instrument
+
+  - name: build
+    duration_ms: 8000
+    positive:
+      - layered synth pad, second voice enters
+      - subtle ticking hi-hat, almost subliminal
+      - rising tension, energy accumulating
+      - sense of inevitability
+    negative:
+      - kick drum (not yet)
+      - obvious melody hook
+
+  - name: drop
+    duration_ms: 14000
+    positive:
+      - clean four-on-the-floor kick enters
+      - confident electronic groove, mid-tempo (110-120 bpm)
+      - layered synth arpeggio, slightly glitchy
+      - agentic, things-are-shipping energy
+      - dynamic tech product launch momentum with driving rhythm and uplifting synths
+    negative:
+      - vocals
+      - festival EDM build-and-drop cliche
+      - dubstep wobble
+
+  - name: dwell
+    duration_ms: 8000
+    positive:
+      - kick recedes, pad sustains
+      - single held synth tone, atmospheric
+      - the deliverable is on screen, music holds
+      - controlled, present, alive
+    negative:
+      - retreating to silence
+
+  - name: outro
+    duration_ms: 4000
+    positive:
+      - filter sweep down
+      - fade-friendly tail, void closes
+      - single reverb fade
+    negative:
+      - sudden cut
+      - resolved tonic chord
