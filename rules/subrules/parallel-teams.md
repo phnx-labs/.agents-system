@@ -33,10 +33,4 @@ Every prompt includes: **Mission**, **Full scope** (so each has the big picture)
 
 End every brief with the line from core-hard-lines #8.
 
-## After
-
-- Verify with `grep` — `files_modified: []` may mean a different approach was used, not failure.
-- Run tests for affected paths.
-- Don't re-run the whole team for one teammate's failure.
-
-The `swarm` slash command (`~/.claude/commands/swarm.md`) is the long-form playbook with templates.
+After: verify with `grep` (a teammate's `files_modified: []` may mean a different approach was used, not failure), run tests for affected paths, don't re-run the whole team for one teammate's failure. The `swarm` slash command is the long-form playbook with templates.

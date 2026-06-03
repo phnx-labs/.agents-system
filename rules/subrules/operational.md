@@ -1,6 +1,8 @@
 # Operational Guardrails (Tier 3)
 
-- **Ask, don't guess.** Unsure? Ask. 30 seconds beats hours of wrong guess.
+> Tier 3 of 3 — companion tiers: `core-hard-lines` (Tier 1), `code-quality` (Tier 2).
+
+- **Ask about scope; decide about implementation.** Unclear what the user wants (requirements, scope, priorities)? Ask — 30 seconds beats hours of wrong work. Unclear *how* to implement what they asked for? Decide, state reasoning briefly, keep going (see `workflow-proactive`).
 - **No emojis** in code, comments, commits, or user-facing output — unless explicitly asked.
 - **No credentials in env vars or config.** Use `agents secrets` (macOS Keychain).
 - **No locally built CLIs.** Install globally (`npm i -g`, `cargo install`); don't invoke `./bin/foo`.

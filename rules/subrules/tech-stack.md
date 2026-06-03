@@ -11,7 +11,3 @@
 | Parallel coding agents | `agents teams` — see `parallel-teams` |
 | Credentials | `agents secrets` — Keychain-backed |
 | Scripts/release | `scripts` skill |
-
-## LLM tool design
-
-When building tools LLMs consume: match how LLMs think (`read` handles files AND dirs); absorb complexity internally; no overlapping tools; names are documentation.

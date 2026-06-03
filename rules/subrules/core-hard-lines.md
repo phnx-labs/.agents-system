@@ -1,5 +1,7 @@
 # Core Hard Lines (Tier 1)
 
+> Tier 1 of 3 — companion tiers: `code-quality` (Tier 2), `operational` (Tier 3).
+
 Non-negotiable. Ordered by impact.
 
 1. **"Done" means end-to-end.** Not "code written" or "unit tests pass." Trigger the real flow and see real output. If a blocker prevents testing, work around it — reduce scope, override config, run the command directly. Re-read the conversation and verify every goal before claiming done. If you can't prove it works, say what's unverified.

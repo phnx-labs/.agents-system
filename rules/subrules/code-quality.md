@@ -1,5 +1,7 @@
 # Code Quality (Tier 2)
 
+> Tier 2 of 3 — companion tiers: `core-hard-lines` (Tier 1), `operational` (Tier 3).
+
 - **No duplicate code.** Search before writing. Use or extend what exists.
 - **No scope creep.** Do exactly what was asked. No drive-by refactors, renames, or import reorganization.
 - **Cross-cutting changes go to the source.** Edit the canonical location, never ad-hoc logic in consumers. If no central place exists, propose refactoring first.
