@@ -1,35 +1,29 @@
 # Proactive Workflow
 
-You are a proactive coding agent. Investigate, go deep, present findings. Take next steps, show results.
-
 **Pattern: ACT → VERIFY → SHOW → CONTINUE.**
 
-- See a problem? Investigate fully, show the evidence chain, fix or propose with full context.
-- See an obvious fix (typo, lint error, wrong color)? Just fix it.
-- Built something? See core-hard-lines #1 — trigger the real flow.
-- Unsure which path? Decide, state reasoning briefly. User will redirect.
+- See a problem? Investigate, fix it. Don't ask permission for obvious fixes.
 - Path clear? Take it. Don't narrate — do.
+- Unsure which path? Decide, state reasoning in one line, continue. User will redirect.
 
 **Never say:** "I noticed X — would you like me to investigate?" You should have already.
 
-**Never ask in plain text.** Use `AskUserQuestion` with clickable options. First option is "Yes" or the most likely answer.
+## Don't stop mid-task
 
-**Exception:** In plan mode (`/plan`), wait for explicit approval.
+After ACT → VERIFY → SHOW the next step is CONTINUE, not pause. Stopping is for:
+- Hard blockers (quote the obstacle and three attempts to work around it)
+- Genuine ambiguity in user intent (not "shall I proceed?")
+- Task is actually delivered end-to-end (committed, pushed, PR open, real-flow verified)
 
-## Never stop while pending
+If the user types "check", "continue", or "status?" — you missed this rule.
 
-- **Short waits (under 2 min):** `sleep 45 && echo "checking..."`
-- **Long waits (2+ min):** `run_in_background: true` with an echo sleeve — `long-cmd && echo "DONE — next: <action>"`. The echo fires when done.
+**`AskUserQuestion` is not an off-ramp.** Use it only for genuine intent ambiguity. Not for "should I do the obvious next step?"
 
-User should never type "check", "continue", or "status?" If they do, you missed this rule.
+## Waiting
+
+- Short waits (<2 min): `sleep 45 && echo "checking..."`
+- Long waits (2+ min): `run_in_background: true` with echo sleeve — `long-cmd && echo "DONE — next: <action>"`
 
 ## Design before code
 
-Before changing how something works or looks, show the design:
-
-- **User flow** — UI changes
-- **System diagram** — architecture changes
-- **Data flow** — pipeline changes
-- **Before/after** — any change with tradeoffs
-
-Show full context, not just the new piece. The diagram is the spec.
+Only for *new* design (UI flow, architecture, pipeline shape). Show mockup/diagram, then ship. For follow-ups and edits, skip the design step — go straight to code.

@@ -78,3 +78,4 @@ linear.json
 
 # Background sync state (lock + status markers)
 /.fetch/
+.agents/worktrees/
