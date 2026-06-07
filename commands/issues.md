@@ -12,12 +12,18 @@ Check in this order. Stop at the first one that's actually present.
 
 1. **Skill-level integration.** Look for a skill in this loaded session whose name or description matches an issue-management system. Common names: `linear`, `github`, `jira`, `gitlab`, `shortcut`, `asana`. If one exists, read its `SKILL.md` and follow it — that file is the contract.
 
-2. **Repo-level signal.** No matching skill? Check the repo:
-   - `git remote -v` → if origin is `github.com`, GitHub Issues is the likely tracker. Use `gh issue list`, `gh issue view`, etc.
-   - Look for `.linear/`, `linear.config.*`, or env vars like `LINEAR_API_KEY` / `LINEAR_TEAM_KEY`.
+2. **Installed CLI.** No skill? Check what's already on `PATH`:
+   - `linear --version` (Linear, via [phnx-labs/linear-cli](https://github.com/phnx-labs/linear-cli))
+   - `gh --version` (GitHub Issues)
+   - `jira --version` (Jira, via `jira-cli`)
+   - `glab --version` (GitLab)
+
+3. **Repo-level signal.** Still nothing? Check the repo for tracker breadcrumbs:
+   - `git remote -v` → if origin is `github.com`, GitHub Issues is the likely tracker. Install `gh` if missing.
+   - Look for `.linear/`, `linear.config.*`, or env vars like `LINEAR_API_KEY` / `LINEAR_TEAM_KEY` → Linear. The canonical CLI is shipped as `~/.agents-system/cli/linear-cli.yaml`; install with `agents cli install linear-cli` (one confirm, then `linear setup --api-key ...`).
    - Look for Jira/Atlassian config (`.jira-cli.yml`, `JIRA_URL` in env).
 
-3. **Ask.** If nothing's detectable, ask the user where issues live (Linear team key, GitHub repo, Jira project, etc.) — once. Save the answer to memory if it'll keep coming up.
+4. **Ask.** If nothing's detectable, ask the user where issues live (Linear team key, GitHub repo, Jira project, etc.) — once. Save the answer to memory if it'll keep coming up.
 
 ## Step 2: Do the thing
 
@@ -44,6 +50,7 @@ After doing the action, report:
 ## Anti-patterns
 
 - Don't assume Linear. The system repo doesn't ship a Linear skill — that's intentional. Detect first.
+- Don't silent-install a tracker CLI. When detection says "Linear" but `linear` isn't on PATH, *suggest* `agents cli install linear-cli` and wait for confirmation — installs touch network and `$PATH`. Wrong-tracker false positives (e.g. repo on GitHub but team uses Jira) are real.
 - Don't bypass the skill. If a `linear` (or `github`, etc.) skill is loaded, its SKILL.md is the source of truth — its commands are usually richer than what you'd reinvent (proof attachments, agent-lane labels, etc.).
 - Don't close issues without proof. Engineering: PR URL or commit URL or screenshot of tests passing. Growth/content: published URL or metric.
 - Don't create duplicates. Quick search before creating a new issue.
