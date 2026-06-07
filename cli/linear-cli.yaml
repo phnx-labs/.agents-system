@@ -1,0 +1,18 @@
+name: linear-cli
+description: Linear from the shell, for humans and their agents. Single-file Python CLI, zero deps.
+homepage: https://github.com/phnx-labs/linear-cli
+
+# Binary is `linear` (single-file Python, dropped into a bin dir on PATH).
+check: linear --version
+
+# Upstream-documented one-liner installer. Drops the single-file Python script
+# into /usr/local/bin/linear and chmod +x. No npm or brew package today.
+install:
+  - script: https://raw.githubusercontent.com/phnx-labs/linear-cli/main/install.sh
+
+post_install: |
+  Set up Linear access (per-agent identity):
+    linear setup --api-key "$LINEAR_API_KEY" --agent claude
+  Then probe your queue:
+    linear tasks
+  Resolution order for the key: config file -> LINEAR_API_KEY env -> macOS Keychain (`linear-api-key`).
