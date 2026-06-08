@@ -2,9 +2,9 @@
 
 ## Use worktrees for PR work
 
-PR-bound work goes in `<repo>/.agents/worktrees/<slug>/`. Don't create a branch in place. Don't switch the user's checkout. Don't ask the user to run git for you.
+PR-bound work goes in `<repo>/.agents/worktrees/<slug>/`. Don't create a branch in place. Don't switch the user's checkout. Don't ask the user to run git for you. Normal branch commands are denied; create the task branch only as part of `git worktree add -b` into this directory.
 
-**Why:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is allowed and is isolated.
+**Why:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is the allowed branch-creation path, and it is isolated.
 
 **Slug:** kebab-case from the task (`fix-auth-refresh`). Doubles as the branch name.
 

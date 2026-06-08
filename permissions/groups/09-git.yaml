@@ -1,5 +1,7 @@
-  # Git — read-only + commit/push/clone/fetch/pull.
-  # Destructive operations (reset, checkout, branch, stash, rebase, cherry-pick,
+  # Git — read-only + commit/push/clone/fetch/pull/worktree.
+  # Normal branch creation/switching is denied; use git worktree add -b under
+  # <repo>/.agents/worktrees/<slug>/ for PR-bound coding work.
+  # Destructive operations (reset, checkout, switch, branch, stash, rebase, cherry-pick,
   # revert, clean, reflog, filter-branch, gc, prune, fsck, force-push) are denied
   # in 99-deny.yaml.
   - "Bash(git status:*)"
@@ -22,6 +24,9 @@
   - "Bash(git clone:*)"
   - "Bash(git fetch:*)"
   - "Bash(git pull:*)"
+  - "Bash(git worktree list:*)"
+  - "Bash(git worktree add:*)"
+  - "Bash(git worktree remove:*)"
   - "Bash(git rm:*)"
   - "Bash(git mv:*)"
   - "Bash(git restore:*)"
