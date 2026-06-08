@@ -1,6 +1,6 @@
 # Git: Read-only + Commit/Push Only
 
-Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`, `fetch`, `pull`, `worktree list`, `worktree add`, `worktree remove`.
+Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`, `fetch`, `worktree list`, `worktree add`, `worktree remove`.
 
 Off-limits without explicit user ask: `checkout`, `switch`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), force push.
 

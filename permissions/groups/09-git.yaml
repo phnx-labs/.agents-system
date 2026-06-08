@@ -1,4 +1,4 @@
-  # Git — read-only + commit/push/clone/fetch/pull/worktree.
+  # Git — read-only + commit/push/clone/fetch/worktree.
   # Normal branch creation/switching is denied; use git worktree add -b under
   # <repo>/.agents/worktrees/<slug>/ for PR-bound coding work.
   # Destructive operations (reset, checkout, switch, branch, stash, rebase, cherry-pick,
@@ -23,7 +23,6 @@
   - "Bash(git push:*)"
   - "Bash(git clone:*)"
   - "Bash(git fetch:*)"
-  - "Bash(git pull:*)"
   - "Bash(git worktree list:*)"
   - "Bash(git worktree add:*)"
   - "Bash(git worktree remove:*)"
