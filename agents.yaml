@@ -1,3 +1,15 @@
 run:
   claude:
     strategy: balanced
+
+hooks:
+  git-guard:
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: git-guard.sh
+    timeout: 5
