@@ -37,9 +37,52 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) |
 
 deny_reason=""
 
+# Detect `sh|bash -c <inner>` at the raw string level (BEFORE token split) so
+# that quoted args like `sh -c "git reset --hard"` stay intact. Naive
+# `set -- $seg` would split `"git` away from `reset --hard"` and miss the
+# git subcommand entirely. Sets _dash_c_inner on match. Returns 0 on match.
+extract_sh_c_inner() {
+  _raw=$1
+  _raw=$(printf '%s' "$_raw" | sed 's/^[[:space:]]*//')
+  # Strip leading VAR=value assignments (POSIX env-var prefix).
+  while :; do
+    _pre=$_raw
+    _raw=$(printf '%s' "$_raw" | sed 's/^[A-Za-z_][A-Za-z_0-9]*=[^[:space:]]*[[:space:]][[:space:]]*//')
+    [ "$_raw" = "$_pre" ] && break
+  done
+  # First word must be sh / bash / absolute path to one.
+  case "$_raw" in
+    sh\ *|bash\ *|/bin/sh\ *|/bin/bash\ *|/usr/bin/sh\ *|/usr/bin/bash\ *) ;;
+    *) return 1 ;;
+  esac
+  # Find first occurrence of " -c " anywhere after the shell name.
+  case "$_raw" in
+    *" -c "*) ;;
+    *) return 1 ;;
+  esac
+  _inner=${_raw#* -c }
+  _inner=$(printf '%s' "$_inner" | sed 's/^[[:space:]]*//')
+  # Strip a single layer of wrapping quotes.
+  case "$_inner" in
+    \"*\") _inner=${_inner#\"}; _inner=${_inner%\"} ;;
+    \'*\') _inner=${_inner#\'}; _inner=${_inner%\'} ;;
+  esac
+  _dash_c_inner=$_inner
+  return 0
+}
+
 # Check one already-split segment.
 check_segment() {
   _seg=$1
+
+  # sh|bash -c wrapper detection must happen BEFORE naive token splitting,
+  # because the -c argument is typically a quoted string the naive split
+  # would shred.
+  if extract_sh_c_inner "$_seg"; then
+    if ! check_command_string "$_dash_c_inner"; then return 1; fi
+    return 0
+  fi
+
   # Restore default IFS so `set -- $1` actually splits on space/tab/newline.
   # The caller flipped IFS to newline-only to iterate chain segments.
   unset IFS
@@ -61,32 +104,6 @@ check_segment() {
   case "$first" in
     \"*\") first=$(printf '%s' "$first" | sed 's/^"\(.*\)"$/\1/') ;;
     \'*\') first=$(printf '%s' "$first" | sed "s/^'\(.*\)'$/\1/") ;;
-  esac
-
-  # `sh -c <string>` / `bash -c <string>` — recurse into the inner string.
-  # Single-level recursion is enough for realistic agent dress-up.
-  case "$first" in
-    sh|bash|/bin/sh|/bin/bash|/usr/bin/sh|/usr/bin/bash)
-      shift
-      # Look for `-c` followed by a string.
-      while [ $# -gt 0 ]; do
-        case "$1" in
-          -c)
-            shift
-            [ $# -eq 0 ] && return 0
-            inner=$1
-            # Strip enclosing quotes (jq already unescaped them, but the user
-            # might still have written "sh -c 'git reset ...'" — the inner is
-            # the literal arg, no need to dequote).
-            if ! check_command_string "$inner"; then return 1; fi
-            return 0
-            ;;
-          -*) shift ;;
-          *) break ;;
-        esac
-      done
-      return 0
-      ;;
   esac
 
   # Accept first token == git OR */git (absolute or relative path).
@@ -202,6 +219,9 @@ $(printf '%s\n' "$dirty" | head -5)"
 # check each segment. Also called recursively for sh -c inner strings.
 check_command_string() {
   _input=$1
+  # Restore POSIX-default IFS before reading it — check_segment may have
+  # unset IFS, and `OLDIFS=$IFS` under `set -u` would error on unset.
+  IFS=$(printf ' \t\n.'); IFS=${IFS%.}
   # Split on chain operators AND real newlines. The actual newline is inserted
   # via shell quoting — `\n` in sed replacement is a GNU/BSD extension that's
   # reliable enough on the macOS sed we target.
