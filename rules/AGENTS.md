@@ -81,9 +81,9 @@ Show full context, not just the new piece. The diagram is the spec.
 
 # Git: Read-only + Commit/Push Only
 
-Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`.
+Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`, `fetch`, `pull`, `worktree list`, `worktree add`, `worktree remove`.
 
-Off-limits without explicit user ask: `checkout`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), force push.
+Off-limits without explicit user ask: `checkout`, `switch`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), force push.
 
 **Why:** autonomous agents have caused real data loss with `git reset --hard`, `git checkout -- .`, and force pushes. Fast, irreversible, hard to audit.
 
@@ -93,13 +93,13 @@ Off-limits without explicit user ask: `checkout`, `branch`, `stash`, `reset`, `r
 
 ## Start work in a worktree, not the current checkout
 
-When you start a task that will produce a PR, create a **worktree**. Don't create a branch in place, don't switch the current checkout, don't ask the user to do it.
+When you start a task that will produce a PR, create a **worktree**. Don't create a branch in place, don't switch the current checkout, don't ask the user to do it. Normal branch commands are denied; create the task branch only as part of `git worktree add -b` into the worktree directory.
 
 **Where worktrees live:** `<repo>/.agents/worktrees/<slug>/`. `.agents/` is the standard agent-state directory and is the only sanctioned location — never `/tmp`, never sibling dirs, never ad-hoc parent paths.
 
 **Slug:** short kebab-case derived from the task (`fix-auth-refresh`, `feat-tunnel-picker`). It doubles as the branch name — the branch is metadata, the worktree is the thing.
 
-**Why a worktree:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is allowed and creates an isolated working directory at HEAD without touching the user's primary checkout.
+**Why a worktree:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is the allowed branch-creation path and creates an isolated working directory at HEAD without touching the user's primary checkout.
 
 ### Recipe
 

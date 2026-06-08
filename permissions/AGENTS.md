@@ -15,9 +15,9 @@ The canonical format is Claude's syntax. `agents-cli` handles the translation:
 | `"Bash(git status:*)"` | Same | `{ "git status *": "allow" }` | Inferred mode |
 | `"Read"` | Same | N/A (no read gating) | N/A |
 | `"WebFetch(domain:x.com)"` | Same | N/A | `network_access: true` |
-| `deny: "Bash(sudo:*)"` | Same | `{ "sudo *": "deny" }` | N/A |
+| `deny: "Bash(sudo:*)"` | Same | `{ "sudo *": "deny" }` | Generated forbidden prefix rule in `.codex/rules/agents-deny.rules` |
 
-Codex uses coarse-grained modes (`approval_policy`, `sandbox_mode`) rather than per-command rules. `agents-cli` infers the best fit from the permission set.
+Codex uses coarse-grained modes (`approval_policy`, `sandbox_mode`) for allow rules. Deny rules are emitted as forbidden prefix rules in `.codex/rules/agents-deny.rules`.
 
 ## Rule syntax
 
