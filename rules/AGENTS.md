@@ -28,39 +28,33 @@ Non-negotiable. Ordered by impact.
 
 # Proactive Workflow
 
-You are a proactive coding agent. Investigate, go deep, present findings. Take next steps, show results.
-
 **Pattern: ACT → VERIFY → SHOW → CONTINUE.**
 
-- See a problem? Investigate fully, show the evidence chain, fix or propose with full context.
-- See an obvious fix (typo, lint error, wrong color)? Just fix it.
-- Built something? See core-hard-lines #1 — trigger the real flow.
-- Unsure which path? Decide, state reasoning briefly. User will redirect.
+- See a problem? Investigate, fix it. Don't ask permission for obvious fixes.
 - Path clear? Take it. Don't narrate — do.
+- Unsure which path? Decide, state reasoning in one line, continue. User will redirect.
 
 **Never say:** "I noticed X — would you like me to investigate?" You should have already.
 
-**Never ask in plain text.** Use `AskUserQuestion` with clickable options. First option is "Yes" or the most likely answer.
+## Don't stop mid-task
 
-**Exception:** In plan mode (`/plan`), wait for explicit approval.
+After ACT → VERIFY → SHOW the next step is CONTINUE, not pause. Stopping is for:
+- Hard blockers (quote the obstacle and three attempts to work around it)
+- Genuine ambiguity in user intent (not "shall I proceed?")
+- Task is actually delivered end-to-end (committed, pushed, PR open, real-flow verified)
 
-## Never stop while pending
+If the user types "check", "continue", or "status?" — you missed this rule.
 
-- **Short waits (under 2 min):** `sleep 45 && echo "checking..."`
-- **Long waits (2+ min):** `run_in_background: true` with an echo sleeve — `long-cmd && echo "DONE — next: <action>"`. The echo fires when done.
+**`AskUserQuestion` is not an off-ramp.** Use it only for genuine intent ambiguity. Not for "should I do the obvious next step?"
 
-User should never type "check", "continue", or "status?" If they do, you missed this rule.
+## Waiting
+
+- Short waits (<2 min): `sleep 45 && echo "checking..."`
+- Long waits (2+ min): `run_in_background: true` with echo sleeve — `long-cmd && echo "DONE — next: <action>"`
 
 ## Design before code
 
-Before changing how something works or looks, show the design:
-
-- **User flow** — UI changes
-- **System diagram** — architecture changes
-- **Data flow** — pipeline changes
-- **Before/after** — any change with tradeoffs
-
-Show full context, not just the new piece. The diagram is the spec.
+Only for *new* design (UI flow, architecture, pipeline shape). Show mockup/diagram, then ship. For follow-ups and edits, skip the design step — go straight to code.
 
 # Code Quality (Tier 2)
 
@@ -91,85 +85,44 @@ Off-limits without explicit user ask: `checkout`, `switch`, `branch`, `stash`, `
 
 # Agentic Git Workflow
 
-## Start work in a worktree, not the current checkout
+## Use worktrees for PR work
 
-When you start a task that will produce a PR, create a **worktree**. Don't create a branch in place, don't switch the current checkout, don't ask the user to do it. Normal branch commands are denied; create the task branch only as part of `git worktree add -b` into the worktree directory.
+PR-bound work goes in `<repo>/.agents/worktrees/<slug>/`. Don't create a branch in place. Don't switch the user's checkout. Don't ask the user to run git for you. Normal branch commands are denied; create the task branch only as part of `git worktree add -b` into this directory.
 
-**Where worktrees live:** `<repo>/.agents/worktrees/<slug>/`. `.agents/` is the standard agent-state directory and is the only sanctioned location — never `/tmp`, never sibling dirs, never ad-hoc parent paths.
+**Why:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is the allowed branch-creation path, and it is isolated. Do not `checkout main` or `git pull` before creating the worktree; `pull` mutates the current checkout. Refresh remote state with `git fetch` and create the worktree from `origin/<default-branch>`.
 
-**Slug:** short kebab-case derived from the task (`fix-auth-refresh`, `feat-tunnel-picker`). It doubles as the branch name — the branch is metadata, the worktree is the thing.
-
-**Why a worktree:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is the allowed branch-creation path and creates an isolated working directory at HEAD without touching the user's primary checkout. Do not `checkout main` or `git pull` before creating the worktree; `pull` mutates the current checkout. Refresh remote state with `git fetch` and create the worktree from `origin/<default-branch>`.
-
-### Recipe
+**Slug:** kebab-case from the task (`fix-auth-refresh`). Doubles as the branch name.
 
 ```bash
 REPO=$(git rev-parse --show-toplevel)
 SLUG=fix-auth-refresh
 WT="$REPO/.agents/worktrees/$SLUG"
-
-grep -q '^\.agents/worktrees/' "$REPO/.gitignore" 2>/dev/null \
-  || echo '.agents/worktrees/' >> "$REPO/.gitignore"
-
 git -C "$REPO" remote set-head origin --auto
 BASE=$(git -C "$REPO" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
 git -C "$REPO" fetch origin "$BASE"
 git -C "$REPO" worktree add -b "$SLUG" "$WT" "origin/$BASE"
-
-git -C "$WT" add <files>
-git -C "$WT" commit -m "<conventional message>"
+# work, commit, push inside $WT
 git -C "$WT" push -u origin "$SLUG"
 gh -R <owner/repo> pr create --base "$BASE" --head "$SLUG" --title "…" --body "…"
 ```
 
-## Work end-to-end inside the worktree
+## End-to-end inside the worktree
 
-The worktree is your workspace for the whole task. Implement → test → verify end-to-end (core-hard-lines #1) → commit → push → open PR — all inside `$WT`. Don't stop early, don't bounce back to the primary checkout, don't hand it off.
+Implement → test → verify (real flow per core-hard-lines #1) → commit → push → open PR — all inside `$WT`. Don't bounce back to the primary checkout.
 
-## After PR is open: ask for review, do not clean up
+## After PR: wait for review
 
-PR open is **not** "done." Until merge:
+PR open is **not** "done." Post the URL, ask via `AskUserQuestion` (merge / request changes / iterate). Iterate inside the same `$WT`. Don't remove the worktree or delete the branch until merge.
 
-- Post the PR URL and summarize what changed.
-- Ask the user for review with `AskUserQuestion` (e.g. `merge / request changes / iterate`).
-- If review asks for changes, iterate inside the same `$WT` — additional commits, `git push`.
-- Do not remove the worktree, delete the branch, or claim the task done.
-
-## After merge: only then, close it out
+## After merge
 
 ```bash
 git -C $REPO worktree remove $WT
-git -C $REPO branch -D $SLUG     # merged-branch deletion is allowed
+git -C $REPO branch -D $SLUG
 git -C $REPO fetch --prune
 ```
 
-Cleanup happens **after merge confirmation**, never before.
-
-## Don't
-
-- Don't put worktrees anywhere except `<repo>/.agents/worktrees/`.
-- Don't delete the worktree before merge — the reviewer may ask for changes.
-- Don't use the worktree to dodge `git-readonly` denies for `reset`/`rebase`/`stash` — still off-limits inside `$WT` too.
-
-## Session export on PRs
-
-Every PR includes a session transcript as a SECRET GitHub Gist.
-
-```bash
-agents sessions --last 50 --markdown > /tmp/session-export.md
-gh gist create /tmp/session-export.md --desc "Session transcript for PR"
-```
-
-Never `--public` by default — transcripts can leak repo internals, tool output, infra details. Only `--public` when the target repo is public AND the transcript is reviewed.
-
-Attach the gist URL in the PR description:
-
-```
-## Session Context
-[Session transcript](https://gist.github.com/...)
-```
-
-Secret gists are URL-only access — not indexed, not discoverable. Creates an audit trail linking code to reasoning.
+**Don't:** put worktrees outside `<repo>/.agents/worktrees/`. Don't dodge the deny list inside `$WT` (`reset`/`rebase`/`stash` still off-limits). For PR session-gist export, see the `git-session-export` skill.
 
 # Operational Guardrails (Tier 3)
 
@@ -184,6 +137,7 @@ Secret gists are URL-only access — not indexed, not discoverable. Creates an a
 - **No unsolicited .md files.** No README/docs/summary/notes unless asked.
 - **Permissions:** Add permanent agent permissions to settings once; don't re-prompt across sessions.
 - **Images:** Include the full file path so the user can click to preview.
+- **Hand off commands the user must run — don't just print them.** Markdown code fences aren't executable. Prefer, in order: (1) pipe to clipboard with `pbcopy` and tell the user "copied — paste it" (`printf '%s' '<cmd>' | pbcopy`); (2) write a one-shot script to `/tmp/<slug>.sh`, `chmod +x` it, and tell them to run that single path; (3) only as last resort, render the command in the message. Multi-line commands always go to a script. Quote what you copied so the user can verify before pasting.
 - **Don't:** start/kill dev servers without asking; add backwards-compat shims you weren't asked for; use `find` on macOS (use `fd`).
 
 # Conventions
@@ -200,40 +154,30 @@ Secret gists are URL-only access — not indexed, not discoverable. Creates an a
 
 # Parallel Work via `agents teams`
 
-Default to teams for changes touching more than two independent surfaces. Single-threaded editing is the failure mode.
-
-**When:** multi-file change with separable boundaries; audit/ship-readiness/parity check; anything queueing 4+ sequential edits.
+Default to teams for changes touching 3+ independent surfaces. Single-threaded editing is the failure mode.
 
 **Skip for:** exploration (use `Agent` subagents), single-surface bugs, plan-mode research.
 
 ## Boundary contracts are mandatory
 
-Before spawning, present a distribution plan and get approval. Each teammate needs:
+Before spawning, present a distribution plan. Each teammate needs:
 
-- **Owns** — explicit files (with line ranges where helpful).
+- **Owns** — explicit files.
 - **Must NOT touch** — files owned by others.
 - **Shared deps** — one canonical owner; everyone else imports.
 
-**Independence test:** if A waits on B's output to start, the split is wrong. Re-cut, or sequence with `--after`.
+If A waits on B's output to start, the split is wrong. Re-cut, or sequence with `--after`.
 
 ## Pattern
 
 ```bash
 agents teams create my-feature
-agents teams add my-feature claude "Owns: src/auth/*. Not: src/ui/*. Implement OAuth refresh." --name auth
-agents teams add my-feature codex  "Owns: src/ui/login.tsx. Not: src/auth/*. Wire login UI." --name ui --after auth
+agents teams add my-feature claude "Owns: src/auth/*. Not: src/ui/*. ..." --name auth
+agents teams add my-feature codex  "Owns: src/ui/*. Not: src/auth/*. ..." --name ui --after auth
 agents teams start my-feature --watch
 ```
 
-`--mode plan` for read-only; `--mode edit` (default) for code.
-
-## Briefing each teammate
-
-Every prompt includes: **Mission**, **Full scope** (so each has the big picture), **Your assignment** (files owned), **Boundary contract** (files NOT to touch), **Pattern** (concrete code inline), **Success criteria**.
-
-End every brief with the line from core-hard-lines #8.
-
-After: verify with `grep` (a teammate's `files_modified: []` may mean a different approach was used, not failure), run tests for affected paths, don't re-run the whole team for one teammate's failure. The `swarm` slash command is the long-form playbook with templates.
+Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pattern, success criteria, and ends with the line from core-hard-lines #8. The `swarm` slash command is the long-form playbook.
 
 # Tooling & Stack Conventions
 
