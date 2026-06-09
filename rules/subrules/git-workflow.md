@@ -2,21 +2,23 @@
 
 ## Use worktrees for PR work
 
-PR-bound work goes in `<repo>/.agents/worktrees/<slug>/`. Don't create a branch in place. Don't switch the user's checkout. Don't ask the user to run git for you.
+PR-bound work goes in `<repo>/.agents/worktrees/<slug>/`. Don't create a branch in place. Don't switch the user's checkout. Don't ask the user to run git for you. Normal branch commands are denied; create the task branch only as part of `git worktree add -b` into this directory.
 
-**Why:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is allowed and is isolated.
+**Why:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is the allowed branch-creation path, and it is isolated. Do not `checkout main` or `git pull` before creating the worktree; `pull` mutates the current checkout. Refresh remote state with `git fetch` and create the worktree from `origin/<default-branch>`.
 
 **Slug:** kebab-case from the task (`fix-auth-refresh`). Doubles as the branch name.
 
 ```bash
 REPO=$(git rev-parse --show-toplevel)
 SLUG=fix-auth-refresh
-WT=$REPO/.agents/worktrees/$SLUG
-git -C $REPO fetch origin main
-git -C $REPO worktree add -b $SLUG $WT origin/main
+WT="$REPO/.agents/worktrees/$SLUG"
+git -C "$REPO" remote set-head origin --auto
+BASE=$(git -C "$REPO" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
+git -C "$REPO" fetch origin "$BASE"
+git -C "$REPO" worktree add -b "$SLUG" "$WT" "origin/$BASE"
 # work, commit, push inside $WT
-git -C $WT push -u origin $SLUG
-gh -R <owner/repo> pr create --base main --head $SLUG --title "…" --body "…"
+git -C "$WT" push -u origin "$SLUG"
+gh -R <owner/repo> pr create --base "$BASE" --head "$SLUG" --title "…" --body "…"
 ```
 
 ## End-to-end inside the worktree

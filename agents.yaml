@@ -1,3 +1,35 @@
 run:
   claude:
     strategy: balanced
+
+hooks:
+  git-guard:
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: git-guard.sh
+    timeout: 5
+  rm-guard:
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: rm-guard.sh
+    timeout: 5
+  large-file-add-guard:
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: large-file-add-guard.sh
+    timeout: 5

@@ -81,9 +81,9 @@ Show full context, not just the new piece. The diagram is the spec.
 
 # Git: Read-only + Commit/Push Only
 
-Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`.
+Allowed: `status`, `diff`, `log`, `show`, `remote`, `ls-files`, `cat-file`, `rev-parse`, `describe`, `shortlog`, `blame`, `tag`, `check-ignore`, `config --get`, `ls-tree`, `add`, `commit`, `push`, `clone`, `fetch`, `worktree list`, `worktree add`, `worktree remove`.
 
-Off-limits without explicit user ask: `checkout`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), force push.
+Off-limits without explicit user ask: `checkout`, `switch`, `branch`, `stash`, `reset`, `rebase`, `cherry-pick`, `revert`, `merge --abort`, `clean`, `reflog`, `filter-branch`, `gc`, `prune`, `fsck`, `config` (write), force push.
 
 **Why:** autonomous agents have caused real data loss with `git reset --hard`, `git checkout -- .`, and force pushes. Fast, irreversible, hard to audit.
 
@@ -93,31 +93,33 @@ Off-limits without explicit user ask: `checkout`, `branch`, `stash`, `reset`, `r
 
 ## Start work in a worktree, not the current checkout
 
-When you start a task that will produce a PR, create a **worktree**. Don't create a branch in place, don't switch the current checkout, don't ask the user to do it.
+When you start a task that will produce a PR, create a **worktree**. Don't create a branch in place, don't switch the current checkout, don't ask the user to do it. Normal branch commands are denied; create the task branch only as part of `git worktree add -b` into the worktree directory.
 
 **Where worktrees live:** `<repo>/.agents/worktrees/<slug>/`. `.agents/` is the standard agent-state directory and is the only sanctioned location — never `/tmp`, never sibling dirs, never ad-hoc parent paths.
 
 **Slug:** short kebab-case derived from the task (`fix-auth-refresh`, `feat-tunnel-picker`). It doubles as the branch name — the branch is metadata, the worktree is the thing.
 
-**Why a worktree:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is allowed and creates an isolated working directory at HEAD without touching the user's primary checkout.
+**Why a worktree:** `checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list. `git worktree add` is the allowed branch-creation path and creates an isolated working directory at HEAD without touching the user's primary checkout. Do not `checkout main` or `git pull` before creating the worktree; `pull` mutates the current checkout. Refresh remote state with `git fetch` and create the worktree from `origin/<default-branch>`.
 
 ### Recipe
 
 ```bash
 REPO=$(git rev-parse --show-toplevel)
 SLUG=fix-auth-refresh
-WT=$REPO/.agents/worktrees/$SLUG
+WT="$REPO/.agents/worktrees/$SLUG"
 
-grep -q '^\.agents/worktrees/' $REPO/.gitignore 2>/dev/null \
-  || echo '.agents/worktrees/' >> $REPO/.gitignore
+grep -q '^\.agents/worktrees/' "$REPO/.gitignore" 2>/dev/null \
+  || echo '.agents/worktrees/' >> "$REPO/.gitignore"
 
-git -C $REPO fetch origin main
-git -C $REPO worktree add -b $SLUG $WT origin/main
+git -C "$REPO" remote set-head origin --auto
+BASE=$(git -C "$REPO" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
+git -C "$REPO" fetch origin "$BASE"
+git -C "$REPO" worktree add -b "$SLUG" "$WT" "origin/$BASE"
 
-git -C $WT add <files>
-git -C $WT commit -m "<conventional message>"
-git -C $WT push -u origin $SLUG
-gh -R <owner/repo> pr create --base main --head $SLUG --title "…" --body "…"
+git -C "$WT" add <files>
+git -C "$WT" commit -m "<conventional message>"
+git -C "$WT" push -u origin "$SLUG"
+gh -R <owner/repo> pr create --base "$BASE" --head "$SLUG" --title "…" --body "…"
 ```
 
 ## Work end-to-end inside the worktree
