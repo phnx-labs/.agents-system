@@ -1,0 +1,20 @@
+name: jq
+description: |
+  Lightweight JSON parser. Required by hooks that read structured tool
+  payloads — `git-guard.sh` uses `jq -r .tool_input.command` to correctly
+  unescape \n / \t / \" so multi-line agent commands don't bypass it.
+homepage: https://jqlang.org
+
+check: jq --version
+
+# Apple ships /usr/bin/jq since macOS 14.x — `check` already passes there, so
+# no install runs. brew covers older macOS + intentional reinstalls. Linux:
+# every mainstream distro packages jq under the name `jq` (apt/dnf/yum/apk
+# install jq), so we don't ship a script here. If your distro doesn't have
+# jq packaged, install from https://jqlang.org/download/.
+install:
+  - brew: jq
+
+post_install: |
+  jq is now on PATH.
+  Used by hooks (notably git-guard) to parse PreToolUse JSON payloads.
