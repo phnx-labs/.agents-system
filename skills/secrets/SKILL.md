@@ -76,6 +76,33 @@ agents secrets view production
 agents secrets view production --reveal
 ```
 
+## Multiple Accounts on One Website
+
+Name the bundle after the domain (`x.com`, `linkedin.com`) — one bundle per site, any number of accounts inside. Group keys by account handle and give every account a `--note` saying when to use it:
+
+```bash
+agents secrets create x.com --description "X/Twitter accounts. Read key notes to pick the right one."
+
+agents secrets add x.com THEMUQSIT_USERNAME --value themuqsit \
+  --note "Personal account. Casual engagement, research."
+agents secrets add x.com THEMUQSIT_PASSWORD --type password \
+  --note "Password for @themuqsit"
+agents secrets add x.com GETONRUSH_USERNAME --value GetOnRush \
+  --note "Product account for promoting Rush. Marketing, announcements."
+agents secrets add x.com GETONRUSH_PASSWORD --type password \
+  --note "Password for @GetOnRush"
+```
+
+Key naming: uppercase the handle, replace non-alphanumerics with `_`, suffix `_USERNAME` / `_PASSWORD` (plus `_EMAIL` for the login email and `_TOTP_SECRET` for 2FA accounts).
+
+To pick an account, run `agents secrets view x.com` — notes print in the clear while values stay masked. Reveal only the pair you need:
+
+```bash
+agents secrets export x.com --plaintext | grep '^GETONRUSH_'
+```
+
+For browser logins, bind the bundle to a profile so it injects at browser start: `agents browser profiles create x --browser chrome --secrets x.com`.
+
 ## 1Password Integration
 
 ```bash
