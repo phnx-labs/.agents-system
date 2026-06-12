@@ -98,6 +98,7 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 |-------|-------------|
 | `agents-cli/` | Manage AI coding agent CLIs. Install versions, sync configs, switch between agents, manage MCP servers. |
 | `browser/` | Drive a browser to automate websites — uses the built-in `agents browser` command with per-agent profile isolation over CDP. |
+| `computer/` | Drive native macOS apps — screenshot, click, type, drag via the `agents computer` Accessibility daemon. Covers AX-opaque surfaces (VMs, canvas editors) with coordinate mode. |
 | `mcporter/` | MCP server CLI for managing Model Context Protocol servers. |
 | `teams/` | Organize AI coding agents into teams for parallel collaboration. Create, add, start, monitor, and collect results. |
 
