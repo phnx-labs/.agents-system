@@ -2,7 +2,7 @@
 #
 # Includes all subrules from `<repo>/rules/subrules/`.
 # Linear tickets context is injected by hooks/03-linear-inject-tasks-context.sh.
-# Script/release discipline lives in the `scripts` skill.
+# Release/publish discipline lives in the `release` skill.
 
 presets:
   default:

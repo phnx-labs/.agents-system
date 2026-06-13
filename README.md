@@ -55,7 +55,7 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`.
 | `/recap` | Summarize state — facts first, hypotheses grounded |
 | `/commit` | Stage, conventional commit, push in background |
 | `/continue` | Resume previous session with context recovery |
-| `/issues` | Work with issue tracker (auto-detects Linear/GitHub/Jira) |
+| `/tickets` | Work with issue tracker (auto-detects Linear/GitHub/Jira) |
 | `/teams` | Spawn parallel agents for a task |
 
 Several commands use `agents teams` for complex scopes (audit, debug, plan, clean, test, recap).

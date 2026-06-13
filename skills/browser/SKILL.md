@@ -23,13 +23,21 @@ Routes to specialized subskills based on the target.
 What are you automating?
 ├── Web page / web app → browser-use.md
 │   └── Specific site with known quirks? → domain-skills/<site>/
-└── Electron desktop app (Rush, VS Code, Slack, …) → electron-use.md
+└── Electron desktop app (VS Code, Slack, …) → electron-use.md
     └── App in app-skills/? → read that first, then follow electron-use.md
 ```
 
-## App-Specific Guides
+## Adding a new domain-skill
 
-| App | Type | Subskill |
-|---|---|---|
-| Rush desktop | Electron | `app-skills/rush/` |
-| Higgsfield | Web | `domain-skills/higgsfield/` |
+When you need to drive a site that doesn't have a `domain-skills/<site>/` entry yet:
+
+1. **Check upstream first.** [browser-use/awesome-prompts](https://github.com/browser-use/awesome-prompts) is a community library of agent prompts for popular sites — often a faster starting point than writing selectors from scratch. Adapt their snippets into our `SKILL.md` format (frontmatter `description:` + body); credit upstream in the body.
+2. **Scaffold the directory:** `domain-skills/<site>/SKILL.md` plus any helper scripts under `scripts/`.
+3. **Match by directory name** (e.g. `slack` resolves both `slack.com` and `app.slack.com`), or set an explicit `domains:` array in the frontmatter for cross-host coverage:
+   ```yaml
+   ---
+   description: Drive <site>...
+   domains: [mail.google.com, gmail.com]
+   ---
+   ```
+4. **Auto-discovery:** `agents browser start --url <url>` now auto-loads the matching `SKILL.md` and surfaces its contents on stderr so an agent driving the task has site-specific guidance before clicking anything. Pass `--no-skills` to opt out.

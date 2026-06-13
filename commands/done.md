@@ -112,7 +112,7 @@ If a release is needed:
 
 ## Step 6: Update Task Management
 
-Check if there's an active task for this work using the `/issues` skill or project tracker:
+Check if there's an active task for this work using the `/tickets` skill or project tracker:
 
 - If a task is In Progress for this work, mark it done with proof (PR link, release version, etc.)
 - Check TODO.md at the repo root — mark off any related items
@@ -125,7 +125,7 @@ If anything from Step 1 is NOT DONE or PARTIALLY DONE:
    - "How should we handle {item}?" with options based on context
    - "Is {item} still needed?" — Yes, create ticket / No, skip / Defer to later
 
-2. For items that need tickets, create them via `/issues` skill with:
+2. For items that need tickets, create them via `/tickets` skill with:
    - Clear title describing the remaining work
    - Context from this session (what was attempted, what blocked it)
    - Acceptance criteria

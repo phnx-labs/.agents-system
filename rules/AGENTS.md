@@ -143,7 +143,7 @@ git -C $REPO fetch --prune
 # Conventions
 
 - **Memory file:** `AGENTS.md` is canonical. `CLAUDE.md` and `GEMINI.md` are symlinks (or synced copies).
-- **Tickets:** Linear context is auto-injected at session start by the linear hook — read it before starting work. Use `/issues` to take explicit action (query, update, close) on tickets across Linear/GitHub/Jira. Close only with proof.
+- **Tickets:** Linear context is auto-injected at session start by the linear hook — read it before starting work. Use `/tickets` to take explicit action (query, update, close) on tickets across Linear/GitHub/Jira. Close only with proof.
 - **Parallel work:** Multi-surface changes use `agents teams` — see `parallel-teams`.
 
 # agents-cli
@@ -186,10 +186,10 @@ Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pa
 | Task | Tool |
 | --- | --- |
 | Query large docs (.md, .html, .pdf) | `mq` — for files 100+ lines, probe then extract |
-| Issue tracker (Linear/GitHub/Jira) | `/issues` command — auto-detects |
+| Issue tracker (Linear/GitHub/Jira) | `/tickets` command — auto-detects |
 | Browser automation | `browser` skill (a.k.a. `agents browser`) |
 | Interactive terminal (REPLs, TUIs) | `agents pty` — see `agents pty --help` |
 | Parallel coding agents | `agents teams` — see `parallel-teams` |
 | Credentials | `agents secrets` — Keychain-backed |
-| Scripts/release | `scripts` skill |
+| Release/publish | `release` skill |
 

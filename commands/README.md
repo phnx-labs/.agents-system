@@ -50,7 +50,7 @@ These run in your current session, with optional team augmentation for complex s
 - `/audit` - Multi-perspective audit by spawning a team of agents, each playing a different attacker or defender role
 
 **Task Management**
-- `/issues` - Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
+- `/tickets` - Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
 - `/continue` - Resume a previous task with context recovery
 - `/commit` - Stage all changes, write a conventional commit message, and push in the background
 
