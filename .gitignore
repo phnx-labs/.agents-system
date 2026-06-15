@@ -1,4 +1,5 @@
 # Local-only directories (not synced to repo)
+/tests/
 /sessions/
 /versions/
 /shims/

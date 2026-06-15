@@ -132,8 +132,21 @@ check_segment() {
   shift
 
   case "$sub" in
-    reset|checkout|stash|rebase|cherry-pick|revert|clean|reflog|filter-branch|gc|prune|fsck)
+    reset|checkout|stash|cherry-pick|revert|clean|reflog|filter-branch|gc|prune|fsck)
       deny_reason="git $sub is denied (rewrites history or destroys work). Use a worktree-based flow instead."
+      return 1
+      ;;
+    rebase)
+      # Finishing an already-started rebase is safe — the conflicts were
+      # resolved by hand and the only effect is to advance/end the sequence.
+      # Only STARTING a rebase rewrites history, so deny that.
+      for a in "$@"; do
+        case "$a" in
+          --continue|--skip|--abort|--quit|--edit-todo|--show-current-patch)
+            return 0 ;;
+        esac
+      done
+      deny_reason="git rebase (start) is denied (rewrites history). Use a worktree-based flow. Finishing an in-progress rebase (--continue/--skip/--abort) is allowed."
       return 1
       ;;
     branch)

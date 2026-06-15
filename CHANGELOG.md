@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.18] - 2026-06-14
+
+### Changed
+- **`hooks/git-guard.sh`** — finishing an in-progress rebase is now allowed (`git rebase --continue` / `--skip` / `--abort` / `--quit` / `--edit-todo` / `--show-current-patch`); only *starting* a rebase stays denied, since that's what rewrites history. Hand-resolving conflicts and advancing the sequence is safe and was previously blocked outright.
+- **`.gitignore`** — ignore the local-only `/tests/` directory.
+
 ## [0.1.17] - 2026-06-14
 
 ### Fixed
