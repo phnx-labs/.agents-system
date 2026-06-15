@@ -100,6 +100,7 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 | `browser/` | Drive a browser to automate websites — uses the built-in `agents browser` command with per-agent profile isolation over CDP. |
 | `computer/` | Drive native macOS apps — screenshot, click, type, drag via the `agents computer` Accessibility daemon. Covers AX-opaque surfaces (VMs, canvas editors) with coordinate mode. |
 | `docs/` | Write documentation — user-facing, technical, runbooks, onboarding, changelogs. Less is more: only document what code can't tell you. |
+| `git-workflow/` | Run PR-bound work in an isolated worktree — create the branch from the real default branch, work end-to-end inside it, open the PR, clean up after merge. Backs the always-on git-workflow rule. |
 | `mcporter/` | MCP server CLI for managing Model Context Protocol servers. |
 | `reflect/` | Recall all feedback, corrections, and constraints from the current conversation before rewriting or iterating. |
 | `release/` | Publish packages to registries (npm, CDN, etc.). Discovers repo structure, runs tests, updates changelog, publishes, and tags. Supports monorepos and semver. |
