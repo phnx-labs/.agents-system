@@ -10,15 +10,16 @@
 
 ## What this is
 
-`agents-cli` uses layered configuration. Three repos with the same shape but different roles:
+`agents-cli` uses layered configuration. Repos with the same shape but different roles:
 
 | Repo | Role | Edited by |
 |---|---|---|
 | `<project>/.agents/` | **Project** — repo-specific overrides | Project maintainers |
 | `~/.agents/` | **User** — your personal additions and overrides | You |
+| `~/.agents-<alias>/` | **Extras** — optional opinionated bundles (opt-in) | Bundle authors |
 | `~/.agents-system/` (this one) | **System** — npm-shipped defaults | Upstream PRs |
 
-Resources resolve **project > user > system**. Same-named resource at a higher layer wins, everything else unions.
+Resources resolve **project > user > extras > system**. Same-named resource at a higher layer wins, everything else unions.
 
 ## Quick start
 
@@ -98,6 +99,21 @@ Runtime state written to this directory but never committed:
 - `versions/`, `shims/` — installed CLIs
 - `sessions/`, `teams/`, `swarm/` — execution state
 - `agents.yaml`, `*.log`, `*.pid` — local config and logs
+
+## Going further: extras bundles
+
+This repo is the lean, universal default. Heavier opt-in workflows — parallel coding
+loops, branded media generation, git plumbing — ship as separate **extras** bundles you
+layer in with one command (they slot in above system, below your user repo):
+
+```bash
+agents repo add gh:phnx-labs/.agents-extras   # /loop, /sprint, /dispatch, /verify, /animate, /image, /compose, /design, /cleanup
+agents repo list                              # confirm it registered
+```
+
+Extras are kept out of system on purpose — they carry heavier dependencies and paid API
+keys, so the default install stays fast and works on any OS without setup. Disable
+anytime with `agents repo disable <alias>`.
 
 ## Customization
 
