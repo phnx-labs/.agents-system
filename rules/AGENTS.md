@@ -122,7 +122,7 @@ git -C $REPO branch -D $SLUG
 git -C $REPO fetch --prune
 ```
 
-**Don't:** put worktrees outside `<repo>/.agents/worktrees/`. Don't dodge the deny list inside `$WT` (`reset`/`rebase`/`stash` still off-limits). For PR session-gist export, see the `git-session-export` skill.
+**Don't:** put worktrees outside `<repo>/.agents/worktrees/`. Don't dodge the deny list inside `$WT` (`reset`/`rebase`/`stash` still off-limits). To attach the session transcript to a PR, see the `sessions` skill.
 
 # Operational Guardrails (Tier 3)
 
@@ -130,15 +130,15 @@ git -C $REPO fetch --prune
 
 - **Ask about scope; decide about implementation.** Unclear what the user wants (requirements, scope, priorities)? Ask — 30 seconds beats hours of wrong work. Unclear *how* to implement what they asked for? Decide, state reasoning briefly, keep going (see `workflow-proactive`).
 - **No emojis** in code, comments, commits, or user-facing output — unless explicitly asked.
-- **No credentials in env vars or config.** Use `agents secrets` (macOS Keychain).
+- **No credentials in env vars or config.** Use `agents secrets` (OS keychain-backed).
 - **No locally built CLIs.** Install globally (`npm i -g`, `cargo install`); don't invoke `./bin/foo`.
 - **No background shells left running.** Foreground or explicit `run_in_background` with a finish signal.
 - **No toasts.** Silent success, inline errors.
 - **No unsolicited .md files.** No README/docs/summary/notes unless asked.
 - **Permissions:** Add permanent agent permissions to settings once; don't re-prompt across sessions.
 - **Images:** Include the full file path so the user can click to preview.
-- **Hand off commands the user must run — don't just print them.** Markdown code fences aren't executable. Prefer, in order: (1) pipe to clipboard with `pbcopy` and tell the user "copied — paste it" (`printf '%s' '<cmd>' | pbcopy`); (2) write a one-shot script to `/tmp/<slug>.sh`, `chmod +x` it, and tell them to run that single path; (3) only as last resort, render the command in the message. Multi-line commands always go to a script. Quote what you copied so the user can verify before pasting.
-- **Don't:** start/kill dev servers without asking; add backwards-compat shims you weren't asked for; use `find` on macOS (use `fd`).
+- **Hand off commands the user must run — don't just print them.** Markdown code fences aren't executable. Prefer, in order: (1) pipe to the clipboard (`pbcopy` on macOS, `xclip -selection clipboard` / `wl-copy` on Linux) and tell the user "copied — paste it"; (2) write a one-shot script to a temp path (`mktemp` or `/tmp/<slug>.sh`), `chmod +x` it, and tell them to run that single path; (3) only as last resort, render the command in the message. Multi-line commands always go to a script. Quote what you copied so the user can verify before pasting.
+- **Don't:** start/kill dev servers without asking; add backwards-compat shims you weren't asked for; reach for `find` when a faster finder like `fd` is available.
 
 # Conventions
 
@@ -177,7 +177,7 @@ agents teams add my-feature codex  "Owns: src/ui/*. Not: src/auth/*. ..." --name
 agents teams start my-feature --watch
 ```
 
-Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pattern, success criteria, and ends with the line from core-hard-lines #8. The `swarm` slash command is the long-form playbook.
+Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pattern, success criteria, and ends with the line from core-hard-lines #8. The `/teams` command is the long-form playbook.
 
 # Tooling & Stack Conventions
 
@@ -190,6 +190,6 @@ Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pa
 | Browser automation | `browser` skill (a.k.a. `agents browser`) |
 | Interactive terminal (REPLs, TUIs) | `agents pty` — see `agents pty --help` |
 | Parallel coding agents | `agents teams` — see `parallel-teams` |
-| Credentials | `agents secrets` — Keychain-backed |
+| Credentials | `agents secrets` — OS keychain-backed |
 | Release/publish | `release` skill |
 

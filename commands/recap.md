@@ -1,5 +1,5 @@
 ---
-description: Summarize the current situation - facts first, hypotheses with grounding
+description: Summarize the current situation — facts first, hypotheses with grounding
 ---
 
 You are creating a recap of: $ARGUMENTS

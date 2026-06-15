@@ -9,5 +9,5 @@
 | Browser automation | `browser` skill (a.k.a. `agents browser`) |
 | Interactive terminal (REPLs, TUIs) | `agents pty` — see `agents pty --help` |
 | Parallel coding agents | `agents teams` — see `parallel-teams` |
-| Credentials | `agents secrets` — Keychain-backed |
+| Credentials | `agents secrets` — OS keychain-backed |
 | Release/publish | `release` skill |

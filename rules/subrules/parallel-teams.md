@@ -23,4 +23,4 @@ agents teams add my-feature codex  "Owns: src/ui/*. Not: src/auth/*. ..." --name
 agents teams start my-feature --watch
 ```
 
-Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pattern, success criteria, and ends with the line from core-hard-lines #8. The `swarm` slash command is the long-form playbook.
+Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pattern, success criteria, and ends with the line from core-hard-lines #8. The `/teams` command is the long-form playbook.

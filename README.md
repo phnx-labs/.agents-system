@@ -48,30 +48,36 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`.
 |---------|---------|
 | `/plan` | Plan with research, code reading, artifacts, optional team review |
 | `/debug` | Root-cause analysis with full evidence chain |
-| `/done` | Verify work is complete, test, release, create tickets for remaining |
-| `/audit` | Multi-perspective security audit using agent teams |
 | `/clean` | Remove tech debt, consolidate duplicates |
 | `/test` | Test critical paths with parallel validation |
 | `/recap` | Summarize state — facts first, hypotheses grounded |
 | `/commit` | Stage, conventional commit, push in background |
+| `/review` | Review every PR the session opened, then merge / request-changes per verdict |
+| `/done` | Verify work is complete, test, release, create tickets for remaining |
+| `/prune` | Delete merged branches and worktrees, locally and on origin (conservative) |
 | `/continue` | Resume previous session with context recovery |
 | `/tickets` | Work with issue tracker (auto-detects Linear/GitHub/Jira) |
 | `/teams` | Spawn parallel agents for a task |
 
-Several commands use `agents teams` for complex scopes (audit, debug, plan, clean, test, recap).
+Several commands use `agents teams` for complex scopes (debug, plan, clean, test, recap, review).
 
 ## Skills
 
-Skills are richer than commands — multi-file capabilities with persistent context.
+Skills are richer than commands — multi-file capabilities with persistent context. The full set ships in [`skills/`](skills/); highlights:
 
 | Skill | Purpose |
 |-------|---------|
 | `agents-cli` | Manage agent CLIs, versions, config |
 | `browser` | Drive browsers for automation |
+| `computer` | Drive native macOS apps (screenshot, click, type) |
 | `teams` | Organize agents into parallel teams |
+| `run` / `routines` | Dispatch a single agent / schedule recurring agents |
+| `sessions` | Search and read prior agent transcripts |
+| `secrets` | Keychain-backed env-var bundles |
 | `mcporter` | Configure and call MCP servers |
+| `docs` / `release` / `reflect` | Write docs / publish packages / recall feedback |
 
-Invoke with `/skillname` or let Claude invoke when relevant.
+See [`skills/README.md`](skills/README.md) for the complete table. Invoke with `/skillname` or let Claude invoke when relevant.
 
 ## Rules
 

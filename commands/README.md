@@ -32,35 +32,31 @@ Use a command when you want a specific methodology applied once. Use a skill whe
 
 ## Commands
 
-These run in your current session, with optional team augmentation for complex scopes:
+The command files in this directory, with optional team augmentation for complex scopes:
 
-**Planning & Design**
-- `/plan` - Feature planning with mandatory artifacts (mockups, diagrams, state machines). Forces grounded discussion. For large features, automatically validates with a team.
-- `/design` - UX design with ASCII mockups and interaction flows
-- `/redesign` - Improve existing screens with before/after proposals
-- `/product` - Think like a product engineer - user value over technical elegance
+**Planning**
+- `/plan` — Feature planning with mandatory artifacts (mockups, diagrams, state machines). Forces grounded discussion. For large features, automatically validates with a team.
 
 **Debugging & Maintenance**
-- `/debug` - Systematic root cause analysis. Maps the full data path, reads every file in the chain, builds evidence. For complex bugs, verifies with independent teammates.
-- `/clean` - Remove tech debt, consolidate duplicate code, clean up patterns. For large codebases, parallelizes scanning across areas.
-- `/recap` - Summarize current situation with facts, hypotheses (grounded in evidence), and next steps. Automatically spawns teams for actionable items.
-- `/test` - Identify critical paths and validate them. For complex scopes, distributes testing across a team.
+- `/debug` — Systematic root cause analysis. Maps the full data path, reads every file in the chain, builds evidence. For complex bugs, verifies with independent teammates.
+- `/clean` — Remove tech debt, consolidate duplicate code, clean up patterns. For large codebases, parallelizes scanning across areas.
+- `/recap` — Summarize the current situation — facts first, hypotheses grounded in evidence, next steps. Spawns teams for actionable items.
+- `/test` — Identify critical paths and validate them. For complex scopes, distributes testing across a team.
 
-**Audit & Security**
-- `/audit` - Multi-perspective audit by spawning a team of agents, each playing a different attacker or defender role
+**Shipping & Review**
+- `/commit` — Stage all changes, write a conventional commit message, and push in the background.
+- `/review` — Recap the session's goal, list every PR it opened, review each in parallel, then merge / request-changes / close-as-duplicate per verdict.
+- `/done` — Verify work is truly done end-to-end, test, release if needed, then close or create tickets for what remains.
+- `/prune` — Delete merged branches and worktrees locally and on origin. Conservative — never removes work that could be lost.
 
 **Task Management**
-- `/tickets` - Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
-- `/continue` - Resume a previous task with context recovery
-- `/commit` - Stage all changes, write a conventional commit message, and push in the background
-
-**Utilities**
-- `/secrets` - Manage named bundles of environment variables backed by macOS Keychain. Create bundles, add secrets, inject into runs.
-- `/sessions` - Search, browse, and read agent conversation transcripts across Claude, Codex, Gemini, and OpenCode.
-- `/teams` - Arrange agents into teams for parallel execution. Create, add members, start, monitor, and collect results.
+- `/tickets` — Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
+- `/continue` — Resume a previous task with context recovery.
 
 **Delegation**
-- `/spawn` - Spawn a single subagent with full context for one task
+- `/teams` — Arrange agents into teams for parallel execution. Create, add members, start, monitor, and collect results.
+
+> Capabilities like `/secrets`, `/sessions`, `/audit`, and `/design` are **skills**, not commands — see [`skills/`](../skills/). They're invocable the same way (`/name`) but live in the skills layer with their own tooling and context.
 
 ## Team Augmentation
 
@@ -71,7 +67,7 @@ Several commands automatically use `agents teams` when the scope is complex:
 - `/clean` — Parallelizes scanning across frontend/backend/shared/docs for large codebases
 - `/test` — Distributes testing across areas for complex scopes
 - `/recap` — Spawns teams for 2+ clear, actionable items instead of listing them
-- `/audit` — Always uses teams; each teammate plays a different threat perspective
+- `/review` — Reviews each open PR in parallel, one reviewer per PR
 
 Run `agents teams --help` for team management commands.
 

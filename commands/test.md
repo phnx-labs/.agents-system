@@ -1,5 +1,5 @@
 ---
-description: Test critical paths - parallel validation for complex scopes
+description: Test critical paths — parallel validation for complex scopes
 ---
 
 You are testing: $ARGUMENTS

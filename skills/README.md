@@ -103,6 +103,10 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 | `mcporter/` | MCP server CLI for managing Model Context Protocol servers. |
 | `reflect/` | Recall all feedback, corrections, and constraints from the current conversation before rewriting or iterating. |
 | `release/` | Publish packages to registries (npm, CDN, etc.). Discovers repo structure, runs tests, updates changelog, publishes, and tags. Supports monorepos and semver. |
+| `routines/` | Schedule agents to run on a cron schedule or one-shot at a specific time. The scheduler auto-starts on first add. |
+| `run/` | Execute a single agent headlessly or interactively — plan/edit/full modes, secrets injection, version pinning, fallback chains. |
+| `secrets/` | Manage named bundles of environment variables backed by the OS keychain. Create bundles, add secrets, inject them into agent runs. |
+| `sessions/` | Search, browse, and read prior agent conversation transcripts across Claude, Codex, Gemini, and OpenCode. |
 | `teams/` | Organize AI coding agents into teams for parallel collaboration. Create, add, start, monitor, and collect results. |
 
 ## Further Reading

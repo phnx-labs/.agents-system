@@ -37,4 +37,4 @@ git -C $REPO branch -D $SLUG
 git -C $REPO fetch --prune
 ```
 
-**Don't:** put worktrees outside `<repo>/.agents/worktrees/`. Don't dodge the deny list inside `$WT` (`reset`/`rebase`/`stash` still off-limits). For PR session-gist export, see the `git-session-export` skill.
+**Don't:** put worktrees outside `<repo>/.agents/worktrees/`. Don't dodge the deny list inside `$WT` (`reset`/`rebase`/`stash` still off-limits). To attach the session transcript to a PR, see the `sessions` skill.

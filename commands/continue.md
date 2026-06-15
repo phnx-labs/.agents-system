@@ -1,5 +1,5 @@
 ---
-description: Resume a previous task - load context via agents sessions, assess state, then continue working
+description: Resume a previous task — load context via agents sessions, assess state, then continue working
 ---
 
 Resume previous work: $ARGUMENTS
@@ -49,4 +49,4 @@ Pick up exactly where things left off. Don't redo completed work. Follow ACT -> 
 - Do not ask "what were you working on?" — load the transcript first
 - Do not dump raw transcript output at the user — synthesize it
 - Do not start coding before verifying the prior work is still intact
-- Do not use the older `/sessions` skill or hand-traverse `~/.agents/versions/.../projects/` — `agents sessions` is the canonical tool
+- Use the `agents sessions` CLI to load context — don't hand-traverse `~/.agents/versions/.../projects/`

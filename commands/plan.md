@@ -1,5 +1,5 @@
 ---
-description: Plan with grounded design - research, read code, create artifacts, optionally get early review
+description: Plan with grounded design — research, read code, create artifacts, optionally get early review
 ---
 
 You are planning: $ARGUMENTS
