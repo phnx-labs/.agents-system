@@ -35,6 +35,10 @@ case "$input" in *git*) ;; *) exit 0 ;; esac
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || cmd=""
 [ -z "$cmd" ] && exit 0
 
+# Session working directory, used to tell whether a history-rewriting op is
+# scoped to an isolated worktree (safe) vs the user's main checkout (gated).
+cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null) || cwd=""
+
 deny_reason=""
 
 # Detect `sh|bash -c <inner>` at the raw string level (BEFORE token split) so
@@ -146,7 +150,16 @@ check_segment() {
             return 0 ;;
         esac
       done
-      deny_reason="git rebase (start) is denied (rewrites history). Use a worktree-based flow. Finishing an in-progress rebase (--continue/--skip/--abort) is allowed."
+      # Rebasing your own PR branch inside an isolated worktree is the blessed
+      # flow — it rewrites history on a branch nothing else uses and never
+      # touches the user's main checkout. Detect it via the worktree path in
+      # the command (`git -C <wt> rebase` / `cd <wt> && git rebase`) or the
+      # session cwd already being inside one. force-with-lease is already
+      # allowed (see `push` below), so the round-trip works end to end.
+      case "$cmd$cwd" in
+        *"/.agents/worktrees/"*) return 0 ;;
+      esac
+      deny_reason="git rebase (start) is denied outside a worktree (rewrites history). Run it inside a <repo>/.agents/worktrees/<slug> worktree; finishing an in-progress rebase (--continue/--skip/--abort) is allowed anywhere."
       return 1
       ;;
     branch)
