@@ -10,7 +10,8 @@ Plans fail when they're based on assumptions instead of evidence. Before proposi
 1. Research current best practices and APIs
 2. Read the actual code that will change
 3. Create concrete artifacts (mockups, diagrams)
-4. Optionally get early review from a small team
+4. For medium+ work, get independent plans from a vendor-varied panel and adjudicate one
+   merged plan against the code (Step 7)
 
 ## Step 1: Understand the Request
 
@@ -175,31 +176,87 @@ Frontend -> User: show success
 | Email taken | existing email | 400, email_taken |
 | Weak password | "123" | 400, weak_password |
 
-## Step 7: Early Design Review (Recommended for Medium+ Features)
+## Step 7: Independent Design Panel -> Adjudicate (automatic for medium+ features)
 
-Before finalizing, get independent review from 1-2 agents:
+You have your own grounded plan from Steps 1-6. Now get *genuinely independent* plans from
+other agents and adjudicate one merged plan. Run this **automatically** — do NOT stop to ask
+whether to verify.
+
+**Skip ONLY for** small, well-understood changes with clear patterns (say so in one line and
+go to Step 8). **Run for** new features, architectural changes, unfamiliar areas.
+
+**Why independent plans, not a critique of yours:** a team asked to *review your plan* anchors
+on your framing and polishes one approach — and their mistakes feed straight into it. A team
+that plans *independently* surfaces genuinely different architectures, and you adopt an idea
+only after checking it against the code — so a reviewer's error loses that point instead of
+corrupting the plan.
+
+### Spawn independent planners — variety of vendors, read-only
 
 ```bash
-agents teams create plan-review-<topic>
-agents teams add plan-review-<topic> claude "Review this feature design independently. 
-Context: [paste the goal and constraints]
-Files to read: [list the key files]
-Do NOT look at my proposed approach. Create your own design with artifacts.
-Return file:line quotes for every claim." --name reviewer1 --mode plan
-
-agents teams add plan-review-<topic> codex "Same task, independent review..." --name reviewer2 --mode plan
-
-agents teams start plan-review-<topic> --watch
+agents teams doctor                       # see which vendor agents are installed
+agents teams create plan-<topic>
+agents teams add plan-<topic> codex  "<blind brief>" --name p1 --mode plan
+agents teams add plan-<topic> gemini "<blind brief>" --name p2 --mode plan
+agents teams add plan-<topic> cursor "<blind brief>" --name p3 --mode plan
+agents teams start plan-<topic> --watch
+agents teams logs plan-<topic> p1   # ...read each, then:
+agents teams disband plan-<topic>
 ```
 
-After they complete:
-- Compare their designs with yours
-- Incorporate edge cases you missed
-- Adopt simpler approaches if found
-- Note disagreements as design questions
+**Variety is the requirement — a MIX of vendors** (`codex`/`gemini`/`cursor`/`claude`), not N
+copies of one; same vendor = same blind spots. **How many is your judgment**, scaled to the
+feature's breadth. Each planner is **`--mode plan`** (reads code, never edits).
 
-**Skip for:** Small, well-understood changes with clear patterns.
-**Use for:** New features, architectural changes, unfamiliar areas.
+### The blind brief (SHARE / WITHHOLD)
+
+Each planner gets the SAME brief. The split is what keeps them independent — leak your
+approach and you've just measured your own bias.
+
+**SHARE — enough to plan well, and where to look:**
+- The goal / problem, who benefits, and the constraints.
+- The key files to read (with paths) — point them at the relevant code.
+- The *factual* primitives inventory from Step 5 (what already exists). This is reality, not
+  your opinion, and it steers them toward reuse over invent.
+
+**WITHHOLD — never include (named so they can't slip in):**
+- Your chosen approach or architecture.
+- Your mockups / diagrams / state machines.
+- Your file-by-file implementation plan.
+- Any framing that pre-loads the answer ("I'm planning to put it in the X layer").
+
+Brief template:
+```
+Mission: Design this feature independently and return a FULL plan with artifacts. Do not
+assume any prior design exists — this is your own design.
+
+Goal: <what + why + who benefits>
+Constraints: <time / deps / backwards-compat>
+Read these files: <paths>
+Already exists (reuse, don't reinvent): <factual primitives inventory from Step 5>
+
+Return: user flow / mockups / API specs / state diagrams as the change type demands, then a
+file-by-file implementation outline.
+
+Return file:line quotes for every claim. Do NOT paraphrase. If you can't quote it, don't
+claim it.
+```
+
+### Adjudicate (this is where reviewer mistakes get filtered)
+
+Collect every planner's design plus your own and synthesize **ONE** plan:
+
+- **Adopt an idea only after verifying it against the actual code (file:line).** A proposal
+  that's wrong about the code is rejected *for that point* — it never silently enters the plan.
+- **Do not privilege your own plan.** Treat it as one candidate among N. If a planner found a
+  simpler or more correct approach, take it.
+- **Fold in** edge cases, reuse opportunities, and failure modes any planner caught that you
+  missed.
+- Where designs differ on a genuine *trade-off* (not a factual error), surface it as a design
+  question via `AskUserQuestion` rather than picking silently.
+
+You are the adjudicator, not an averager — the merged plan is the strongest grounded design,
+not the union of all of them.
 
 ## Step 8: Design Questions
 
@@ -236,8 +293,11 @@ Components, hooks, utilities, patterns to reuse. What each provides.
 
 **Design Questions:** (only if genuinely ambiguous)
 
-### Review Findings (if team was spawned)
-What reviewers found. What was incorporated.
+### Independent Plans (if a panel was spawned)
+For each independent planner: vendor, the approach it proposed in one line, and the verdict —
+ADOPTED (what was taken), REJECTED (what was discarded *and why* — flag anything contradicted
+by the code with file:line), or DESIGN QUESTION (a genuine trade-off surfaced to the user).
+Note what the panel caught that your own plan missed.
 
 ### Summary
 
