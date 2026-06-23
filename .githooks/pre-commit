@@ -36,10 +36,17 @@ ensure_yq
 # Get staged files
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
 
+# Print only the first YAML frontmatter block (between the first two `---`
+# lines). Body markdown horizontal rules (`---`) are ignored — extraction stops
+# at the closing delimiter rather than re-triggering on every `---` in the body.
+extract_frontmatter() {
+    awk 'NR==1 && $0=="---" {inside=1; next} inside && $0=="---" {exit} inside {print}' "$1"
+}
+
 validate_yaml_frontmatter() {
     local file="$1"
     local frontmatter
-    frontmatter=$(sed -n '/^---$/,/^---$/p' "$file" | sed '1d;$d')
+    frontmatter=$(extract_frontmatter "$file")
 
     [[ -z "$frontmatter" ]] && return 0
 
@@ -71,7 +78,7 @@ for file in $STAGED; do
 
     case "$file" in
         */SKILL.md)
-            frontmatter=$(sed -n '/^---$/,/^---$/p' "$REPO_ROOT/$file" | sed '1d;$d')
+            frontmatter=$(extract_frontmatter "$REPO_ROOT/$file")
             if [[ -z "$frontmatter" ]]; then
                 echo -e "${RED}✗ Missing YAML frontmatter:${NC} $file"
                 ((ERRORS++))

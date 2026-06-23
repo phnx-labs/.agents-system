@@ -34,6 +34,7 @@ agents view          # show what's installed
 .agents-system/
   commands/        # slash commands (/plan, /debug, /done, ...)
   skills/          # capabilities (agents-cli, browser, teams, ...)
+  plugins/         # bundled plugins (code, ...) — registered in .claude-plugin/marketplace.json
   hooks/           # lifecycle scripts + hooks.yaml manifest
   rules/           # AGENTS.md + modular rule fragments
   permissions/     # permission groups + presets
@@ -79,6 +80,14 @@ Skills are richer than commands — multi-file capabilities with persistent cont
 | `docs` / `release` / `reflect` | Write docs / publish packages / recall feedback |
 
 See [`skills/README.md`](skills/README.md) for the complete table. Invoke with `/skillname` or let Claude invoke when relevant.
+
+## Plugins
+
+Plugins bundle related skills, commands, hooks, and subagents into one installable unit. The system layer ships lightweight, no-paid-key plugins by default; heavier or key-gated plugins live in `.agents-extras`. Registered in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json), synced per agent version.
+
+| Plugin | Purpose |
+|--------|---------|
+| `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:sprint`, `/code:quality`, `/commit` |
 
 ## Rules
 

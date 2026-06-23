@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "agents-system",
+  "description": "npm-shipped default plugins for agents-cli — the lightweight, no-paid-key workflows that ship with the system layer. Heavier or key-gated plugins live in .agents-extras instead.",
+  "owner": {
+    "name": "phnx-labs",
+    "url": "https://github.com/phnx-labs"
+  },
+  "plugins": [
+    {
+      "name": "code",
+      "source": "./plugins/code",
+      "description": "Coding-workflow plugin for the manager/router engineering loop. `/code:loop` drains a queue end-to-end (single ticket or many: plan, code, test, review, rebase, fix CI, merge), `/code:dispatch` triages a single task and picks the delivery path, `/code:verify` runs the end-to-end gate (canonical test per changed surface, read from the project's CLAUDE.md/AGENTS.md), `/code:review` reviews every PR opened in parallel — plus a security pass on risk-touching diffs — and merges per verdict, `/code:sprint` runs a time-boxed multi-track parallel push via `agents teams`, `/code:quality` runs a read-only code-health diagnostic and opens an HTML report, `/commit` splits the working tree into the maximum number of small logical commits.",
+      "version": "0.6.1",
+      "author": {
+        "name": "Muqsit Nawaz",
+        "email": "contact@trp.so"
+      }
+    }
+  ]
+}
