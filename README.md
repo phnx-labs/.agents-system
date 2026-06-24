@@ -56,6 +56,7 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`.
 | `/commit` | Stage, conventional commit, push in background |
 | `/review` | Review every PR the session opened, then merge / request-changes per verdict |
 | `/done` | Verify work is complete, test, release, create tickets for remaining |
+| `/finish` | Drive the current task to completion end-to-end instead of stopping at a recap, blocker, or partial handoff |
 | `/prune` | Delete merged branches and worktrees, locally and on origin (conservative) |
 | `/continue` | Resume previous session with context recovery |
 | `/tickets` | Work with issue tracker (auto-detects Linear/GitHub/Jira) |

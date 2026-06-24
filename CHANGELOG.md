@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.23] - 2026-06-23
+
+### Added
+- **`commands/finish.md`** — the `/finish` command, ported from `.agents-extras` as a system default. An execution intervention (not a recap): recover the original contract from the conversation, convert each open item to a next action with evidence-backed verdicts, take the next action immediately, verify end-to-end on the real flow, ship, and keep going until the task is delivered or a hard external blocker is proven with three quoted attempts. Complements `/done` (which *checks* whether work is complete) by *driving* it to completion. Lightweight, no deps.
+
 ## [0.1.22] - 2026-06-23
 
 ### Added
