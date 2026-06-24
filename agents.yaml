@@ -33,3 +33,12 @@ hooks:
     matcher: Bash
     script: large-file-add-guard.sh
     timeout: 5
+  session-start-autosync:
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - SessionStart
+    script: 05-session-start-autosync.sh
+    timeout: 5
