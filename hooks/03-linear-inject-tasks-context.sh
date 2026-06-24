@@ -2,13 +2,19 @@
 # SessionStart hook: fetch ALL Linear tasks from active sprint
 # Groups by agent label, shows Claude's tasks first, then full team status
 
-LINEAR_API_KEY=$(security find-generic-password -s "linear-api-key" -w 2>/dev/null)
-TEAM_ID=$(security find-generic-password -s "linear-team-id" -w 2>/dev/null)
+# Read credentials through the CLI's cross-platform keychain layer (macOS
+# Keychain via /usr/bin/security, Linux via secret-tool + encrypted-file
+# fallback) instead of hardcoding the macOS-only `security` binary — which
+# does not exist on Linux and made this hook print "not found" on every
+# launch there. macOS items written by the previous `security -s linear-api-key`
+# convention are read transparently (same account+service lookup).
+LINEAR_API_KEY=$(agents secrets get linear-api-key 2>/dev/null)
+TEAM_ID=$(agents secrets get linear-team-id 2>/dev/null)
 
 if [ -z "$LINEAR_API_KEY" ] || [ -z "$TEAM_ID" ]; then
-  echo "Linear credentials not found in Keychain. Add them with:"
-  echo '  security add-generic-password -a "$USER" -s "linear-api-key" -w "YOUR_KEY"'
-  echo '  security add-generic-password -a "$USER" -s "linear-team-id" -w "YOUR_TEAM_ID"'
+  echo "Linear credentials not found. Add them with:"
+  echo '  agents secrets set linear-api-key --value YOUR_KEY'
+  echo '  agents secrets set linear-team-id --value YOUR_TEAM_ID'
   exit 0
 fi
 
