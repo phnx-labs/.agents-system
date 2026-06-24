@@ -272,5 +272,5 @@ The skill itself is the playbook — these are the orchestrator-level invocation
 ## Sibling references
 
 - `agents teams` — the parallel execution primitive. See `~/.agents/plugins/agents/skills/teams/SKILL.md`.
-- `/swarm` command — long-form playbook with team templates.
+- `/teams` command — long-form playbook with team templates.
 - `parallel-teams` doc in AGENTS.md / CLAUDE.md — the boundary-contract discipline.
