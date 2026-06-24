@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.25] - 2026-06-24
+
+### Fixed
+- **`plugins/code/skills/sprint/SKILL.md`** — the "Sibling references" section pointed at a `/swarm` command that does not exist; corrected to `/teams`, the actual parallel-teams command.
+- **`plugins/code/.claude-plugin/plugin.json`** — removed an invalid `skills` field that is not part of the plugin manifest schema.
+
 ## [0.1.24] - 2026-06-23
 
 ### Fixed
