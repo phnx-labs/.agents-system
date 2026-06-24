@@ -1,0 +1,9 @@
+{
+  "name": "git",
+  "version": "0.1.0",
+  "description": "git — pure git plumbing commands that aren't tied to code logic. `/cleanup` removes merged branches and worktrees with hard data-loss guards (skips anything with uncommitted changes, stashes, unmerged commits, locks, or detached HEAD). Future home for `/tag-release`, `/rebase-clean`, and other git-only workflows. The code-aware loop (`/commit`, `/review`, `/sprint`) lives in the `code` plugin.",
+  "author": {
+    "name": "Muqsit Nawaz",
+    "email": "contact@trp.so"
+  }
+}

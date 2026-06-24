@@ -16,6 +16,16 @@
         "name": "Muqsit Nawaz",
         "email": "contact@trp.so"
       }
+    },
+    {
+      "name": "git",
+      "source": "./plugins/git",
+      "description": "git — pure git plumbing commands that aren't tied to code logic. `/git:cleanup` removes merged branches and worktrees with hard data-loss guards (skips anything with uncommitted changes, stashes, unmerged commits, locks, or detached HEAD), using `git rev-list --count origin/$MAIN..HEAD == 0` as the load-bearing 'nothing to lose' check. Future home for `/tag-release`, `/rebase-clean`, and other git-only workflows. The code-aware loop (`/commit`, `/review`, `/sprint`) lives in the `code` plugin.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Muqsit Nawaz",
+        "email": "contact@trp.so"
+      }
     }
   ]
 }

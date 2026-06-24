@@ -34,7 +34,7 @@ agents view          # show what's installed
 .agents-system/
   commands/        # slash commands (/plan, /debug, /done, ...)
   skills/          # capabilities (agents-cli, browser, teams, ...)
-  plugins/         # bundled plugins (code, ...) — registered in .claude-plugin/marketplace.json
+  plugins/         # bundled plugins (code, git, ...) — registered in .claude-plugin/marketplace.json
   hooks/           # lifecycle scripts + hooks.yaml manifest
   rules/           # AGENTS.md + modular rule fragments
   permissions/     # permission groups + presets
@@ -88,6 +88,7 @@ Plugins bundle related skills, commands, hooks, and subagents into one installab
 | Plugin | Purpose |
 |--------|---------|
 | `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:sprint`, `/code:quality`, `/commit` |
+| `git` | Pure git plumbing (no code logic) — `/git:cleanup` prunes merged branches and worktrees with hard data-loss guards |
 
 ## Rules
 
@@ -112,11 +113,11 @@ Runtime state written to this directory but never committed:
 ## Going further: extras bundles
 
 This repo is the lean, universal default. Heavier opt-in workflows — parallel coding
-loops, branded media generation, git plumbing — ship as separate **extras** bundles you
+loops, branded media generation — ship as separate **extras** bundles you
 layer in with one command (they slot in above system, below your user repo):
 
 ```bash
-agents repo add gh:phnx-labs/.agents-extras   # /loop, /sprint, /dispatch, /verify, /animate, /image, /compose, /design, /cleanup
+agents repo add gh:phnx-labs/.agents-extras   # /loop, /sprint, /dispatch, /verify, /animate, /image, /compose, /design
 agents repo list                              # confirm it registered
 ```
 
