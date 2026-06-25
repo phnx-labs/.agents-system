@@ -53,8 +53,8 @@ Slash commands are prompt templates. `commands/<name>.md` becomes `/<name>`.
 | `/clean` | Remove tech debt, consolidate duplicates |
 | `/test` | Test critical paths with parallel validation |
 | `/recap` | Summarize state — facts first, hypotheses grounded |
-| `/commit` | Stage, conventional commit, push in background |
-| `/review` | Review every PR the session opened, then merge / request-changes per verdict |
+| `/commit` | Alias of `/code:commit` — split into max logical commits, push in background |
+| `/review` | Alias of `/code:review` — review every PR the session opened, then merge / request-changes per verdict |
 | `/done` | Verify work is complete, test, release, create tickets for remaining |
 | `/finish` | Drive the current task to completion end-to-end instead of stopping at a recap, blocker, or partial handoff |
 | `/prune` | Delete merged branches and worktrees, locally and on origin (conservative) |

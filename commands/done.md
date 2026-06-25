@@ -6,6 +6,8 @@ You are checking whether the current work is actually done. Context: $ARGUMENTS
 
 Do NOT skip steps. Do NOT claim done until every check passes.
 
+> **`/done` vs `/finish`** — `/done` is the **closing checklist + ship gate**: verify end-to-end, then commit → PR → *optionally cut a package release* → close/create tickets, ending by reporting and asking what's next. If instead you're *stalling mid-task* (stopped at a recap, a blocker, or a partial handoff) and need to be driven to completion without stopping, use **`/finish`**. `/done` checks-and-ships; `/finish` refuses-to-stop. (For driving a queue of tickets/branches all the way to merged, that's `/code:loop`.)
+
 ## Step 1: Recall What Was Asked
 
 Re-read the conversation from the beginning. Build a checklist of every goal, requirement, and commitment you made:
