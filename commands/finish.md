@@ -6,6 +6,8 @@ You are finishing the current task. Context: $ARGUMENTS
 
 This command is not a recap command. It is an execution intervention: recover the original goal, identify what remains, take the next concrete action, verify the real flow, and keep going until the task is truly delivered or a hard external blocker is proven.
 
+> **`/finish` vs `/done`** — `/finish` is the **anti-stopping driver**: its whole job is to refuse to stop at a recap/blocker/partial handoff and push the current task to delivered. It does *not* run a release step. When the work is already delivered and you want the **closing checklist + ship gate** (E2E verify → commit → PR → optional package release → close tickets), use **`/done`**. For draining a *queue* of tickets/branches all the way to merged, use `/code:loop`.
+
 ## Step 1 - Recover The Contract
 
 Re-read the conversation from the start and write a short working checklist:

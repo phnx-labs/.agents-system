@@ -73,6 +73,7 @@ When the queue is empty (every item merged or parked with a note), you summarize
 The argument tells you where the work comes from:
 
 - A single ticket ID (`PROJ-123`, `#412`) → queue of one.
+- A single branch or PR (`#412`, a branch name, a worktree path) → **queue of one: land this one thing.** Take it through verify → open/refresh PR → wait for CI (fix the cause if it's red) → review → address comments → merge → clean up. This single-item path **is** "land one branch" — there is no separate `/land` or `/merge` command; for one branch, you run `/code:loop` with a queue of one and skip the planner/conflict-graph framing that only matters for multi-item queues.
 - A filter (`--label=bug`, `--query="state:open assignee:me"`) → fetch the matching tickets from your issue tracker (Linear, GitHub Issues, Jira).
 - A path to a markdown file with a checklist → each unchecked item is a queue item.
 - `--todos` → grep `FIXME` / `TODO` from the repo and treat each as an item.

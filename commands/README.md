@@ -44,8 +44,8 @@ The command files in this directory, with optional team augmentation for complex
 - `/test` — Identify critical paths and validate them. For complex scopes, distributes testing across a team.
 
 **Shipping & Review**
-- `/commit` — Stage all changes, write a conventional commit message, and push in the background.
-- `/review` — Recap the session's goal, list every PR it opened, review each in parallel, then merge / request-changes / close-as-duplicate per verdict.
+- `/commit` — **Alias of `/code:commit`** (code plugin). Split changes into the maximum number of small logical commits and push in the background. Canonical definition lives in the `code` plugin; this is the short name.
+- `/review` — **Alias of `/code:review`** (code plugin). Recap the session's goal, list every PR it opened, review each in parallel, then merge / request-changes / close-as-duplicate per verdict. Canonical definition lives in the `code` plugin; this is the short name.
 - `/done` — Verify work is truly done end-to-end, test, release if needed, then close or create tickets for what remains.
 - `/prune` — Delete merged branches and worktrees locally and on origin. Conservative — never removes work that could be lost.
 
