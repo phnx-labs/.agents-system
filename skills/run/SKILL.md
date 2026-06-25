@@ -174,6 +174,17 @@ agents run claude "..." --acp           # via @zed-industries/claude-code-acp ad
 
 Emits a unified event stream; ndjson when combined with `--json`.
 
+## Run in the cloud instead
+
+`agents run` executes on this machine. To offload work to a remote backend — Rush Cloud (GitHub repo + branch, auto-opens a PR), Codex Cloud (pre-built env), or Factory pods — use `agents cloud run`:
+
+```bash
+agents cloud run "fix the flaky test" --provider rush --repo owner/repo
+agents cloud run "add auth tests" --provider codex --env <env_id>
+```
+
+Scale past local capacity, dispatch async with `--no-follow`, and manage tasks with `agents cloud list|status|logs|cancel`. See the `cloud` skill.
+
 ## Quick reference
 
 | Flag | Purpose |

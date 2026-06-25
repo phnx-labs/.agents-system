@@ -98,6 +98,7 @@ Each subdirectory is a self-contained skill with its own `SKILL.md`. Invoke with
 |-------|-------------|
 | `agents-cli/` | Manage AI coding agent CLIs. Install versions, sync configs, switch between agents, manage MCP servers. |
 | `browser/` | Drive a browser to automate websites — uses the built-in `agents browser` command with per-agent profile isolation over CDP. |
+| `cloud/` | Dispatch agent tasks to the cloud — Rush Cloud (GitHub repo + branch, auto-opens a PR), Codex Cloud (pre-built env), and Factory pods. Run, list, status, logs, message, cancel. |
 | `computer/` | Drive native macOS apps — screenshot, click, type, drag via the `agents computer` Accessibility daemon. Covers AX-opaque surfaces (VMs, canvas editors) with coordinate mode. |
 | `docs/` | Write documentation — user-facing, technical, runbooks, onboarding, changelogs. Less is more: only document what code can't tell you. |
 | `git-workflow/` | Run PR-bound work in an isolated worktree — create the branch from the real default branch, work end-to-end inside it, open the PR, clean up after merge. Backs the always-on git-workflow rule. |
