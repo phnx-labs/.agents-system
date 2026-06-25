@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agents-system",
-  "description": "npm-shipped default plugins for agents-cli — the lightweight, no-paid-key workflows that ship with the system layer. Heavier or key-gated plugins live in .agents-extras instead.",
+  "description": "npm-shipped default plugins for agents-cli \u2014 the lightweight, no-paid-key workflows that ship with the system layer. Heavier or key-gated plugins live in .agents-extras instead.",
   "owner": {
     "name": "phnx-labs",
     "url": "https://github.com/phnx-labs"
@@ -10,7 +10,7 @@
     {
       "name": "code",
       "source": "./plugins/code",
-      "description": "Coding-workflow plugin for the manager/router engineering loop. `/code:loop` drains a queue end-to-end (single ticket or many: plan, code, test, review, rebase, fix CI, merge), `/code:dispatch` triages a single task and picks the delivery path, `/code:verify` runs the end-to-end gate (canonical test per changed surface, read from the project's CLAUDE.md/AGENTS.md), `/code:review` reviews every PR opened in parallel — plus a security pass on risk-touching diffs — and merges per verdict, `/code:sprint` runs a time-boxed multi-track parallel push via `agents teams`, `/code:quality` runs a read-only code-health diagnostic and opens an HTML report, `/commit` splits the working tree into the maximum number of small logical commits.",
+      "description": "Coding-workflow plugin for the manager/router engineering loop. `/code:loop` drains a queue end-to-end (single ticket or many: plan, code, test, review, rebase, fix CI, merge), `/code:dispatch` triages a single task and picks the delivery path, `/code:verify` runs the end-to-end gate (canonical test per changed surface, read from the project's CLAUDE.md/AGENTS.md), `/code:review` reviews every PR opened in parallel \u2014 plus a security pass on risk-touching diffs \u2014 and merges per verdict, `/code:sprint` runs a time-boxed multi-track parallel push via `agents teams`, `/code:quality` runs a read-only code-health diagnostic and opens an HTML report, `/commit` splits the working tree into the maximum number of small logical commits.",
       "version": "0.6.1",
       "author": {
         "name": "Muqsit Nawaz",
@@ -20,8 +20,18 @@
     {
       "name": "git",
       "source": "./plugins/git",
-      "description": "git — pure git plumbing commands that aren't tied to code logic. `/git:prune` removes merged branches and worktrees with hard data-loss guards (skips anything with uncommitted changes, stashes, unmerged commits, locks, or detached HEAD), using `git rev-list --count origin/$MAIN..HEAD == 0` as the load-bearing 'nothing to lose' check. `/git:tag-release` creates and pushes an annotated release tag (never force, never re-points an existing tag). The code-aware loop (`/commit`, `/review`, `/sprint`) lives in the `code` plugin.",
+      "description": "git \u2014 pure git plumbing commands that aren't tied to code logic. `/git:prune` removes merged branches and worktrees with hard data-loss guards (skips anything with uncommitted changes, stashes, unmerged commits, locks, or detached HEAD), using `git rev-list --count origin/$MAIN..HEAD == 0` as the load-bearing 'nothing to lose' check. `/git:tag-release` creates and pushes an annotated release tag (never force, never re-points an existing tag). The code-aware loop (`/commit`, `/review`, `/sprint`) lives in the `code` plugin.",
       "version": "0.2.0",
+      "author": {
+        "name": "Muqsit Nawaz",
+        "email": "contact@trp.so"
+      }
+    },
+    {
+      "name": "social",
+      "source": "./plugins/social",
+      "description": "social \u2014 turn a content agent's post archive into strategy. social:audit (parse+dedup+cluster+12x3 taxonomy), social:align (audience/ICP fit: buyer vs amplifier, gaps + re-weighting), social:schedule (coverage-deduped engagement-rubric backlog scheduled to X/LinkedIn via getlate). Built from a real ~4,600-draft audit.",
+      "version": "0.1.0",
       "author": {
         "name": "Muqsit Nawaz",
         "email": "contact@trp.so"
