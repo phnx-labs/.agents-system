@@ -97,10 +97,18 @@ If anything remains, it must be one of:
 - A user-only action such as payment, credentials, destructive approval, public posting, or strategic judgment.
 - A deliberately created follow-up ticket with acceptance criteria and proof that the current task's shippable slice is complete.
 
-Forbidden endings:
+Forbidden endings — these are the stalls `/finish` exists to interrupt:
 
+- "Want me to continue?" / "Should I do X next?"
 - "Pick one and I'll continue."
-- "Let me know if you want me to proceed."
+- "Let me know if (or when) you want me to proceed."
+- "Stopping here — let me know if you want more."
 - "The remaining sequence is mechanical."
 - "I can stop here."
-- Any status-only recap that does not take the next action first.
+- Any trailing question that hands the steering wheel back, or any status-only recap that does not take the next action first.
+
+Required instead — every turn ends with an action, not a question:
+
+- "Next: [doing X]" with the tool call in the **same turn** as the sentence announcing it.
+- "X done. Next: [doing Y]" with the tool call in the **same turn**.
+- For a genuine fork only (human judgment, credentials, payment, public posting, destructive/production approval): `AskUserQuestion` with two **forward-moving** options — never include a "stop" option.
