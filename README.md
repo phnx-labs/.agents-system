@@ -88,7 +88,7 @@ Plugins bundle related skills, commands, hooks, and subagents into one installab
 | Plugin | Purpose |
 |--------|---------|
 | `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:sprint`, `/code:quality`, `/commit` |
-| `git` | Pure git plumbing (no code logic) — `/git:cleanup` prunes merged branches and worktrees with hard data-loss guards |
+| `git` | Pure git plumbing (no code logic) — `/git:prune` prunes merged branches and worktrees with hard data-loss guards; `/git:tag-release` cuts and pushes an annotated release tag |
 
 ## Rules
 
