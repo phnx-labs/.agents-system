@@ -55,7 +55,35 @@ This is the most important step. "It compiles" and "unit tests pass" are not don
 
 If tests are needed and don't exist, write them before proceeding.
 
-## Step 4: Commit and PR
+## Step 4: Update Docs
+
+If the work added a new module, command, flag, config setting, data flow, or user-visible behavior, the docs that describe those things need to move with the code. Stale docs are worse than no docs.
+
+**Walk every changed file and ask: did this change anything a human reader would look up?** Check each surface that applies:
+
+- **`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`** (root or affected subdirectory) — these are the canonical map files. If you added a new module, new top-level area, new gotcha, or a new file-locations pointer, add a one-line entry. Keep entries short (these are maps, not territory). `CLAUDE.md` / `GEMINI.md` are typically symlinks to `AGENTS.md` — edit the real file.
+- **`README.md`** — if user-facing setup/usage/installation/quickstart changed (new flag, new env var, new install step, new command), update it.
+- **`docs/*.md`** (or `docs/` subtree) — if you changed an architectural flow that has a design doc (e.g. lifecycle, state machine, sequence diagram), update it. Don't write new design docs unless asked — extend the existing one.
+- **`CHANGELOG.md`** (if the repo has one) — add a line for the user-visible change under the next-version section.
+- **Help text / `--help` output** — if you added/renamed/removed a CLI flag, a slash command argument, a config key, or a tool parameter, update the help string in code AND any examples in docs that show the old usage.
+- **In-code descriptions** — `package.json` `contributes.*.description` (VS Code extension settings/commands), CLI usage strings, config-schema descriptions, JSDoc on exported types if user-facing.
+- **Comments at the entry points** you changed (the top of the file or function) — if the contract changed, the comment changed.
+
+**What does NOT need a docs update:**
+- Bug fixes (the code IS the doc — commit message captures the why)
+- Internal refactors with no behavior change
+- Test-only changes
+- Small renames where the new name is self-evident
+
+**Anti-patterns to avoid:**
+- Don't create a new `.md` file when an existing one already covers the area. Extend it.
+- Don't write tutorial-length prose in `AGENTS.md` — that file is a map (one line per area, pointer to code).
+- Don't duplicate. If the keybindings live in `package.json`, the doc says "see `package.json`", not the actual binding list.
+- Don't add a doc bullet you couldn't immediately point at the new code from.
+
+If you skip this step, justify it explicitly in the Step 9 recap (e.g. "docs unchanged: pure bug fix, no user-visible surface").
+
+## Step 5: Commit and PR
 
 If there are uncommitted changes that represent completed work:
 
@@ -91,7 +119,7 @@ If on a feature branch:
 
 This creates an audit trail linking the PR to the reasoning that produced it.
 
-## Step 5: Release (if applicable)
+## Step 6: Release (if applicable)
 
 Check if this work involves a publishable package:
 
@@ -112,14 +140,14 @@ If a release is needed:
 4. If confirmed, run release: `scripts/release.sh --confirm` or equivalent
 5. Verify the release landed (check the registry, not just the script output)
 
-## Step 6: Update Task Management
+## Step 7: Update Task Management
 
 Check if there's an active task for this work using the `/tickets` skill or project tracker:
 
 - If a task is In Progress for this work, mark it done with proof (PR link, release version, etc.)
 - Check TODO.md at the repo root — mark off any related items
 
-## Step 7: Handle Remaining Items
+## Step 8: Handle Remaining Items
 
 If anything from Step 1 is NOT DONE or PARTIALLY DONE:
 
@@ -132,7 +160,7 @@ If anything from Step 1 is NOT DONE or PARTIALLY DONE:
    - Context from this session (what was attempted, what blocked it)
    - Acceptance criteria
 
-## Step 8: Recap and Verdict
+## Step 9: Recap and Verdict
 
 **First, summarize the session in 2-3 sentences:**
 - What was the original task/request?
