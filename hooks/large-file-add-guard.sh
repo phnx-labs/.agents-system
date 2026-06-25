@@ -60,8 +60,15 @@ is_binary_magic() {
 size_kb() {
   _f=$1
   [ -f "$_f" ] || { echo 0; return; }
-  # macOS stat: -f %z; GNU stat: -c %s. Try BSD first.
-  _bytes=$(stat -f %z "$_f" 2>/dev/null || stat -c %s "$_f" 2>/dev/null || echo 0)
+  # GNU stat: -c %s; BSD/macOS stat: -f %z. Validate each result is numeric:
+  # `stat -f` on GNU means --file-system and prints a multi-line blurb with
+  # exit 0 (not a failure), so a naive `stat -f ... || stat -c ...` chain keeps
+  # the garbage and breaks the arithmetic below. Try GNU first, then BSD, then
+  # the portable `wc -c`, validating numeric at each step.
+  _bytes=$(stat -c %s "$_f" 2>/dev/null) || _bytes=""
+  case "$_bytes" in ''|*[!0-9]*) _bytes=$(stat -f %z "$_f" 2>/dev/null) ;; esac
+  case "$_bytes" in ''|*[!0-9]*) _bytes=$(wc -c < "$_f" 2>/dev/null | tr -d ' ') ;; esac
+  case "$_bytes" in ''|*[!0-9]*) _bytes=0 ;; esac
   echo $(( _bytes / 1024 ))
 }
 
@@ -201,9 +208,12 @@ check_segment() {
   esac
 
   # Walk remaining args. -A / --all / -u / --update / . => out of scope.
+  # -f / --force => explicit override (the bypass this hook's own deny message
+  # tells the user to use); honor it instead of denying anyway.
   while [ $# -gt 0 ]; do
     case "$1" in
       -A|--all|-u|--update) return 0 ;;
+      -f|--force) return 0 ;;
       .) return 0 ;;
       --) shift; while [ $# -gt 0 ]; do
             if ! check_path "$1"; then return 1; fi
