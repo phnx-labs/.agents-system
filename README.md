@@ -78,6 +78,7 @@ Skills are richer than commands — multi-file capabilities with persistent cont
 | `sessions` | Search and read prior agent transcripts |
 | `secrets` | Keychain-backed env-var bundles |
 | `docs` / `release` / `reflect` | Write docs / publish packages / recall feedback |
+| `learn` | Reflect on a finished session and fold durable, generalizing lessons back into skills/rules/memory — without overfitting or downgrading what works |
 
 See [`skills/README.md`](skills/README.md) for the complete table. Invoke with `/skillname` or let Claude invoke when relevant.
 
@@ -87,7 +88,7 @@ Plugins bundle related skills, commands, hooks, and subagents into one installab
 
 | Plugin | Purpose |
 |--------|---------|
-| `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:sprint`, `/code:quality`, `/commit` |
+| `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:ship`, `/code:sprint`, `/code:quality`, `/code:learn`, `/commit` |
 | `git` | Pure git plumbing (no code logic) — `/git:prune` prunes merged branches and worktrees with hard data-loss guards; `/git:tag-release` cuts and pushes an annotated release tag |
 
 ## Rules
