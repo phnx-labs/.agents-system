@@ -66,7 +66,9 @@ A few mechanics bite often enough to name. These are grain, not law — read the
 
 Done means merged. Not "PR open." Not "tests green locally." Not "approved but not yet clicked." Merged, CI green on `main`, worktree removed, branch deleted, ticket closed with a link to the PR.
 
-When the queue is empty (every item merged or parked with a note), you summarize. What landed, what parked, what blocked. The summary is short and lets the user pick the next move.
+For a **distributable, merged is the middle, not the end.** If the item ships a VS Code extension, a published CLI, or a deployed web app, users don't run `main` — merge alone reaches nobody. Route it through `code:ship`: publish, confirm the public channel actually serves the new version, activate it where it runs, verify the real surface. "Merged" on a distributable without a ship pass is a half-landed item; say so in the summary rather than calling it done.
+
+When the queue is empty (every item merged — and shipped, where it's a distributable — or parked with a note), you summarize. What landed, what shipped, what parked, what blocked. The summary is short and lets the user pick the next move.
 
 ## What the queue looks like
 
@@ -86,6 +88,7 @@ Whatever the source, you normalize to a queue. Each item gets an ID, a title, a 
 - `code:dispatch` — when an item's scope is unclear, run this first to pick the delivery path.
 - `code:verify` — the end-to-end test gate. Run it before opening the PR and again after the final push.
 - `code:review` — the pre-merge review. Run it after CI is green; act on its verdict.
+- `code:ship` — the post-merge gate for distributables (extensions, CLIs, web apps): publish, confirm live, activate, verify. Merge is not the terminal state for anything users install or visit.
 - `code:commit` — the splitting / message-writing primitive when you stage work.
 - `agents teams` — the fanout primitive for disjoint parallel items.
 

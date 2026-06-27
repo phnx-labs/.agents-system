@@ -115,6 +115,41 @@ agents computer key --bundle com.parallels.desktop.console --keys enter --requir
 agents computer screenshot --bundle com.parallels.desktop.console --window-id <n> --out /tmp/vm2.jpg  # verify
 ```
 
+## Electron Editors (VS Code / VSCodium / Cursor)
+
+The default advice is "prefer `browser`'s `electron-use.md` (CDP)." But you often must drive these via AX instead — to reload a window after installing an extension, or when Screen Recording is denied and screenshots are dead. The webview UI sits in an iframe the AX tree only partially reaches; the rules below are the ones that bite. Bundle ids: `com.microsoft.VSCode`, `com.vscodium`, Cursor varies (`defaults read /Applications/Cursor.app/Contents/Info CFBundleIdentifier`).
+
+- **AX survives a denied Screen Recording grant.** `get-text` and `describe` read the accessibility tree (incl. webview text) with no ScreenCaptureKit. Only `screenshot` needs Screen Recording. When captures time out with "denied Screen Recording permission," **verify with `get-text`**, not screenshots — grep its output for the strings the UI should render.
+- **Reload a window to activate a freshly-installed extension.** Installing writes to disk; the running window keeps its old extension host until reloaded. Command palette → **"Developer: Reload Window"**. Every open window has its own host — reload each. An editor running with **zero windows** needs one first: `code -n <folder>`.
+- **Use System Events keystrokes for the palette, not `agents computer key`, after a cross-window raise.** `osascript` System Events posts to the frontmost process coherently; `agents computer key` can race the raise and land in the wrong window. Pattern that works:
+  ```bash
+  osascript <<'EOF'
+  tell application "VSCodium" to activate
+  delay 0.5
+  tell application "System Events" to tell process "VSCodium"
+    perform action "AXRaise" of window "Factory — myrepo"   -- target a specific window by title
+    delay 0.8
+    keystroke "p" using {command down, shift down}           -- command palette
+    delay 0.8
+    keystroke "Developer: Reload Window"
+    delay 0.8
+    key code 36                                              -- Return
+  end tell
+  EOF
+  ```
+  List windows to pick a title: `osascript -e 'tell application "System Events" to tell process "Code" to get name of windows'`. The `cmd+\`` "next window" chord is **not** a valid `agents computer key` chord — raise by title instead.
+- **`type-text`, not `type`, into the palette.** The palette field rejects `type --id` with `AXValue not settable`. `type-text` synthesizes keystrokes into the focused field and works.
+- **Webview buttons (the Floor/Bench/Panel tabs, etc.) ignore both AXPress and coordinate clicks.** `click --id` does an AXPress that doesn't fire the React onClick; coordinate clicks miss because the iframe coordinate space and Retina scale don't line up with AX `bounds`. Drive webview state through the command palette or a keybinding, not by clicking webview chrome.
+- **`@eN` ids are per-`describe` snapshots.** They go stale as the UI changes — re-`describe` immediately before you act, never reuse ids across calls.
+- **Verify activation from `exthost.log`, not the GUI.** Authoritative and file-based:
+  ```bash
+  BASE="$HOME/Library/Application Support/Code/logs"   # or VSCodium / Cursor
+  EH="$(ls -dt "$BASE"/*/ | head -1)"window1/exthost/exthost.log
+  grep "_doActivateExtension <publisher>.<name>" "$EH" | tail -1   # fresh timestamp = live
+  grep "\[error\]" "$EH" | grep -i "<name>" | tail -3              # post-activation errors
+  ```
+  A `_doActivateExtension` timestamp newer than your reload = that window runs the new code. (For the full publish→activate→verify flow, see `code:ship`.)
+
 ## Safety Rails
 
 - Password/secure fields are refused unless `type --allow-secure-field` is passed explicitly. Don't pass it unless the user asked you to fill a credential.
