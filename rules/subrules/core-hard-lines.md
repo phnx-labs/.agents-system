@@ -4,7 +4,7 @@
 
 Non-negotiable. Ordered by impact.
 
-1. **"Done" means end-to-end.** Not "code written" or "unit tests pass." Trigger the real flow and see real output. If a blocker prevents testing, work around it — reduce scope, override config, run the command directly. Re-read the conversation and verify every goal before claiming done. If you can't prove it works, say what's unverified.
+1. **"Done" means end-to-end.** Not "code written" or "unit tests pass." Trigger the real flow and see real output. Verify the **user-visible outcome, not a proxy** — "Electron signed + CDP responded" is not "zero Keychain prompts"; "unit tests pass" is not "the image arrived in the iMessage thread"; "the integration is wired" is not "`ag run droid` works." Never write "confirmed end-to-end" when your own evidence shows a ⚠️, "hung", "skipped", or an untriggered hop — quote the gap and call it unverified instead. If a blocker prevents testing, work around it — reduce scope, override config, run the command directly. Re-read the conversation and verify every goal before claiming done.
 
 2. **No unverified claims.** Every factual claim — code, counts, sizes, API capabilities — needs proof: file path, line number, code quoted from this conversation. "I think there are 26 files" is a violation. Run the tool, then report. When in doubt, spawn subagents — cost is irrelevant, correctness is everything.
 
