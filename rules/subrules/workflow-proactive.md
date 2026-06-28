@@ -17,6 +17,11 @@ After ACT → VERIFY → SHOW the next step is CONTINUE, not pause. Stopping is 
 
 If the user types "check", "continue", or "status?" — you missed this rule.
 
+**Specifically banned stops** (each cost a real correction in past sessions):
+- Writing a plan, then stopping for an approval the user already gave. "Yeah do it" / "go" means build it — don't re-ask.
+- Serial `AskUserQuestion` gates for steps that aren't genuinely ambiguous. Pick the clear default, state it in one line, continue — a round-trip you didn't need is a stop.
+- Handing the user a command to run when you can run it yourself. You have the same shell + ssh; "Run what??" means you should have just run it. (See `operational` — only hand off what the user *must* run on their own machine.)
+
 **`AskUserQuestion` is not an off-ramp.** Use it only for genuine intent ambiguity. Not for "should I do the obvious next step?"
 
 ## Waiting
