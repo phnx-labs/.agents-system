@@ -8,3 +8,12 @@ hooks:
       - SessionStart
     script: 05-session-start-autosync.sh
     timeout: 5
+  attention-sentinel:
+    agents:
+      - claude
+    events:
+      - Notification
+      - Stop
+      - UserPromptSubmit
+    script: 06-attention-sentinel.sh
+    timeout: 5
