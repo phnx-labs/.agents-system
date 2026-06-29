@@ -46,7 +46,8 @@ The command files in this directory, with optional team augmentation for complex
 **Shipping & Review**
 - `/commit` — **Alias of `/code:commit`** (code plugin). Split changes into the maximum number of small logical commits and push in the background. Canonical definition lives in the `code` plugin; this is the short name.
 - `/review` — **Alias of `/code:review`** (code plugin). Recap the session's goal, list every PR it opened, review each in parallel, then merge / request-changes / close-as-duplicate per verdict. Canonical definition lives in the `code` plugin; this is the short name.
-- `/done` — Verify work is truly done end-to-end, test, release if needed, then close or create tickets for what remains.
+- `/finish` — Anti-stopping driver **and** ship gate: refuses to stop at a recap/blocker/partial handoff and drives the task to delivered — verify E2E, docs, commit, PR, optional release, close tickets.
+- `/done` — Recap the session for handoff, then cleanly **self-exit** (SIGTERM the harness). Assumes the work is already delivered; for the ship gate use `/finish`.
 - `/prune` — Delete merged branches and worktrees locally and on origin. Conservative — never removes work that could be lost.
 
 **Task Management**

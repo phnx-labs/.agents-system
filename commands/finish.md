@@ -6,7 +6,7 @@ You are finishing the current task. Context: $ARGUMENTS
 
 This command is not a recap command. It is an execution intervention: recover the original goal, identify what remains, take the next concrete action, verify the real flow, and keep going until the task is truly delivered or a hard external blocker is proven.
 
-> **`/finish` vs `/done`** — `/finish` is the **anti-stopping driver**: its whole job is to refuse to stop at a recap/blocker/partial handoff and push the current task to delivered. It does *not* run a release step. When the work is already delivered and you want the **closing checklist + ship gate** (E2E verify → commit → PR → optional package release → close tickets), use **`/done`**. For draining a *queue* of tickets/branches all the way to merged, use `/code:loop`.
+> **`/finish` vs `/done`** — `/finish` is the **anti-stopping driver + ship gate**: it refuses to stop at a recap/blocker/partial handoff and drives the current task all the way to delivered — verify E2E → update docs → commit → PR → optional package release → close tickets. `/done` is the opposite end: it assumes the work is *already* delivered, prints a handoff recap, and then **self-exits the session**. For draining a *queue* of tickets/branches all the way to merged, use `/code:loop`.
 
 ## Step 1 - Recover The Contract
 
@@ -60,16 +60,56 @@ If unrelated pre-existing failures block a full suite, prove that they are unrel
 
 ## Step 5 - Ship The Finished Work
 
-After verification:
+After verification, run the closing ship gate. Do not skip a sub-step; if one genuinely does not
+apply, say so in the final report (e.g. "docs unchanged: pure bug fix, no user-visible surface").
 
-- Check `git status`.
-- Inspect every changed file in the diff.
-- Commit completed work if the project workflow expects agent commits.
-- Open or update the PR if that is the delivery path.
-- Deploy or release if the project rules say changed deployable surfaces must ship.
-- Update the issue tracker only with proof: commit, PR, deploy URL, test output, or health-check response.
+**Docs.** Walk every changed file and ask: did this change anything a human reader would look up?
+Update only the surface that applies — don't write new docs unless asked:
 
-Do not create docs, tickets, or summary files unless the task or project workflow requires them.
+- **`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`** (root or affected subdir) — the canonical map files.
+  New module / top-level area / gotcha / file-locations pointer → add a one-line entry. These are
+  maps, not territory; `CLAUDE.md` / `GEMINI.md` are usually symlinks — edit the real file.
+- **`README.md`** — if user-facing setup/usage/install/quickstart changed (new flag, env var, command).
+- **`CHANGELOG.md`** (if the repo has one) — a line for the user-visible change under the next version.
+- **Help text / `--help`, in-code descriptions, entry-point comments** — if a flag, command argument,
+  config key, or tool parameter was added/renamed/removed, update the string in code AND any examples.
+
+What does NOT need docs: bug fixes, internal refactors with no behavior change, test-only changes,
+self-evident small renames.
+
+**Commit & PR.** Check `git status`; inspect every changed file in the diff. Commit completed work
+if the project workflow expects agent commits; never commit incomplete or broken work. If on a
+feature branch and the delivery path is a PR, push and open/update it, then attach the session
+transcript as a **secret** gist for an audit trail (never `--public` unless the repo is public AND
+you've reviewed the transcript):
+
+```bash
+git rev-parse --abbrev-ref HEAD          # confirm not on main/master
+git push -u origin HEAD
+gh pr create --title "..." --body "..."
+agents sessions --last 50 --markdown > /tmp/session-export.md
+GIST_URL=$(gh gist create /tmp/session-export.md --desc "Session transcript for PR" | tail -1)
+gh pr comment --body "## Session Context
+[Session transcript]($GIST_URL)"
+```
+
+**Release (if applicable).** If the work touches a publishable package, ship it:
+
+```bash
+[ -f package.json ] && echo npm; [ -f Cargo.toml ] && echo crate
+[ -f pyproject.toml ] && echo pypi; [ -f scripts/release.sh ] && echo release-script
+```
+
+Build, run the full test suite, then `AskUserQuestion` to confirm ("Release v{version} to {registry}?"
+— Yes / No / Skip). On confirm, run the release and verify it landed in the registry, not just that
+the script exited 0.
+
+**Tracker.** Update the issue tracker only with proof: commit, PR, deploy URL, test output, or
+health-check response. For work that is proven-remaining (a deferred slice with a complete shippable
+slice already delivered), create a follow-up ticket via the project's `/tickets` skill with a clear
+title, the session context, and acceptance criteria — rather than silently dropping it.
+
+Do not create summary `.md` files unless the task or project workflow requires them.
 
 ## Step 6 - Final Report
 
