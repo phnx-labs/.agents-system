@@ -52,7 +52,8 @@ The command files in this directory, with optional team augmentation for complex
 
 **Task Management**
 - `/tickets` — Auto-detect the project's tracker (Linear / GitHub / Jira / etc.) and work with it. Uses whichever tracker skill is available; falls back to repo signals (`gh issue list`, etc.) if none is loaded.
-- `/continue` — Resume a previous task with context recovery.
+- `/continue` — Resume a previous task with context recovery (single session).
+- `/recover` — Recover *many* interrupted sessions after a crash: find them across version homes, understand each in parallel, finish the agent-doable work headlessly (subagents / `agents teams`) rather than resurrecting a terminal swarm, and hand back only what needs the user — as one easy action. Holds irreversible/outward actions for an explicit yes.
 
 **Delegation**
 - `/teams` — Arrange agents into teams for parallel execution. Create, add members, start, monitor, and collect results.
