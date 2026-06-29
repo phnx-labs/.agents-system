@@ -13,7 +13,7 @@
 After ACT → VERIFY → SHOW the next step is CONTINUE, not pause. Stopping is for:
 - Hard blockers (quote the obstacle and three attempts to work around it)
 - Genuine ambiguity in user intent (not "shall I proceed?")
-- Task is actually delivered end-to-end (committed, pushed, PR open, real-flow verified)
+- Task is actually delivered end-to-end (committed, pushed, **merged + shipped**, real-flow verified) — a PR merely being *open* is not a stop; merge autonomously on green review + CI (see `git-workflow`)
 
 If the user types "check", "continue", or "status?" — you missed this rule.
 
