@@ -1,8 +1,8 @@
 ---
 name: learn
-description: "Post-session reflection that writes durable improvements forward. After a substantial session, recall what was actually used, distill only the lessons that generalize, and route each to its right home — a skill, a rule, a memory, or nothing. Built to NOT downgrade existing workflows and NOT overfit to one session. Triggers on: 'learn from this', 'reflect and improve', 'update your skills', 'what did we learn', 'capture the lesson', 'retro', 'post-mortem this session'."
-argument-hint: "[empty = current session | session-id | topic to reflect across]"
-allowed-tools: Bash(agents *), Bash(git *), Bash(rg *), Bash(fd *), Bash(ls *), Bash(cat *), Bash(jq *), Read(*), Write(*), Edit(*), Task(*)
+description: "Post-session reflection that writes durable improvements forward. Two modes. Default: reflect on the session you just finished — recall what was used, distill only the lessons that generalize, route each to its right home (skill / rule / memory / nothing). Target mode (`/learn <skill|plugin|command|workflow>`): audit every past session that used that target, surface the recurring problems as an HTML triage report (each framed expectation → what happened → why, anchored to the session that surfaced it), then apply only the fixes you approve. Built to NOT downgrade existing workflows and NOT overfit to one session. Triggers on: 'learn from this', 'reflect and improve', 'update your skills', 'what did we learn', 'audit my rush:design skill', 'where does <skill> keep going wrong', 'retro', 'post-mortem this session'."
+argument-hint: "[empty = current session | session-id | topic | <skill|plugin|command|workflow> to audit across sessions]"
+allowed-tools: Bash(agents *), Bash(git *), Bash(rg *), Bash(fd *), Bash(ls *), Bash(cat *), Bash(jq *), Bash(bun *), Bash(mkdir *), Bash(open *), Bash(xdg-open *), Bash(chmod *), Read(*), Write(*), Edit(*), Task(*)
 user-invocable: true
 ---
 
@@ -13,6 +13,85 @@ You just finished real work. Some of it taught you something — a tool that beh
 It is the opposite failure mode that makes this hard. The lazy output is to encode nothing. The eager output is to encode everything — to overfit a permanent rule to one session's fluke, or to rewrite a battle-tested skill around a single bad afternoon. Both degrade the system. Your job is the narrow middle: the few lessons that are real, general, and durable — and the discipline to ship them without breaking what already works.
 
 **Not `reflect`.** `reflect` is mid-conversation: it recalls the user's feedback before your next attempt and writes nothing. `learn` is post-session: it writes durable lessons forward into the skill library. Different jobs — don't conflate them.
+
+## Two modes — pick by the argument
+
+- **No argument, a session id, or a free topic → reflection mode.** Reflect on the session you just finished (or the one named) and write its lessons forward. This is everything from **Phase 1** down — the default.
+- **The argument names an installed skill, plugin, command, or a workflow → target-audit mode.** The user wants to know where *that one thing* keeps going wrong across all the times they've used it, and fix it. Run **Target audit** below instead, then return to Phase 4 to apply the approved fixes.
+
+Decide which the argument is before doing anything: `agents inspect user --json` and `agents inspect system --json` list the installed skills/commands/plugins. If `$ARGUMENTS` matches one of those names (e.g. `rush:design`, `code:loop`, `/commit`), or is clearly the name of a recurring workflow the user runs, it's a **target** — go to Target audit. If it's a hex session id or a loose theme to reflect across, it's reflection mode.
+
+## Target audit — `/learn <target>`
+
+The user runs many skills and plugins every day. This mode answers: *"Where does `<target>` keep failing me, exactly — and what will you change so it stops?"* It mines every past session that actually used the target, frames each recurring problem the way it really happened, and hands you an HTML report to triage before anything is edited.
+
+The audit scripts ship next to this skill. Resolve them once:
+
+```bash
+AUDIT="$HOME/.agents/.system/skills/learn/audit"   # canonical source, present wherever agents-cli is set up
+RUN="$(mktemp -d)/learn-audit"; mkdir -p "$RUN"
+```
+
+### Step 1 — Find every session that used the target
+
+`find-sessions.sh` enumerates the sessions and classifies *how* each used the target (a real `Skill`/tool/command invocation vs. an incidental prose mention), newest first.
+
+```bash
+# Named target (skill / plugin / command / tool) — keep only real invocations:
+bash "$AUDIT/find-sessions.sh" "<target>" --all --structured-only > "$RUN/sessions.jsonl"
+# A loose workflow phrase (no single invocation token) — drop --structured-only so
+# conversation-text matches are kept:
+# bash "$AUDIT/find-sessions.sh" "<phrase>" --all > "$RUN/sessions.jsonl"
+```
+
+Each line carries `id`, `shortId`, `topic`, `ts`, `file` (the transcript), `cwd`, `hits`, `structuredHits`, `firstLine`/`lastLine` (the JSONL line numbers where the use occurred — the moments to quote), and `kind`. Drop `--all` to scope to the current project only.
+
+### Step 2 — Read the sessions, recency-weighted
+
+Read the matched transcripts (`file` field) and find the friction: a result the user rejected, a step the agent rediscovered live, a correction given more than once, a flag/path that had to be guessed, an error that recurred. **Weight by recency** — the newer a session, the more fully you read it, because old friction may already have been fixed:
+
+- A problem seen in **recent** sessions is live. Surface it.
+- A problem seen **only in old** sessions, absent from recent ones, is likely already addressed → set `maybe_already_fixed: true` and check: does the target's current text (or `git log` on its file) already cover it? If yes, drop it or mark it resolved. Don't re-propose a fix that already landed.
+- The **same** problem across several sessions is the highest-value finding — record every session it appears in and set `recurrence_count`.
+
+For each problem, capture it **exactly as it happened**, grounded in the transcript (cite the session + line; quote the real moment — the user's actual words or the actual error). This is core-hard-lines #2: a problem you can't quote, you don't claim.
+
+### Step 3 — Build the findings and render the report
+
+Write `findings.json` (array) and `meta.json` matching the schema in `audit/report.ts`. Every finding is framed **expectation → what happened → why → proposed fix**:
+
+```jsonc
+// findings.json — one object per problem
+{
+  "severity": "high|medium|low",
+  "title": "one-line problem name",
+  "expectation": "what the user/agent expected (the 'before')",
+  "what_happened": "what actually happened (the 'after')",
+  "why": "root cause, if known",                  // optional
+  "quote": "the real moment — user's words or the error text",
+  "session_id": "…", "session_short": "…", "session_topic": "…",
+  "session_ts": "ISO8601", "transcript_line": 47,  // from firstLine/lastLine
+  "recurrence_count": 2, "recurrence_sessions": ["a1b2c3d4","9f8e7d6c"],
+  "maybe_already_fixed": false,
+  "proposed_fix": "1–2 lines: exactly what you'll change",
+  "fix_target": "skills/<x>/SKILL.md | rules/subrules/<x>.md | memory"
+}
+```
+
+```bash
+bun "$AUDIT/report.ts" "$RUN/findings.json" "$RUN/meta.json" > "$RUN/report.html"
+open "$RUN/report.html" 2>/dev/null || xdg-open "$RUN/report.html"
+```
+
+Then tell the user the report is open and give a 2–3 line spoken summary (the top recurring problem, the count, the headline fix). The report is the review surface: it groups by severity, sorts newest-first, flags `maybe fixed`, and lets the user tick the fixes they approve and **Copy approved fixes → /learn apply**.
+
+### Step 4 — Apply only what's approved
+
+Wait for the user's call. They either paste back the `/learn apply …` brief from the report or tell you which to take. Then apply **only the approved fixes** — and apply them through the rest of this skill: each fix still passes the **four gates** (Phase 3), routes to its home (Phase 4), edits **without downgrading** (Phase 5), and **verifies + ships** via worktree + PR (Phase 6). The audit changes *what you fix* (problems mined from real sessions, not this conversation); it does not relax *how* you fix it.
+
+---
+
+> The phases below are reflection mode (the default). Target-audit mode borrows Phases 3–6 to filter and ship the fixes it surfaced.
 
 ## Phase 1 — Recall, grounded
 
