@@ -26,7 +26,7 @@ shortcuts:
     Rethink mode. NOT one angle — MANY. Multi-agent, multi-lens investigation before committing to a direction. This is a MANDATORY GATE, not a green light to implement.
 
     ---------------- PREP ----------------------------------------------
-    1. Load the `reflect` skill — recall every constraint, correction, and piece of feedback in this conversation. Ignoring prior feedback makes the rethink worthless.
+    1. Recall every constraint, correction, and piece of feedback in this conversation — scan the whole thread, quote the user's words, and treat the corrections as cumulative (the latest one does not replace the earlier ones). Ignoring prior feedback makes the rethink worthless.
     2. Load the `product` skill — user value over technical elegance is the measuring stick.
     3. Re-READ (not grep) every file and doc relevant to the decision. Stale memory produces stale takes.
 
