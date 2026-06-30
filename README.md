@@ -77,7 +77,7 @@ Skills are richer than commands — multi-file capabilities with persistent cont
 | `run` / `routines` | Dispatch a single agent / schedule recurring agents |
 | `sessions` | Search and read prior agent transcripts |
 | `secrets` | Keychain-backed env-var bundles |
-| `docs` / `release` / `reflect` | Write docs / publish packages / recall feedback |
+| `docs` / `release` | Write docs / publish packages |
 | `learn` | Reflect on a finished session and fold durable, generalizing lessons back into skills/rules/memory — without overfitting or downgrading what works |
 
 See [`skills/README.md`](skills/README.md) for the complete table. Invoke with `/skillname` or let Claude invoke when relevant.
