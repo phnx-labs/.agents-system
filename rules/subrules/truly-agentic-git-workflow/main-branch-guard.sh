@@ -20,11 +20,17 @@
 # tool calls: the user's own editor, `!`-prefixed session commands, and git's
 # internal hooks are unaffected.
 #
+# Scope (deliberate — the "files + commit gate" design): raw-shell working-tree
+# mutation on the default branch (`>`/`>>` redirection, `tee`, `sed -i`, `cp`,
+# `git rm`/`git mv`) is NOT blocked at write time. The `git add`/`git commit`
+# gate is the choke point — such changes can never be committed to the default
+# branch, so nothing lands there outside a worktree + PR.
+#
 # Limitations (intentionally out of scope — runtime obfuscation only a sandbox
 # can stop): `eval`/`xargs`/`$(...)` subshells feeding a git command string,
-# base64-decoded commands. The file-write block already prevents an agent from
-# authoring the content those would commit, so the commit gate is defense in
-# depth, not the sole barrier.
+# base64-decoded commands. The commit gate is defense in depth, not the sole
+# barrier — the file-tool block already stops an agent authoring content on the
+# default branch through Write/Edit/NotebookEdit.
 
 set -eu
 
@@ -45,11 +51,9 @@ on_default_branch() {
   _cur=$(git -C "$_top" symbolic-ref --short -q HEAD 2>/dev/null) || _cur=""
   [ -z "$_cur" ] && return 1
   _def=$(git -C "$_top" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##') || _def=""
-  if [ -n "$_def" ]; then
-    [ "$_cur" = "$_def" ] && return 0
-    return 1
-  fi
-  # No origin/HEAD recorded — fall back to the conventional default names.
+  # Protect the resolved default (origin/HEAD) AND always the conventional names,
+  # so a stale/mispointed/absent origin/HEAD can never expose `main`/`master`.
+  [ -n "$_def" ] && [ "$_cur" = "$_def" ] && return 0
   case "$_cur" in
     main|master) return 0 ;;
     *) return 1 ;;

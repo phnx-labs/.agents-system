@@ -50,6 +50,19 @@ git_q -C "$CLONE_FEAT" checkout -b feat/y
 # 4. Plain non-git directory.
 NOGIT="$TMP/plain"; mkdir -p "$NOGIT"; echo x > "$NOGIT/file.txt"
 
+# 5. A REAL linked worktree off MAIN_REPO, on a feature branch (allow).
+WT_LINK="$TMP/wt_link"
+git_q -C "$MAIN_REPO" worktree add -b wt-feat "$WT_LINK"
+echo x > "$WT_LINK/tracked.txt"
+
+# 6. Clone whose default is `trunk` (origin/HEAD) but checked out on a local
+#    `main` branch — must be protected by the main/master clause (stale/mispointed
+#    origin/HEAD must never expose main).
+CLONE_MAIN="$TMP/clone_main"
+git_q clone "$BARE" "$CLONE_MAIN"
+git_q -C "$CLONE_MAIN" remote set-head origin trunk
+git_q -C "$CLONE_MAIN" checkout -b main
+
 # run_guard <want_exit> <desc> <json>
 run_guard() {
   want=$1; desc=$2; json=$3
@@ -101,6 +114,13 @@ run_guard 0 "git push on main (not gated here)"  "$(bj "git push" "$MAIN_REPO")"
 run_guard 0 "git commit in non-git cwd"          "$(bj "git commit -m x" "$NOGIT")"
 run_guard 0 "non-git bash on main (fast path)"   "$(bj "echo hello" "$MAIN_REPO")"
 run_guard 0 "ls with no git token"               "$(bj "ls -la" "$MAIN_REPO")"
+
+# --- Extra edge cases (from review) ---
+run_guard 0 "Write in real linked worktree (feat)" "$(wj Write file_path "$WT_LINK/tracked.txt")"
+run_guard 0 "git commit in real linked worktree"   "$(bj "git commit -m x" "$WT_LINK")"
+run_guard 2 "git -C <relative> commit, cwd=TMP"    "$(bj "git -C main_repo commit -m x" "$TMP")"
+run_guard 2 "local 'main' under trunk-default clone" "$(bj "git commit -m x" "$CLONE_MAIN")"
+run_guard 2 "Write on local 'main' under trunk default" "$(wj Write file_path "$CLONE_MAIN/f.txt")"
 
 printf -- '---\nmain-branch-guard: %s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
