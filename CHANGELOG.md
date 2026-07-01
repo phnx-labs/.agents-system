@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.39] - 2026-07-01
+
+### Added
+- **`main-branch-guard` hook — enforces the worktree+PR workflow at the tool boundary, so agents can't commit straight to a protected branch.** A PreToolUse guard blocks direct commits/pushes to `main`/`master` (always protected, regardless of the repo's configured default) and, per #46, refuses a `git worktree add -b` whose base is stale or a local ref — the new branch must fork from a freshly-fetched `origin/<default>` so PRs never diverge from an old base. Consolidated the previously scattered git subrules into a single `truly-agentic-git-workflow` rule and recompiled `AGENTS.md` from the subrules (absorbing prior merge-guard/footer staleness). (#43, #46)
+  - Follow-up hardening (#44): precise guard-scope wording, always-protect `main`/`master`, dropped a dangling reference, and added 5 edge-case tests to the guard's test suite.
+
+### Fixed
+- **`hooks/03-linear-inject-tasks-context.sh` now routes the "Your Tasks" bucket to the *running* agent instead of a hardcoded `agent:claude`.** On a codex (or any non-claude) session the agent's own `agent:<name>` tasks fell under generic "Team Tasks" while claude's were mislabelled as "yours" — the bucket was a guess, not an identity check. The hook now derives the harness from its own resolved path (`.../versions/<agent>/.../home/.<agent>/hooks/`): agents-cli installs one copy per agent and each harness invokes ITS copy, so the path names the agent on every launch path (interactive shim, headless runner, sandbox) with no dependency on harness-specific env vars. `AGENT_SELF=<name>` is an explicit override; `claude` is the last-resort default for manual runs. Verified across claude/codex/`AGENT_SELF` paths and with a synthetic two-issue payload that routes `agent:codex` vs `agent:claude` correctly under each identity. (#45)
+
 ## [0.1.38] - 2026-07-01
 
 ### Added
