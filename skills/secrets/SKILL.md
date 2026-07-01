@@ -76,6 +76,33 @@ agents secrets view production
 agents secrets view production --reveal
 ```
 
+## Remote secrets (other hosts)
+
+Browse and *use* the bundles that live on another machine, over SSH. Hosts
+resolve through the `agents hosts` registry, an ssh-config alias, or `user@host`.
+Use `--host` for one host and `--hosts` for a comma-separated list.
+
+```bash
+# Browse bundles on one host, or several at once (grouped by host)
+agents secrets list  --host yosemite-s1
+agents secrets list  --hosts yosemite-s0,yosemite-s1
+agents secrets view  --host yosemite-s1 r2.backups --reveal --plaintext
+
+# Use a remote bundle ephemerally — values are injected, never stored locally
+agents secrets exec  --host yosemite-s1 r2.backups -- ./deploy.sh
+agents run claude "ship it" --secrets r2.backups@yosemite-s1   # bundle@host
+```
+
+- **`bundle@host`** is the reference form for `agents run --secrets`; local and
+  remote bundles mix freely in one run.
+- **Ephemeral.** Remote values cross over SSH and are injected into the
+  run/command env in memory — never written to this machine's keychain or disk.
+- **The remote unlocks with its own credentials.** A file-backed remote bundle
+  reads headlessly via the remote's own `AGENTS_SECRETS_PASSPHRASE`; a keychain
+  bundle on a macOS remote blocks on Touch ID under non-interactive SSH — use a
+  remote `file` bundle, an unlocked remote secrets-agent, or run `view --reveal`
+  from an interactive terminal (it forces an SSH TTY so the prompt can surface).
+
 ## Multiple Accounts on One Website
 
 Name the bundle after the domain (`x.com`, `linkedin.com`) — one bundle per site, any number of accounts inside. Group keys by account handle and give every account a `--note` saying when to use it:
