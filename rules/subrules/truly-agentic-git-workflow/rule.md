@@ -84,7 +84,7 @@ CI** with the background-command + finish-echo pattern (never `Monitor`,
 ```
 run with `run_in_background: true` — the harness re-invokes you the moment checks
 settle. If the PR has no checks configured, go straight to review. A non-author
-review **and** green CI = squash-merge without asking (see `gh-merge-guard`); fall
+review **and** green CI = rebase-merge without asking (see `gh-merge-guard`); fall
 back to `AskUserQuestion` only when the review finds problems, tests fail, or the
 merge conflicts. Don't remove the worktree or delete the branch until merge.
 Never stop with a limp "okay, I'll wait" — that just makes the user ping you.
