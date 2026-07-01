@@ -17,3 +17,10 @@ hooks:
       - UserPromptSubmit
     script: 06-attention-sentinel.sh
     timeout: 5
+  inject-session-id:
+    agents:
+      - claude
+    events:
+      - SessionStart
+    script: 07-inject-session-id.sh
+    timeout: 5
