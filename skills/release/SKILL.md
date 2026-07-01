@@ -476,15 +476,27 @@ If the release script supports dry-run:
 
 Show the output and summarize what will happen.
 
-### 6.2 Confirm with user
+### 6.2 Proceed on in-session authorization
 
-Before actual release, use `AskUserQuestion`:
-- Show version change: `1.2.2 → 1.2.3`
-- Show registry target
-- Show changelog entry preview
-- Show files that will be published
+If the user authorized a release this session — they asked to "release", "ship",
+"publish", "cut a new version", or "merge and release" — that authorization carries
+through to the publish, the same way in-session "open a PR" carries through to
+merge-on-green (`gh-merge-guard`). **Do NOT re-ask.** Show the dry-run result as a
+report, then continue to 6.3:
+- version change (`1.2.2 → 1.2.3`), registry target, changelog entry preview, files to be published.
 
-Options: "Release now", "Edit changelog first", "Cancel"
+Use `AskUserQuestion` **only** for a genuine fork you cannot resolve yourself:
+- Monorepo with multiple publishable packages and `$ARGUMENTS` didn't name one (see 1.5).
+- A **major (breaking)** version bump — confirm the semver jump is intended.
+- The version genuinely can't be inferred (no tags, ambiguous history).
+
+When you do ask, offer **forward actions only** ("Publish X.Y.Z" / "Bump
+differently") — never a dead-end "Cancel"; the user can always interrupt.
+
+**Never publish as a side-effect.** If the user did NOT ask for a release this
+session, don't run the publish — surface that a release is ready and let them call
+it. The autonomy is "don't re-confirm an authorized release," not "release
+unprompted."
 
 ### 6.3 Execute
 
