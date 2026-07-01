@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.40] - 2026-07-01
+
+### Added
+- **`register-session-pid` SessionStart hook (`hooks/08-register-session-pid.sh`) — records each agent process's live session id into the per-pid registry (`~/.agents/.cache/terminals/by-pid/<pid>.json`) so `ag sessions --active` maps a pid to its EXACT session instead of guessing the newest transcript in the cwd (which collapses co-located agents onto one row on hosts with no terminal extension).** Complements the agents-cli `ag run` launcher write: the launcher assigns Claude's id via `--session-id`; this hook fills in the id for agents that generate it internally (Codex/Kimi/Grok/Antigravity), by resolving the agent pid up the parent chain and enriching the launcher's entry. Registered for `claude`, `codex`, `kimi`, `grok`, `antigravity`.
+  - Reads the session id from whichever channel the agent uses (verified against each vendor's hook docs): stdin SessionStart JSON `session_id` (Claude/Codex/Kimi/Antigravity), else `$GROK_SESSION_ID` / `$GEMINI_SESSION_ID` / `$CLAUDE_SESSION_ID`. The launcher's `agent`/`cwd`/`tmuxPane` win on merge — the hook only owns `sessionId`.
+  - Fails safe: runs on every session start, `no set -e`; empty/malformed/idless payloads exit 0 with no write. `hooks/08-register-session-pid_test.sh` covers all delivery shapes, ancestor-pid resolution, launcher merge, and the idless no-ops (9 cases).
+  - **Verified end-to-end for Claude:** a real session fired the hook, which recorded the true session id — matched against the on-disk transcript. Firing inside Codex/Kimi/Grok/Antigravity is doc-asserted (those agents are not installed/authed on the dev host); the script itself is tested against each of their documented payload shapes.
+
 ## [0.1.39] - 2026-07-01
 
 ### Added
