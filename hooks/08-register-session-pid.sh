@@ -19,10 +19,20 @@
 # Antigravity; `$GROK_SESSION_ID` env for Grok; `$GEMINI_SESSION_ID` /
 # `$CLAUDE_SESSION_ID` as further env fallbacks.
 #
+# PLATFORM: the ancestor-pid resolution reads /proc (Linux). This hook exists
+# for headless / no-extension hosts (SSH/tmux) — exactly where the collapse
+# happens. On macOS the terminal extension already writes live-terminals.json
+# with each session's real id, so `ag sessions` needs no hook there; without
+# /proc the ancestor walk simply no-ops (fails safe), which is correct.
+#
 # BLAST RADIUS: runs on every agent session start. It must never abort or delay
 # the session. No `set -e`; all failures exit 0 with no output; the only side
 # effect is a best-effort registry write.
 
+# SessionStart payloads are small and bounded (session_id, transcript_path,
+# cwd, event name — well under 1KB), so passing it as a single argv is safe and
+# keeps the script quote-agnostic (a `-c` string would break on any apostrophe
+# in a comment).
 input="$(cat 2>/dev/null || true)"
 
 python3 - "$input" <<'PY' 2>/dev/null || true
