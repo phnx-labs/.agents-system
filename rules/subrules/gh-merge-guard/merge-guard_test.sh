@@ -57,6 +57,14 @@ check 2 "cat heredoc redirect then run" "$(printf 'cat <<EOF >x.sh\ngh pr %s 40 
 check 2 "tee heredoc then run"       "$(printf 'tee x.sh <<EOF >/dev/null; sh x.sh\ngh pr %s 40 %s\nEOF' "$M" "$A")"
 check 2 "process-subst sh <(cat)"    "$(printf 'sh <(cat <<EOF\ngh pr %s 40 %s\nEOF\n)' "$M" "$A")"
 check 2 "eval command-subst cat"     "$(printf 'eval \$(cat <<EOF\ngh pr %s 40 %s\nEOF\n)' "$M" "$A")"
+# --admin quote/backslash obfuscation on a visible merge (round-4 attacks)
+check 2 "admin via empty dquotes"    "gh pr $M 40 --ad\"\"min"
+check 2 "admin via empty squotes"    "gh pr $M 40 --ad''min"
+check 2 "admin via backslash"        "gh pr $M 40 --ad\\min"
+check 2 "admin via wrapped squotes"  "gh pr $M 40 --ad'min'"
+check 2 "merge word split too"       "g\"\"h pr $M 40 --ad\"\"min"
+# heredoc routed onward via backslash-newline line continuation (round-4)
+check 2 "heredoc line-continuation pipe" "$(printf 'cat <<EOF \\\n| sh\ngh pr %s 40 %s\nEOF' "$M" "$A")"
 
 # --- Should ALLOW (exit 0): legit merges and unrelated commands ---
 check 0 "legit squash merge"         "gh pr $M 40 --squash --delete-branch"
