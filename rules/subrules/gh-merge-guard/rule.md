@@ -1,8 +1,8 @@
 # Merge & Admin-Bypass Guard
 
-Irreversible, shared-state actions need explicit user authorization **in the current session** — an earlier "open a PR" does not authorize a merge.
+Authorization to do the work carries through to the merge — an in-session "build it / open a PR / fix this" authorizes a **squash-merge on green**, no fresh ask needed. What still needs explicit authorization is merging *past* the safety rails: never bypass branch protection, never rubber-stamp your own code, never merge red.
 
-- **Never `gh pr merge --admin`.** Admin bypass merges past branch protection and required reviews. The bundled `merge-guard.sh` (PreToolUse) blocks it. When the user authorizes a merge, merge *without* `--admin` so protections still apply.
-- **Never merge a PR the user didn't explicitly ask you to merge.** "Investigate", "run the tests", "open a PR" are not "merge it." Opening a PR is the end of the task — then ask (`AskUserQuestion`: merge / iterate / close).
-- **Never self-approve your own PR.** Reviewing and approving code you wrote, then merging it, is not review.
+- **Merge autonomously on green; ask only on red.** A non-author review **and** passing CI = squash-merge without asking (see `git-workflow`). Fall back to `AskUserQuestion` (merge / iterate / close) only when the review finds problems, tests fail, or the merge conflicts. "Green" means a genuine independent review + CI, never a rubber stamp.
+- **Never `gh pr merge --admin`.** Admin bypass merges past branch protection and required reviews. The bundled `merge-guard.sh` (PreToolUse) blocks it. Merge *without* `--admin` so protections still apply — if protections block the merge, that's a red to resolve, not a thing to bypass.
+- **Never self-approve your own PR.** Reviewing and approving code you wrote, then merging it, is not review. The reviewer that clears the green must be someone — or some agent — other than the author.
 - **Never transfer credentials or auth files** (tokens, `~/.rush/user.yaml`, keychain exports) to another host or VM without explicit authorization. Don't attempt the transfer first and surface a question only after a guard blocks you.
