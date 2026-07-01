@@ -50,6 +50,13 @@ check 2 "dot-source /dev/stdin heredoc" "$(printf '. /dev/stdin <<EOF\ngh pr %s 
 check 2 "source /dev/stdin heredoc"  "$(printf 'source /dev/stdin <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
 check 2 "command sh heredoc"         "$(printf 'command sh <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
 check 2 "env bash heredoc"           "$(printf 'env bash <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+# heredoc routed onward into execution after the tag / via subst (round-3 attacks)
+check 2 "cat heredoc piped to sh"    "$(printf 'cat <<EOF | sh\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "cat heredoc no-space pipe bash" "$(printf 'cat<<EOF|bash\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "cat heredoc redirect then run" "$(printf 'cat <<EOF >x.sh\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "tee heredoc then run"       "$(printf 'tee x.sh <<EOF >/dev/null; sh x.sh\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "process-subst sh <(cat)"    "$(printf 'sh <(cat <<EOF\ngh pr %s 40 %s\nEOF\n)' "$M" "$A")"
+check 2 "eval command-subst cat"     "$(printf 'eval \$(cat <<EOF\ngh pr %s 40 %s\nEOF\n)' "$M" "$A")"
 
 # --- Should ALLOW (exit 0): legit merges and unrelated commands ---
 check 0 "legit squash merge"         "gh pr $M 40 --squash --delete-branch"
