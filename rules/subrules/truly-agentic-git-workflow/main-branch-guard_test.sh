@@ -137,6 +137,19 @@ run_guard 0 "worktree list"                        "$(bj "git -C $CLONE worktree
 # ALLOW: -b with a raw commit SHA is a deliberate, explicit base.
 CLONE_SHA=$(git -C "$CLONE" rev-parse HEAD)
 run_guard 0 "worktree add -b, explicit SHA base"   "$(bj "git -C $CLONE worktree add -b feat/z5 $TMP/wt_sha $CLONE_SHA")"
+# DENY: glued short option `-bNAME` / `-BNAME` must still register as creating.
+run_guard 2 "worktree add -bNAME, implicit base"   "$(bj "git -C $CLONE worktree add -bglued1 $TMP/wt_g1")"
+run_guard 2 "worktree add -bNAME, local base"      "$(bj "git -C $CLONE worktree add -bglued2 $TMP/wt_g2 trunk")"
+run_guard 2 "worktree add -BNAME, local base"      "$(bj "git -C $CLONE worktree add -Bglued3 $TMP/wt_g3 trunk")"
+# ALLOW: glued short option with a remote base is still fine.
+run_guard 0 "worktree add -bNAME, origin/ base"    "$(bj "git -C $CLONE worktree add -bglued4 $TMP/wt_g4 origin/trunk")"
+# DENY: abbreviated / fully-qualified LOCAL ref forms resolve to refs/heads/*.
+run_guard 2 "worktree add -b, heads/ local ref"    "$(bj "git -C $CLONE worktree add -b feat/q1 $TMP/wt_q1 heads/trunk")"
+run_guard 2 "worktree add -b, refs/heads/ ref"     "$(bj "git -C $CLONE worktree add -b feat/q2 $TMP/wt_q2 refs/heads/trunk")"
+# ALLOW: fully-qualified REMOTE ref resolves to refs/remotes/*.
+run_guard 0 "worktree add -b, refs/remotes/ ref"   "$(bj "git -C $CLONE worktree add -b feat/q3 $TMP/wt_q3 refs/remotes/origin/trunk")"
+# DENY: --force interleaved before -b with a local base still caught.
+run_guard 2 "worktree add --force -b, local base"  "$(bj "git -C $CLONE worktree add --force -b feat/q4 $TMP/wt_q4 trunk")"
 
 printf -- '---\nmain-branch-guard: %s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
