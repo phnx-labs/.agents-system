@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.40] - 2026-07-01
+
+### Changed
+- **PR merges now default to `--rebase`, not `--squash`.** The workflow optimizes for one-concept-per-commit history — `/code:commit` splits aggressively into micro-commits precisely so each lands individually — but the merge step then squashed that history away. The two were contradictory. Rebase is now the single, consistent default across the rule sources (`truly-agentic-git-workflow`, `gh-merge-guard`, and the flat `rules/AGENTS.md` mirror), the `git-workflow` skill (`gh pr merge --rebase` + a "Rebase, not squash" rationale), and the code plugin (`code:review`). Squash is reserved for throwaway-WIP commit series ("wip", "fix typo"). Left untouched: `prune`'s squash-merged-branch *detection*, `/commit`'s `squash` *mode* argument, and the `--admin` guard test fixtures. (#49)
+- **Parallel edit-mode teammates now get isolated worktrees.** Teammates sharing one checkout collide on the index and files (cross-writes, stale reads, merge chaos). The `parallel-teams` rule, the `teams` skill, and the `/teams` command now direct agents to give each teammate its own git worktree — one per teammate type / independent surface — via `teams create --enable-worktrees` + `teams add --worktree <role>`. (#48)
+
 ## [0.1.39] - 2026-07-01
 
 ### Added
