@@ -241,7 +241,7 @@ Post one comment to the PR via `gh pr comment <N> --body-file <synthesized>.md`.
 
 | Verdict | Action |
 |---|---|
-| READY TO MERGE | `gh pr merge <N> --squash --auto` (if CI green) or merge directly if CI is N/A. Then close the worktree. |
+| READY TO MERGE | `gh pr merge <N> --rebase --auto` (if CI green) or merge directly if CI is N/A. Rebase preserves the PR's individual commits; squash only for throwaway-WIP commit series. Then close the worktree. |
 | CHANGES REQUESTED | Leave the comment. Iterate inside the same worktree — additional commits, `git push`. Do NOT spawn a fresh review until changes land. |
 | BLOCKED | Surface to the user via `AskUserQuestion`. Don't unilaterally close or revert. |
 

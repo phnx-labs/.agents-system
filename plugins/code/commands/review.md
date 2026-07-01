@@ -174,7 +174,7 @@ Verdicts:
   #414  CLOSE_DUPLICATE  — e2e covered by existing tests/login.e2e.ts (commit a97ae40 in main).
 
 Merge plan (stack order):
-  1. #412  → merge (squash)
+  1. #412  → merge (rebase)
   2. #413  → after fixes land, re-review; do not merge yet
   3. #414  → close as duplicate of a97ae40
 ```
@@ -212,12 +212,12 @@ EOF
 )"
 ```
 
-Then merge. Strategy by default: **squash** for feature/fix PRs (clean main history), **merge commit** for stacked PRs where you want to preserve the per-PR boundary. Use `--auto` only if CI is still running.
+Then merge. Strategy by default: **rebase** — replay the PR's commits onto main so the granular per-commit history is preserved (this matches the `code:commit` micro-commit philosophy; squashing would throw away exactly the one-concept-per-commit history those commits were authored to create). Only squash when a PR's commits are genuine throwaway WIP ("wip", "fix typo", "address review") that should not land individually. Use `--auto` only if CI is still running.
 
 ```bash
-gh pr merge <N> --squash --delete-branch
-# or for stacked PRs where each PR is its own logical unit:
-gh pr merge <N> --merge --delete-branch
+gh pr merge <N> --rebase --delete-branch
+# squash ONLY when the commits are throwaway WIP, not clean logical units:
+# gh pr merge <N> --squash --delete-branch
 ```
 
 For stacked PRs: after merging the base, the next PR's base auto-retargets on GitHub if it was set to the previous head — but if your tooling didn't enable that, run `gh pr edit <next> --base main` and confirm `mergeStateStatus` becomes `clean` before merging the next one.
