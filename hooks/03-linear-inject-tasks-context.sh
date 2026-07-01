@@ -1,6 +1,6 @@
 #!/bin/bash
 # SessionStart hook: fetch ALL Linear tasks from active sprint
-# Groups by agent label, shows Claude's tasks first, then full team status
+# Groups by agent label, shows the RUNNING agent's tasks first, then team status
 
 # Read credentials through the CLI's cross-platform keychain layer (macOS
 # Keychain via /usr/bin/security, Linux via secret-tool + encrypted-file
@@ -10,6 +10,17 @@
 # convention are read transparently (same account+service lookup).
 LINEAR_API_KEY=$(agents secrets get linear-api-key 2>/dev/null)
 TEAM_ID=$(agents secrets get linear-team-id 2>/dev/null)
+
+# Identify which harness is running this hook so "Your Tasks" reflects the right
+# agent bucket instead of always assuming Claude. Most reliable signal: this
+# script's own resolved path. agents-cli installs one copy per agent under
+# .../versions/<agent>/.../home/.<agent>/hooks/, and each harness invokes ITS
+# copy — so the path names the agent on every launch path (interactive shim,
+# headless runner, sandbox) with no dependency on harness-specific env vars.
+# AGENT_SELF is an explicit override/escape hatch; claude is the last resort.
+self_path=$(realpath "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")
+AGENT_SELF="${AGENT_SELF:-$(printf '%s' "$self_path" | sed -n 's#.*/versions/\([^/]*\)/.*#\1#p')}"
+export AGENT_SELF="${AGENT_SELF:-claude}"
 
 if [ -z "$LINEAR_API_KEY" ] || [ -z "$TEAM_ID" ]; then
   echo "Linear credentials not found. Add them with:"
@@ -26,7 +37,9 @@ result=$(curl -s -X POST https://api.linear.app/graphql \
   }" 2>/dev/null)
 
 echo "$result" | python3 -c "
-import json, sys
+import json, sys, os
+
+SELF = os.environ.get('AGENT_SELF', 'claude')
 
 try:
     data = json.load(sys.stdin)
@@ -94,15 +107,15 @@ try:
             line += f'\n  > {short}'
         return line
 
-    # Claude's tasks first
-    claude_tasks = groups.pop('agent:claude', [])
-    if claude_tasks:
-        print(f'### Your Tasks (agent:claude) -- {len(claude_tasks)}')
-        for n in claude_tasks:
+    # The running agent's own tasks first (bucket chosen by the harness)
+    mine = groups.pop(f'agent:{SELF}', [])
+    if mine:
+        print(f'### Your Tasks (agent:{SELF}) -- {len(mine)}')
+        for n in mine:
             print(fmt_issue(n))
         print()
     else:
-        print('### Your Tasks (agent:claude) -- none assigned')
+        print(f'### Your Tasks (agent:{SELF}) -- none assigned')
         print()
 
     # Other agents
@@ -125,7 +138,7 @@ try:
         print()
 
     print('---')
-    if claude_tasks:
+    if mine:
         print('Pick your highest-priority task. For team tasks, check agent status if anything looks stale.')
     else:
         print('No tasks for you. Review team status -- check on stale or blocked work.')
