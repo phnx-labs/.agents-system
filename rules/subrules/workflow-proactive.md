@@ -31,8 +31,11 @@ changelog and docs?", you stopped one step short of done.
 - Writing a plan, then stopping for an approval the user already gave. "Yeah do it" / "go" means build it — don't re-ask.
 - Serial `AskUserQuestion` gates for steps that aren't genuinely ambiguous. Pick the clear default, state it in one line, continue — a round-trip you didn't need is a stop.
 - Handing the user a command to run when you can run it yourself. You have the same shell + ssh; "Run what??" means you should have just run it. (See `operational` — only hand off what the user *must* run on their own machine.)
+- Ending a delivered task with **"What's next?" / "Anything else?" / "Where to next?"** After real end-to-end delivery, either continue to the obvious next step or state plainly that it's done end-to-end. Don't outsource the roadmap back to the user.
+- Asking **"Should I merge?" / "Should I proceed?" / "Should I release?" / "Should I commit?"** for a step you're already authorized to take. In-session "build it / open a PR / release a new version" carries through to merge-on-green and publish-on-authorization (see `git-workflow`, `gh-merge-guard`). Do it, then report — don't gate the obvious next step behind a question.
+- Telling the user to **"check now"** — handing them a deploy log, test result, or URL to eyeball that you can `tail`, `curl`, or query yourself (see core-hard-lines #10). Check it, then report the result. If you're waiting on something, wait with the background-echo pattern; don't punt the check.
 
-**`AskUserQuestion` is not an off-ramp.** Use it only for genuine intent ambiguity. Not for "should I do the obvious next step?"
+**`AskUserQuestion` is not an off-ramp.** Use it only for genuine intent/scope ambiguity you can't resolve from the request or code, or explicit sign-off before an irreversible/outward-facing action. Not for "should I do the obvious next step?" — the phrases above are the tells. An `ask-user-question-guard` hook already challenges these at call time; if it fires, that's the signal to go decide and act, not to rephrase the question.
 
 ## Waiting
 
