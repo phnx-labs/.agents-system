@@ -69,6 +69,26 @@ agents teams start my-feature --watch
 
 Always use `--mode plan` for security audits, research, and analysis.
 
+## Worktree Isolation (edit-mode teams)
+
+By default all teammates share the current checkout. For parallel **edit** work, give each teammate its **own** git worktree so they don't collide on one working tree — one worktree per teammate type / independent surface.
+
+```bash
+# Turn on per-teammate isolation for the team
+agents teams create my-feature --enable-worktrees
+
+# Each teammate gets a dedicated worktree (.agents/worktrees/<name>, branch agents/<name>)
+agents teams add my-feature claude "Owns: src/auth/*" --name auth --worktree auth --mode edit
+agents teams add my-feature codex  "Owns: src/ui/*"   --name ui   --worktree ui   --mode edit
+agents teams start my-feature --watch
+```
+
+- **Name the worktree after the surface** the teammate owns; the name must be **unique per teammate** (two teammates can't share one worktree name).
+- `--cwd <dir>` sets a plain working directory for a teammate when you don't want a worktree.
+- `--use-worktree <path>` on `create` makes **all** teammates share one existing checkout — the opposite of isolation; use only when every teammate must build against one tree.
+- **Skip worktrees for `--mode plan`** teams — read-only, no contention.
+- Worktrees are cleaned up on `stop`/`disband` when clean, and kept if they have uncommitted changes.
+
 ## Monitoring
 
 ```bash
@@ -90,6 +110,7 @@ agents teams logs my-feature frontend
 - **Demand evidence** — end prompts with: `Return file:line quotes for every claim`
 - **Run in parallel** — most tasks don't depend on each other
 - **Name teammates** with `--name` for easy reference
+- **Isolate edit-mode teammates** — `--enable-worktrees` on create + `--worktree <name>` per teammate, so parallel edits don't collide on one checkout
 
 ## Short Aliases
 
