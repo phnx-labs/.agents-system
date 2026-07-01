@@ -78,6 +78,13 @@ check 0 "single-quoted body mentions it" \
   "gh pr create --body 'do not gh pr $M --admin'"
 check 0 "commit msg mentions it" \
   "git commit -m \"note: gh pr $M $A is blocked by the guard\""
+check 0 "commit -am cluster mentions it" \
+  "git commit -am 'fix: gh pr $M $A guard hardening'"
+check 0 "commit -asm cluster mentions it" \
+  "git commit -asm \"gh pr $M $A note\""
+# but a real bypass inside an -am command substitution still blocks
+check 2 "commit -am with subst bypass" \
+  "git commit -am \"\$(gh pr $M 40 $A)\""
 
 # cat-heredoc body feeding a doc flag (the exact shape that misfired on PR #40)
 hd=$(printf 'gh pr create --title t --body "$(cat <<%sEOF%s\ndocs: never gh pr %s 40 %s here\nEOF\n)"' "'" "'" "$M" "$A")

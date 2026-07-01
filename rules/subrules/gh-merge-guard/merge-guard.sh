@@ -70,13 +70,16 @@ if command -v perl >/dev/null 2>&1; then
     }gemsx;
 
     # 2. Documentation-flag value -> blank ONLY plain quoted text; keep any value
-    #    containing a command substitution ($( or backtick) visible.
+    #    containing a command substitution ($( or backtick) visible. The short
+    #    forms allow a combined single-dash cluster ending in the value flag, so
+    #    `git commit -am/-asm "msg"` is handled like `-m "msg"`.
     s{
-      ((?:--body|--title|--message|--notes|--subject|--body-text|-b|-t|-m)(?:=|[ \t]+))
+      (^|[ \t;&|`(])
+      ((?:--body|--title|--message|--notes|--subject|--body-text|-[A-Za-z]*[btm])(?:=|[ \t]+))
       ("(?:\\.|[^"\\])*"|\x27[^\x27]*\x27)
     }{
-      my ($flag,$val)=($1,$2);
-      $val =~ /[\$`]/ ? "$flag$val" : "$flag ";
+      my ($bnd,$flag,$val)=($1,$2,$3);
+      $val =~ /[\$`]/ ? "$bnd$flag$val" : "$bnd$flag ";
     }gex;
   ') || scan=$cmd
 else
