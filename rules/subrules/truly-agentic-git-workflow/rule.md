@@ -2,13 +2,16 @@
 
 **The default branch is untouchable. Every change is a worktree + PR. Always.**
 
-Never create, edit, or delete a file — and never `git add`/`git commit` — while a
-repo is on its default branch (`main`/`master`/whatever `origin/HEAD` points at).
-This is **mechanically enforced**: the bundled `main-branch-guard` (PreToolUse)
-blocks Write/Edit/NotebookEdit and `git add`/`git commit` on the default branch.
-No exceptions, no escape hatch. Worktrees (feature branches) and non-git paths
-(`/tmp`, scratchpad) are unaffected. The guard gates only the agent's tool calls —
-the user's own editor and `!`-prefixed session commands are never blocked.
+Never create, edit, or delete a file with the agent's file tools
+(Write/Edit/NotebookEdit), and never `git add`/`git commit`, while a repo is on its
+default branch (`main`/`master`/whatever `origin/HEAD` points at). This is
+**mechanically enforced** by the bundled `main-branch-guard` (PreToolUse). The
+commit gate is the choke point: even a file changed by raw shell (`>`, `sed -i`,
+`git rm`) on the default branch can never be *committed* there — so nothing lands
+on the default branch outside a worktree + PR. No exceptions, no escape hatch.
+Worktrees (feature branches) and non-git paths (`/tmp`, scratchpad) are
+unaffected. The guard gates only the agent's tool calls — the user's own editor
+and `!`-prefixed session commands are never blocked.
 
 If you catch yourself about to edit a file in a checkout that's on `main`, stop
 and make a worktree first (recipe below).
@@ -69,8 +72,7 @@ Full recipe — worktree creation, PR, after-merge cleanup: the `git-workflow` s
 
 Opening a PR is not a stopping point. After `gh pr create`, **actively wait for
 CI** with the background-command + finish-echo pattern (never `Monitor`,
-`ScheduleWakeup`, or `until` loops — see `deployment-and-waiting`), then review
-and merge:
+`ScheduleWakeup`, or `until` loops — they fail silently), then review and merge:
 
 ```
 (gh pr checks <pr> --watch --fail-fast; echo "CI settled rc=$? — next: non-author review, then merge on green")
