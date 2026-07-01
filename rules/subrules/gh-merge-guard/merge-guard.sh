@@ -36,17 +36,19 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) |
 
 if command -v perl >/dev/null 2>&1; then
   scan=$(printf '%s' "$cmd" | perl -0777 -pe '
-    # 1. Heredoc bodies feeding a non-shell command are inert data -> drop the
-    #    body. If the opener line invokes a shell (sh/bash/eval/...), the body
-    #    executes, so keep it visible.
+    # 1. A heredoc body is inert ONLY when it feeds a known data-sink command
+    #    (cat/tee/gh/git — they treat it as text, never as shell). Then drop the
+    #    body. Anything else — a shell interpreter, ". file"/"source", or any
+    #    command we do not recognise — KEEPS the body visible, so a heredoc
+    #    piped into execution is still matched. Default-safe: unknown => keep.
     s{
       (^|[\n;&|(`])([^\n]*?)<<[-~]?[ \t]*(["\x27]?)([A-Za-z_]\w*)\3
       (.*?)\n[ \t]*\4[ \t]*(?=\n|$)
     }{
       my ($b,$pre,$tag,$body)=($1,$2,$4,$5);
-      $pre =~ /(?:^|[;&|(`]|\$\()[ \t]*(?:sh|bash|zsh|ksh|dash|eval|source|\.)\b/
-        ? "$b$pre<<$tag\n$body\n$tag"
-        : "$b$pre";
+      $pre =~ /(?:^|[;&|(`]|\$\()[ \t]*(?:cat|tee|gh|git)\b[^;&|`]*$/
+        ? "$b$pre"
+        : "$b$pre<<$tag\n$body\n$tag";
     }gemsx;
 
     # 2. Value of a documentation flag is inert TEXT -> drop it, UNLESS it

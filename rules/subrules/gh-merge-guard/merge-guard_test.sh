@@ -46,6 +46,10 @@ check 2 "sh -c double-quoted bypass" "sh -c \"gh pr $M 40 $A\""
 check 2 "command subst in -m value"  "git commit -m \"\$(gh pr $M 40 $A)\""
 check 2 "backtick command subst"     "echo \`gh pr $M 40 $A\`"
 check 2 "shell-fed heredoc"          "$(printf 'sh <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "dot-source /dev/stdin heredoc" "$(printf '. /dev/stdin <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "source /dev/stdin heredoc"  "$(printf 'source /dev/stdin <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "command sh heredoc"         "$(printf 'command sh <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
+check 2 "env bash heredoc"           "$(printf 'env bash <<EOF\ngh pr %s 40 %s\nEOF' "$M" "$A")"
 
 # --- Should ALLOW (exit 0): legit merges and unrelated commands ---
 check 0 "legit squash merge"         "gh pr $M 40 --squash --delete-branch"
@@ -63,6 +67,10 @@ check 0 "commit msg mentions it" \
 # cat-heredoc body feeding a doc flag (the exact shape that misfired on PR #40)
 hd=$(printf 'gh pr create --title t --body "$(cat <<%sEOF%s\ndocs: never gh pr %s 40 %s here\nEOF\n)"' "'" "'" "$M" "$A")
 check 0 "cat-heredoc doc body mentions it" "$hd"
+# bare cat/gh heredoc whose body is only inert text
+check 0 "bare cat heredoc mentions it"  "$(printf 'cat <<EOF\ndocs: gh pr %s 40 %s\nEOF' "$M" "$A")"
+check 0 "gh body-file heredoc mentions it" \
+  "$(printf 'gh pr create --body-file - <<EOF\ndocs: gh pr %s 40 %s\nEOF' "$M" "$A")"
 
 printf -- '---\nmerge-guard: %s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
