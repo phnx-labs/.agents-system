@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.37] - 2026-07-01
+
+### Fixed
+- **`merge-guard.sh` no longer false-blocks commands that merely *mention* an admin-bypass merge in body/message text.** The guard did a naive substring match over the entire command string, so a `gh pr create` / `git commit` whose `--body` or `-m` text documented the guard (as this repo's own rules do) was blocked as if it were a bypass merge — it fired on a `gh pr create` during PR #40. The guard now strips heredoc bodies and quoted spans (via `perl`, with a safe raw-match fallback if `perl` is absent) before matching, so only a real admin-bypass merge *invocation* is blocked; documentation text passes. Never fails open on a genuine bypass.
+  - Added `rules/subrules/gh-merge-guard/merge-guard_test.sh` — 10 cases over the real script and real stdin JSON: genuine bypass merges (incl. chained `create && merge`) block, legit merges and unrelated commands pass, and body/heredoc/commit-message text mentioning the tokens passes.
+
 ## [0.1.36] - 2026-07-01
 
 ### Changed
