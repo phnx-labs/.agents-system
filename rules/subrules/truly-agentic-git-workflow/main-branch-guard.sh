@@ -13,6 +13,9 @@
 #     (or .notebook_path); resolves its enclosing repo and current branch.
 #   - Bash -> inspects `git commit|add|stage` segments; resolves the target repo
 #     from `-C <path>` or the session cwd.
+#   - Bash -> also gates `git worktree add -b/-B`: a new-branch worktree must be
+#     based on a freshly-fetched remote ref (origin/<default>), never an implicit
+#     HEAD or a local branch (the "worktree-ing off a stale local commit" trap).
 #
 # Exits 0 (allow) or 2 (deny, message on stderr).
 #
@@ -149,6 +152,67 @@ resolve_repo_dir() {
   fi
 }
 
+set_worktree_deny() {
+  # $1 = new branch name (may be empty), $2 = what's wrong with the base.
+  _bn=${1:-<slug>}
+  deny_reason="Blocked: creating worktree branch '$_bn' from $2.
+
+A new-branch worktree must be based on a freshly-fetched remote-tracking ref, not
+a local or implicit base — a local default branch can be stale, so you'd branch
+off an old commit. Fetch first and base off origin/<default>:
+  REPO=\$(git rev-parse --show-toplevel)
+  git -C \"\$REPO\" fetch origin
+  BASE=\$(git -C \"\$REPO\" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
+  git -C \"\$REPO\" worktree add -b $_bn \"\$REPO/.agents/worktrees/$_bn\" \"origin/\$BASE\""
+}
+
+# check_worktree_base <repo> <args-after-`worktree`...> — gate NEW-branch worktree
+# creation so the branch is based on a freshly-fetched remote-tracking ref
+# (origin/<default>), never an implicit HEAD or a local branch (either can be a
+# stale default branch — the "worktree-ing off a stale local commit" trap). Only
+# `worktree add -b/-B` (new branch) is gated; materializing an existing ref
+# (`worktree add <path> <ref>` without -b) and `worktree list/remove/...` pass.
+check_worktree_base() {
+  _wrepo=$1; shift
+  [ "${1:-}" = "add" ] || return 0
+  shift
+  _creating=0
+  _newbr=""
+  _wbase=""
+  _npos=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -b|-B)    _creating=1; shift; [ $# -gt 0 ] && { _newbr=$1; shift; } ;;
+      --reason) shift; [ $# -gt 0 ] && shift ;;   # `--lock --reason <str>`
+      --)       shift
+                [ $# -gt 0 ] && shift             # <path>
+                [ $# -gt 0 ] && _wbase=$1         # [<commit-ish>]
+                break ;;
+      -*)       shift ;;                          # --force/--detach/--checkout/...
+      *)        _npos=$((_npos + 1))
+                if [ "$_npos" -eq 1 ]; then shift; else _wbase=$1; shift; fi ;;
+    esac
+  done
+  # Only new-branch creation is base-sensitive.
+  [ "$_creating" -eq 1 ] || return 0
+
+  if [ -z "$_wbase" ]; then
+    set_worktree_deny "$_newbr" "an implicit base (current HEAD)"
+    return 1
+  fi
+  # Remote-tracking base (origin/<x>, upstream/<x>, ...) — the required form.
+  if git -C "$_wrepo" show-ref --verify --quiet "refs/remotes/$_wbase" 2>/dev/null; then
+    return 0
+  fi
+  # Local branch base — the stale trap we're closing.
+  if git -C "$_wrepo" show-ref --verify --quiet "refs/heads/$_wbase" 2>/dev/null; then
+    set_worktree_deny "$_newbr" "the local branch '$_wbase'"
+    return 1
+  fi
+  # A raw SHA or tag is a deliberate, explicit base — allow.
+  return 0
+}
+
 check_segment() {
   _seg=$1
 
@@ -197,16 +261,23 @@ check_segment() {
   [ $# -eq 0 ] && return 0
 
   sub=$1
+  shift
   case "$sub" in
-    commit|add|stage) ;;
+    commit|add|stage)
+      _repo=$(resolve_repo_dir "$cpath")
+      if on_default_branch "$_repo"; then
+        set_deny_reason "\`git $sub\`"
+        return 1
+      fi
+      return 0
+      ;;
+    worktree)
+      _repo=$(resolve_repo_dir "$cpath")
+      check_worktree_base "$_repo" "$@"
+      return $?
+      ;;
     *) return 0 ;;
   esac
-
-  _repo=$(resolve_repo_dir "$cpath")
-  if on_default_branch "$_repo"; then
-    set_deny_reason "\`git $sub\`"
-    return 1
-  fi
   return 0
 }
 
