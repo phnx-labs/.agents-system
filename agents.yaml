@@ -26,3 +26,10 @@ hooks:
       - SessionStart
     script: 07-inject-device-topology.sh
     timeout: 5
+  inject-session-id:
+    agents:
+      - claude
+    events:
+      - SessionStart
+    script: 07-inject-session-id.sh
+    timeout: 5
