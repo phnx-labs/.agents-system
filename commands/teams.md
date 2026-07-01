@@ -15,7 +15,12 @@ First decide: do you need one agent or multiple?
 
 ```bash
 agents teams create <team-name>
+
+# Edit-mode teams: isolate each teammate in its own git worktree
+agents teams create <team-name> --enable-worktrees
 ```
+
+Use `--enable-worktrees` whenever teammates will **edit** in parallel, so they don't collide on one checkout — one worktree per teammate type / independent surface.
 
 ## Add Teammates
 
@@ -23,7 +28,12 @@ For each independent piece of work:
 
 ```bash
 agents teams add <team-name> <agent> "prompt" --name <role> --mode edit
+
+# With per-teammate worktree isolation (team created with --enable-worktrees):
+agents teams add <team-name> <agent> "prompt" --name <role> --worktree <role> --mode edit
 ```
+
+`--worktree <name>` gives the teammate a dedicated worktree at `.agents/worktrees/<name>` on branch `agents/<name>`. The name must be **unique per teammate**. Name it after the surface the teammate owns.
 
 **Agent selection:**
 | Agent | Best for |
