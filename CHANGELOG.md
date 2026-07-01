@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.42] - 2026-07-01
+
+### Added
+- **`plan-render` skill + `plan-presentation` subrule — every agent now presents implementation plans as a browser-ready HTML doc, in the product's own brand, opened on the machine the user sits at.** Commit `05c10da` shipped the transport (`/plan` Step 9 render + `agents ssh <host> 'open'` via the device-topology hook); the LOOK was left as one thin line ("dark background, readable mono/sans") and the harness's *native* plan mode had no render step at all. This makes the rich format a codified default:
+  - **`skills/plan-render/`** — the single source of the plan LOOK. `SKILL.md` defines the fixed house structure (hero with kicker/headline/chips/TOC, numbered sections, **≥1 hand-authored inline-SVG diagram** — never mermaid — callouts, tagged tables, code) and a **theme-resolution** order that skins the plan in the *target product's* brand (design tokens → tailwind/CSS vars → logo/manifest → live UI), falling back to a dark **+ light** editorial palette only when the product declares no brand. Ships `template.html` (dual-theme skeleton with an in-page `◐` toggle defaulting to `prefers-color-scheme`, so plans read in bright light and dim alike) and `example.html` (gold reference).
+  - **`rules/subrules/plan-presentation/`** — an always-on subrule (added to the `default` preset) so *native plan mode*, `/plan`, and `/swarm:plan` all render + open the plan; bundles the **`plan-html-reminder`** hook (PreToolUse on `ExitPlanMode`): if no fresh plan HTML was rendered this session it blocks the presentation once with a render+open reminder, then passes on the re-call. Self-terminating; a headless fleet still renders the file (which clears the gate) even when it can't open a browser. Covered by `plan-html-reminder_test.sh` (5 cases: block-when-absent, allow on canonical/nested render, stale-render blocks, non-ExitPlanMode never gated).
+  - **Wired the existing plan verbs to the new source:** `/plan` Step 9 and `/swarm:plan`'s review-artifact step now reference `plan-render` for the look (product theming, light/dark, ≥1 SVG) instead of restating a thin recipe. The open-on-Mac transport stays canonical in `/plan` Step 9. Host is always resolved from `agents devices` — never hardcoded.
+
 ## [0.1.41] - 2026-07-01
 
 ### Added
