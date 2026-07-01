@@ -17,3 +17,12 @@ hooks:
       - UserPromptSubmit
     script: 06-attention-sentinel.sh
     timeout: 5
+  inject-device-topology:
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - SessionStart
+    script: 07-inject-device-topology.sh
+    timeout: 5
