@@ -33,3 +33,14 @@ hooks:
       - SessionStart
     script: 07-inject-session-id.sh
     timeout: 5
+  register-session-pid:
+    agents:
+      - claude
+      - codex
+      - kimi
+      - grok
+      - antigravity
+    events:
+      - SessionStart
+    script: 08-register-session-pid.sh
+    timeout: 5
