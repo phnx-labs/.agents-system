@@ -11,8 +11,7 @@ presets:
       - workflow-proactive
       - code-quality
       - testing-strict
-      - git-readonly
-      - git-workflow
+      - truly-agentic-git-workflow
       - gh-merge-guard
       - no-pr-footer
       - operational
