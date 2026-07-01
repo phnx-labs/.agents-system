@@ -182,15 +182,16 @@ check_worktree_base() {
   _npos=0
   while [ $# -gt 0 ]; do
     case "$1" in
-      -b|-B)    _creating=1; shift; [ $# -gt 0 ] && { _newbr=$1; shift; } ;;
-      --reason) shift; [ $# -gt 0 ] && shift ;;   # `--lock --reason <str>`
-      --)       shift
-                [ $# -gt 0 ] && shift             # <path>
-                [ $# -gt 0 ] && _wbase=$1         # [<commit-ish>]
-                break ;;
-      -*)       shift ;;                          # --force/--detach/--checkout/...
-      *)        _npos=$((_npos + 1))
-                if [ "$_npos" -eq 1 ]; then shift; else _wbase=$1; shift; fi ;;
+      -b|-B)     _creating=1; shift; [ $# -gt 0 ] && { _newbr=$1; shift; } ;;
+      -b?*|-B?*) _creating=1; _newbr=${1#-[bB]}; shift ;;   # glued `-bNAME` / `-BNAME`
+      --reason)  shift; [ $# -gt 0 ] && shift ;;  # `--lock --reason <str>`
+      --)        shift
+                 [ $# -gt 0 ] && shift            # <path>
+                 [ $# -gt 0 ] && _wbase=$1        # [<commit-ish>]
+                 break ;;
+      -*)        shift ;;                         # --force/--detach/--checkout/...
+      *)         _npos=$((_npos + 1))
+                 if [ "$_npos" -eq 1 ]; then shift; else _wbase=$1; shift; fi ;;
     esac
   done
   # Only new-branch creation is base-sensitive.
@@ -200,17 +201,20 @@ check_worktree_base() {
     set_worktree_deny "$_newbr" "an implicit base (current HEAD)"
     return 1
   fi
-  # Remote-tracking base (origin/<x>, upstream/<x>, ...) — the required form.
-  if git -C "$_wrepo" show-ref --verify --quiet "refs/remotes/$_wbase" 2>/dev/null; then
-    return 0
-  fi
-  # Local branch base — the stale trap we're closing.
-  if git -C "$_wrepo" show-ref --verify --quiet "refs/heads/$_wbase" 2>/dev/null; then
-    set_worktree_deny "$_newbr" "the local branch '$_wbase'"
-    return 1
-  fi
-  # A raw SHA or tag is a deliberate, explicit base — allow.
-  return 0
+  # Canonicalize the base to its full ref name so all of git's idiomatic forms
+  # classify identically: bare `trunk`, `heads/trunk`, `refs/heads/trunk` all
+  # resolve to refs/heads/trunk (local); `origin/x`, `refs/remotes/origin/x` to
+  # refs/remotes/... A raw SHA / tag has no branch ref -> deliberate, allow.
+  _full=$(git -C "$_wrepo" rev-parse --symbolic-full-name "$_wbase" 2>/dev/null) || _full=""
+  case "$_full" in
+    refs/remotes/*)                       # freshly-fetched remote base — required form
+      return 0 ;;
+    refs/heads/*)                         # local branch — the stale trap we're closing
+      set_worktree_deny "$_newbr" "the local branch '$_wbase'"
+      return 1 ;;
+    *)                                    # raw SHA / tag / unresolved — deliberate, allow
+      return 0 ;;
+  esac
 }
 
 check_segment() {
