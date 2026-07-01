@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.38] - 2026-07-01
+
+### Added
+- **`inject-session-id` SessionStart hook (`hooks/07-inject-session-id.sh`) — injects the live session id (+ transcript path) into the agent's own context.** Registered on `SessionStart` for `claude` in `agents.yaml`, alongside `session-start-autosync` and `attention-sentinel`. This covers Claude Code and every Claude-harness profile (e.g. the `kimi` / `deepseek` `ANTHROPIC_MODEL` presets), so the model can reference its own session id without reading any file.
+  - Deliberately the opposite of the two neighbouring SessionStart hooks (`04-capture-session-start-metadata.sh` writes a silent state file; `05-session-start-autosync.sh` runs a detached sync and stays silent): this hook writes to stdout on purpose. Claude appends SessionStart `hookSpecificOutput.additionalContext` to the model context verbatim — verified end-to-end (the model echoes back the injected UUID, and it matches the real `~/.claude/projects/.../<uuid>.jsonl` transcript on disk), with a negative control confirming no leakage.
+  - **Blast radius is every Claude session start, so the hook fails safe.** No `set -e`; every branch (empty stdin, unparseable JSON, non-object payload, missing `session_id`) exits 0 with no output — a malformed payload yields no context, never a broken or aborted turn. The only thing ever written to stdout is well-formed `additionalContext` JSON, or nothing.
+  - Codex/Gemini deferred to a follow-up: Codex injection is proven viable (a `session_start` hook's stdout lands in the rollout as a `developer` message) but needs the `codex_hooks` feature flag + a pre-trusted hash to be wired, so it is out of scope for this Claude-first change. Gemini has no SessionStart-to-context path.
+
 ## [0.1.37] - 2026-07-01
 
 ### Fixed
