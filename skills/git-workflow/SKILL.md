@@ -9,12 +9,12 @@ user-invocable: true
 # Agentic Git Workflow
 
 PR-bound work runs in an **isolated worktree**, never in the user's checkout. The
-behavioral invariants live in the always-on `git-workflow` rule; this skill is the
-procedure that backs them.
+behavioral invariants live in the always-on `truly-agentic-git-workflow` rule; this
+skill is the procedure that backs them.
 
 ## Why a worktree (not a branch in place)
 
-`checkout`, `switch`, `branch`, `reset` are on the `git-readonly` deny list — fast,
+`checkout`, `switch`, `branch`, `reset` are on the `truly-agentic-git-workflow` deny list — fast,
 irreversible, and the cause of real agent-driven data loss. `git worktree add` is the
 **allowed** branch-creation path and it's isolated: it never touches the user's working
 tree. So you get a fresh branch without `checkout`/`branch`.
@@ -68,7 +68,7 @@ remove the worktree or delete the branch until merge.
 
 Order matters: remove the worktree **first** so the branch is no longer checked
 out, then let `gh` do the merge and delete both branches. This keeps cleanup off
-the `git-readonly` deny list — `git branch -D` is never invoked.
+the `truly-agentic-git-workflow` deny list — `git branch -D` is never invoked.
 
 ```bash
 git -C "$REPO" worktree remove "$WT"                       # allowed; frees the branch
@@ -82,5 +82,5 @@ post-merge local prune, so no deny-listed `git branch` / `checkout` call is need
 ## Boundaries
 
 - Worktrees live **only** under `<repo>/.agents/worktrees/`. Never elsewhere.
-- Never dodge the `git-readonly` deny list inside `$WT`.
+- Never dodge the `truly-agentic-git-workflow` deny list inside `$WT`.
 - To attach the session transcript to the PR, see the `sessions` skill.

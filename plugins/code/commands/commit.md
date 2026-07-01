@@ -37,6 +37,13 @@ Rules:
 
 ## Process
 
+> **Default branch is off-limits.** If the working tree is on its default branch
+> (`main`/`master`), the `main-branch-guard` hook blocks `git add`/`git commit` —
+> by design (see the truly-agentic-git-workflow rule). Move the changes to a
+> worktree + branch and commit there (`git worktree add -b <slug>
+> <repo>/.agents/worktrees/<slug>`), then open a PR. Don't try to work around the
+> guard.
+
 1. Run `git status` and `git diff` (staged + unstaged) in parallel.
 2. If nothing to commit, say so and stop. Do not create an empty commit.
 3. **Split the changes (default: maximum micro-commits).** Scan the diff and split into the smallest viable units. **One concept per commit** is the goal — err on the side of MORE commits, not fewer. A commit covers exactly one thing: one feature increment, one bug fix, one rename, one config tweak, one docs section. If two files could plausibly land in separate commits, they should. Unrelated changes (e.g. a hook config tweak + a new blog post + a bug fix) must NEVER share a commit. When `$ARGUMENTS` contains `squash` or `chunky`, fall back to the older "cluster what belongs together" heuristic instead.
