@@ -185,6 +185,21 @@ agents cloud run "add auth tests" --provider codex --env <env_id>
 
 Scale past local capacity, dispatch async with `--no-follow`, and manage tasks with `agents cloud list|status|logs|cancel`. See the `cloud` skill.
 
+## Run on another machine (SSH)
+
+A different axis from cloud: `agents run --host <name>` runs the agent on one of your **own** registered machines over SSH (no daemon). It follows live by default; `--no-follow` detaches.
+
+```bash
+agents run claude "profile this build" --host gpu-box   # run there, follow live
+agents run claude "..." --host gpu-box --no-follow        # detach
+
+agents hosts ps              # list dispatched runs
+agents logs --host gpu-box   # pick a run on that host and view its log
+agents logs <id> -f          # re-attach to a running one and follow
+```
+
+`agents logs [id]` is the unified viewer over host-dispatch runs and local session transcripts; `agents hosts logs <id>` is the host-only equivalent. See the `devices` skill.
+
 ## Quick reference
 
 | Flag | Purpose |
