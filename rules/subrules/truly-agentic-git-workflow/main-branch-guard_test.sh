@@ -122,5 +122,21 @@ run_guard 2 "git -C <relative> commit, cwd=TMP"    "$(bj "git -C main_repo commi
 run_guard 2 "local 'main' under trunk-default clone" "$(bj "git commit -m x" "$CLONE_MAIN")"
 run_guard 2 "Write on local 'main' under trunk default" "$(wj Write file_path "$CLONE_MAIN/f.txt")"
 
+# --- worktree add -b/-B base freshness ($CLONE has origin/trunk + local trunk) ---
+# DENY: new-branch worktree from an implicit base (current HEAD).
+run_guard 2 "worktree add -b, implicit base"       "$(bj "git -C $CLONE worktree add -b feat/z $TMP/wt_implicit")"
+# DENY: new-branch worktree based on a LOCAL branch (the stale trap).
+run_guard 2 "worktree add -b, local-branch base"   "$(bj "git -C $CLONE worktree add -b feat/z2 $TMP/wt_local trunk")"
+run_guard 2 "worktree add -B, local-branch base"   "$(bj "git -C $CLONE worktree add -B feat/z3 $TMP/wt_localB trunk")"
+# ALLOW: new-branch worktree based on a remote-tracking ref (the required form).
+run_guard 0 "worktree add -b, origin/ base"        "$(bj "git -C $CLONE worktree add -b feat/z4 $TMP/wt_remote origin/trunk")"
+# ALLOW: non-creating worktree add (materialize an existing ref) is not gated.
+run_guard 0 "worktree add (no -b) existing ref"    "$(bj "git -C $CLONE worktree add $TMP/wt_nob origin/trunk")"
+# ALLOW: worktree list / other subcommands untouched.
+run_guard 0 "worktree list"                        "$(bj "git -C $CLONE worktree list")"
+# ALLOW: -b with a raw commit SHA is a deliberate, explicit base.
+CLONE_SHA=$(git -C "$CLONE" rev-parse HEAD)
+run_guard 0 "worktree add -b, explicit SHA base"   "$(bj "git -C $CLONE worktree add -b feat/z5 $TMP/wt_sha $CLONE_SHA")"
+
 printf -- '---\nmain-branch-guard: %s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

@@ -53,7 +53,12 @@ run git — `git worktree add -b` is the allowed, isolated branch-creation path.
    BASE=$(git -C "$REPO" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
    git -C "$REPO" worktree add -b <slug> "$REPO/.agents/worktrees/<slug>" "origin/$BASE"
    ```
-   Worktrees live **only** under `<repo>/.agents/worktrees/<slug>/`.
+   Worktrees live **only** under `<repo>/.agents/worktrees/<slug>/`. The
+   `origin/<default>` base is **mechanically enforced** — `main-branch-guard`
+   denies `git worktree add -b/-B` with an implicit (current-HEAD) or local-branch
+   base, so a new branch can never fork off a stale local commit. Pass an explicit
+   `origin/<default>` (a raw commit SHA or tag is allowed for the rare deliberate
+   case).
 2. **End-to-end inside `$WT`:** implement → test → verify the real flow → commit →
    push → open PR, all in the worktree.
 3. **Worktree integrity (multi-agent safe).** Create worktrees **foreground**,
