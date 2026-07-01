@@ -59,7 +59,7 @@ gh -R <owner/repo> pr create --base "$BASE" --head "$SLUG" --title "…" --body 
 
 PR open is **not** "done" — but merging is autonomous on green. A reviewer that is
 **not** the author reviews the diff and runs the real tests/CI. If
-the review is clean **and** tests pass, squash-merge and clean up without asking
+the review is clean **and** tests pass, rebase-merge and clean up without asking
 (section 4). Only fall back to `AskUserQuestion` (request changes / iterate, inside the
 same `$WT`) when the review finds problems, tests fail, or the merge conflicts. Don't
 remove the worktree or delete the branch until merge.
@@ -72,9 +72,15 @@ the `truly-agentic-git-workflow` deny list — `git branch -D` is never invoked.
 
 ```bash
 git -C "$REPO" worktree remove "$WT"                       # allowed; frees the branch
-gh -R <owner/repo> pr merge "$SLUG" --squash --delete-branch  # merge + delete remote & local branch
+gh -R <owner/repo> pr merge "$SLUG" --rebase --delete-branch  # merge + delete remote & local branch
 git -C "$REPO" fetch --prune                                # drop stale remote-tracking refs
 ```
+
+**Rebase, not squash.** `--rebase` replays the PR's commits onto main so the
+one-concept-per-commit history the `/code:commit` skill authored is preserved —
+squashing throws away exactly the granular history those commits were written to
+create. Squash (`--squash`) only for a throwaway-WIP series ("wip", "fix typo",
+"address review") that should not land as individual commits.
 
 `gh pr merge --delete-branch` handles branch deletion via the GitHub API and a
 post-merge local prune, so no deny-listed `git branch` / `checkout` call is needed.
