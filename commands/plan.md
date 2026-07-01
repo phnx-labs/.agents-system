@@ -312,12 +312,14 @@ A plan buried in terminal scrollback is hard to review. Once the plan is drafted
 the machine the user is actually sitting at. This is the canonical recipe — other
 plan verbs (e.g. `/swarm:plan`) reference this step.
 
-1. **Render.** Write one self-contained `.html` (inline CSS, no external assets) to
-   a temp path, e.g. `/tmp/plan-<slug>.html`. Include: the goal, the user-flow /
-   architecture diagrams (render ASCII in `<pre>`, or inline SVG), the
-   implementation table, existing-primitives-to-reuse, and the design questions.
-   Clean and legible — dark background, readable mono/sans, generous spacing. No
-   framework, no CDN — it must open offline by double-click.
+1. **Render — in the `plan-render` house style.** Load the **`plan-render`** skill and
+   write one self-contained `.html` (inline CSS, no CDN) to `/tmp/plan-<slug>.html`,
+   starting from its `template.html` (`example.html` is the gold reference). Include the
+   goal, the implementation table, existing-primitives-to-reuse, the design questions, and
+   **≥1 hand-authored inline-SVG diagram** (timeline / architecture / before-after — not
+   mermaid). Skin it in the **target product's brand** (design tokens → tailwind → logo);
+   fall back to the dark **+ light** editorial house palette (with the in-page toggle) only
+   when the product declares no brand. It must open offline by double-click.
 
 2. **Open it on the user's browser host.** Use the **Host & Fleet** context injected
    at session start (the online macOS device is where the user sits — pick the one
