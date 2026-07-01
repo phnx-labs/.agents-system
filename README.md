@@ -77,7 +77,7 @@ Skills are richer than commands — multi-file capabilities with persistent cont
 | `run` / `routines` | Dispatch a single agent / schedule recurring agents |
 | `sessions` | Search and read prior agent transcripts |
 | `secrets` | Keychain-backed env-var bundles |
-| `docs` / `release` / `reflect` | Write docs / publish packages / recall feedback |
+| `docs` / `release` | Write docs / publish packages |
 | `learn` | Reflect on a finished session and fold durable, generalizing lessons back into skills/rules/memory — without overfitting or downgrading what works |
 
 See [`skills/README.md`](skills/README.md) for the complete table. Invoke with `/skillname` or let Claude invoke when relevant.
@@ -88,6 +88,7 @@ Plugins bundle related skills, commands, hooks, and subagents into one installab
 
 | Plugin | Purpose |
 |--------|---------|
+| `cloud` | Rush Cloud dispatch: `/cloud:run` documents native `rush cloud run` for Claude Code/Codex cloud workers; `/cloud:accounts` covers Rush login and connected Claude/Codex credential setup |
 | `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:ship`, `/code:sprint`, `/code:quality`, `/code:learn`, `/commit` |
 | `git` | Pure git plumbing (no code logic) — `/git:prune` prunes merged branches and worktrees with hard data-loss guards; `/git:tag-release` cuts and pushes an annotated release tag |
 

@@ -13,6 +13,8 @@ presets:
       - testing-strict
       - git-readonly
       - git-workflow
+      - gh-merge-guard
+      - no-pr-footer
       - operational
       - conventions
       - agents-cli
