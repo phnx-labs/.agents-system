@@ -305,6 +305,41 @@ Note what the panel caught that your own plan missed.
 |---------|----------------|---------------|------------|
 | ... | ... | ... | Low/Med/Hi |
 
+## Step 9: Render the plan as HTML and open it in the user's browser
+
+A plan buried in terminal scrollback is hard to review. Once the plan is drafted
+(artifacts + summary), render it as a **self-contained HTML file** and open it on
+the machine the user is actually sitting at. This is the canonical recipe — other
+plan verbs (e.g. `/swarm:plan`) reference this step.
+
+1. **Render.** Write one self-contained `.html` (inline CSS, no external assets) to
+   a temp path, e.g. `/tmp/plan-<slug>.html`. Include: the goal, the user-flow /
+   architecture diagrams (render ASCII in `<pre>`, or inline SVG), the
+   implementation table, existing-primitives-to-reuse, and the design questions.
+   Clean and legible — dark background, readable mono/sans, generous spacing. No
+   framework, no CDN — it must open offline by double-click.
+
+2. **Open it on the user's browser host.** Use the **Host & Fleet** context injected
+   at session start (the online macOS device is where the user sits — pick the one
+   marked online + direct if there are several Macs; if genuinely ambiguous, ask
+   once). Then:
+   - **If you are already on that host** (its name == your `hostname`):
+     `open /tmp/plan-<slug>.html` (macOS) / `xdg-open` (Linux).
+   - **If you are on a different host** (e.g. a remote Linux node): copy the file
+     over and open it there, reusing the same SSH path the fleet uses —
+     ```bash
+     scp /tmp/plan-<slug>.html <browser-host>:/tmp/ \
+       && agents ssh <browser-host> 'open /tmp/plan-<slug>.html'
+     ```
+     (`agents ssh` resolves the device and auth from `agents devices`; plain
+     `ssh <browser-host>` also works if the registry was rendered to ssh_config.)
+
+3. **Tell the user** the plan opened in their browser, with a 2-3 line spoken summary
+   and the temp path. Then proceed to the design questions / `ExitPlanMode` as usual.
+
+Skip this only when there is no reachable browser host (headless-only fleet) — fall
+back to presenting the plan inline and say why.
+
 ## Constraints
 
 - No time estimates

@@ -85,6 +85,13 @@ Enumerated, each with how the plan handles it.
 ### Testing
 Scenarios to cover — happy path and the edges that matter.
 
+### Review artifact (HTML)
+After the proposal is written, render the plan as a self-contained HTML file and open
+it on the machine the user sits at — follow the canonical recipe in the `/plan` command
+("Render the plan as HTML and open it in the user's browser"), using the injected
+**Host & Fleet** context to pick and reach the browser host. Don't duplicate the recipe;
+reuse it.
+
 ## Constraints
 
 No human-time estimates (wall-clock minutes / edit counts / token cost only). No "nice to have" additions. No backwards-compat planning unless asked. Do exactly what was asked — no scope creep.
