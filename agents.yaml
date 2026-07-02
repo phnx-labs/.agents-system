@@ -26,23 +26,20 @@ hooks:
       - SessionStart
     script: 07-inject-device-topology.sh
     timeout: 5
-  inject-session-id:
-    agents:
-      - claude
-    events:
-      - SessionStart
-    script: 07-inject-session-id.sh
-    timeout: 5
-  register-session-pid:
+  session-identity:
+    # Merged identity hook: session metadata + per-pid registry + Claude-gated
+    # session-id injection, one stdin parse. Union of the three former hooks'
+    # agent lists (04-capture-metadata, 07-inject-session-id, 08-register-pid).
     agents:
       - claude
       - codex
+      - gemini
       - kimi
       - grok
       - antigravity
     events:
       - SessionStart
-    script: 08-register-session-pid.sh
+    script: 04-session-identity.sh
     timeout: 5
   mailbox-inject:
     # Drains the agent's mailbox (AGENTS_MAILBOX_DIR, set by agents-cli at spawn)
