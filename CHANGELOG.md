@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.43] - 2026-07-01
+
+### Changed
+- **Merged the three SessionStart "identity" hooks into one (`hooks/04-session-identity.sh`).** `04-capture-session-start-metadata.sh`, `07-inject-session-id.sh`, and `08-register-session-pid.sh` each independently re-read and re-parsed the *same* SessionStart stdin JSON (`session_id`/`cwd`/`transcript_path`) and spawned their own process on every session start. They are now one hook that reads stdin once and does all three jobs: writes the session metadata file (`~/.agents/.cache/state/sessions/<agent_pid>.json`), enriches the per-pid registry (`~/.agents/.cache/terminals/by-pid/<pid>.json`), and injects the live session id into the model context. Net: session start spawns one identity process instead of three, with no change to any consumer's on-disk contract.
+  - **Deployed to the union of the former agent lists** (`claude`, `codex`, `gemini`, `kimi`, `grok`, `antigravity`). The two silent state writes now run for every agent — strictly additive (a metadata/registry file for an agent that previously lacked one is harmless and closes the former arbitrary gaps). The stdout injection self-gates to the Claude harness via `$CLAUDECODE` (set for Claude Code and the `kimi`/`deepseek` `ANTHROPIC_MODEL` presets the former `07` covered; unset under codex/gemini/standalone-grok), so non-Claude agents never receive Claude-shaped context JSON.
+  - Fails safe exactly as before: runs on every session start, `no set -e`; empty/malformed/idless payloads exit 0 with no write and no stdout. `hooks/04-session-identity_test.sh` (14 cases) covers the metadata write, registry enrichment across every delivery shape (stdin/grok-env/idless/malformed), ancestor-pid resolution, launcher merge, and the Claude-gated injection (both the injected shape and the non-Claude no-injection). Run hermetically under a sandbox `HOME`.
+  - Removed `hooks/07-inject-session-id.sh`, `hooks/08-register-session-pid.sh`, `hooks/08-register-session-pid_test.sh`, and the dormant `hooks/04-capture-session-start-metadata.sh` (the latter had no `agents.yaml` registration; its behaviour is preserved in the merged hook).
+
 ## [0.1.42] - 2026-07-01
 
 ### Added
