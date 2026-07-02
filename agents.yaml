@@ -44,3 +44,14 @@ hooks:
       - SessionStart
     script: 08-register-session-pid.sh
     timeout: 5
+  mailbox-inject:
+    # Drains the agent's mailbox (AGENTS_MAILBOX_DIR, set by agents-cli at spawn)
+    # on every tool call and injects queued `agents message` context mid-run.
+    # Claude only for now — the only harness where PreToolUse additionalContext
+    # is verified to reach the model (Codex/Antigravity are probe-gated next).
+    agents:
+      - claude
+    events:
+      - PreToolUse
+    script: 09-mailbox-inject.py
+    timeout: 5
