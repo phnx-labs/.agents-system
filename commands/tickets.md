@@ -35,7 +35,7 @@ Map the user's intent onto the tracker's primitives:
 | "pick up X" / "claim X" | Move the issue to In Progress (or equivalent) and assign it to the current user. |
 | "comment X: ..." | Append a comment. |
 | "close X" / "done with X" | Move to Done with proof — link a PR, paste a screenshot, attach a deploy URL, or quote a metric. Don't close without evidence. |
-| "create X" | New issue with title (and description if provided). Default priority Medium unless told otherwise. |
+| "create X" | New issue with title (and description if provided). Default priority Medium unless told otherwise. **Attach screenshots and relevant materials** (repro, error output, the visual you captured) so the issue is actionable without a back-and-forth. |
 | "search X" | Free-text search; show top matches with status + assignee. |
 
 If the skill (Step 1) gives you specific commands for these, **use them verbatim** — don't paraphrase the skill's CLI invocations.
@@ -54,3 +54,4 @@ After doing the action, report:
 - Don't bypass the skill. If a `linear` (or `github`, etc.) skill is loaded, its SKILL.md is the source of truth — its commands are usually richer than what you'd reinvent (proof attachments, agent-lane labels, etc.).
 - Don't close issues without proof. Engineering: PR URL or commit URL or screenshot of tests passing. Growth/content: published URL or metric.
 - Don't create duplicates. Quick search before creating a new issue.
+- Don't leak the session transcript. A transcript can help a reviewer, but it carries secrets/tokens/paths — keep it **confidential**: attach it only as a **secret gist link** on a private tracker, never inline, never onto a public issue. See the `truly-agentic-git-workflow` rule.

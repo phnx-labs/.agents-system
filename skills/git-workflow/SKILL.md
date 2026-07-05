@@ -57,6 +57,20 @@ git -C "$WT" push -u origin "$SLUG"
 gh -R <owner/repo> pr create --base "$BASE" --head "$SLUG" --title "…" --body "…"
 ```
 
+**Attach evidence, per the `truly-agentic-git-workflow` rule.** The body carries
+screenshots / artifacts of the user-visible outcome (rendered UI, passing test run,
+`curl`'d health response) — upload the asset, don't just describe it. Attach the
+**session transcript confidentially**: on a private repo, a secret gist link only;
+on a public repo, omit it and reference the local path. Never paste transcript text
+inline or onto a public repo.
+
+```bash
+# screenshot / artifact -> uploaded onto the PR
+gh -R <owner/repo> pr comment <pr> --body "Verified end-to-end: ![result](<uploaded-image>)"
+# confidential transcript, private repos only
+gh gist create --secret "$AGENTS_SESSION_DIR/$SESSION_ID.jsonl"   # paste the URL into the PR
+```
+
 PR open is **not** "done" — but merging is autonomous on green. A reviewer that is
 **not** the author reviews the diff and runs the real tests/CI. If
 the review is clean **and** tests pass, rebase-merge and clean up without asking
@@ -89,4 +103,7 @@ post-merge local prune, so no deny-listed `git branch` / `checkout` call is need
 
 - Worktrees live **only** under `<repo>/.agents/worktrees/`. Never elsewhere.
 - Never dodge the `truly-agentic-git-workflow` deny list inside `$WT`.
-- To attach the session transcript to the PR, see the `sessions` skill.
+- To locate the session transcript to attach, see the `sessions` skill. Attach it
+  **confidentially** (secret gist link on private repos; local-path reference on
+  public repos) — never inline, never onto a public repo. See the
+  `truly-agentic-git-workflow` rule.

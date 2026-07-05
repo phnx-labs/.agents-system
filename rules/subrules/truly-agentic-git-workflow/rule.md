@@ -73,6 +73,28 @@ run git — `git worktree add -b` is the allowed, isolated branch-creation path.
 
 Full recipe — worktree creation, PR, after-merge cleanup: the `git-workflow` skill.
 
+## Open with evidence attached — screenshots, artifacts, a confidential transcript
+
+Opening something for a human — a **PR**, a **GitHub issue**, or a **ticket**
+(Linear/Jira) — is a handoff, not a stopping point. Identify which flow you're in
+and attach what the reviewer needs to judge it without re-running your session.
+Every `gh pr create` / `gh issue create` / ticket-open carries:
+
+- **Screenshots and relevant materials of the user-visible outcome** — the rendered
+  UI, the passing test run, the `curl`'d health response, a before/after. If you
+  produced a visual while verifying end-to-end (core-hard-lines #1), it belongs in
+  the body. Upload the image to the PR/issue (`gh pr comment <pr> --body` with the
+  asset, or drag it into the web UI); reference on-disk images by **full path** so
+  the reviewer can click to preview.
+- **A session transcript — kept confidential, always.** The transcript can carry
+  secrets, tokens, internal paths, and raw reasoning, so it **never** goes inline in
+  a PR/issue/ticket body and **never** touches a public repo or public tracker. On a
+  **private** repo / internal tracker, attach it as a **secret gist** and link only:
+  `gh gist create --secret <session-id>.jsonl` → paste the returned URL. On a
+  **public** repo, omit the transcript entirely and instead reference the local path
+  (`<host>:<session-dir>/<session-id>.jsonl`) so a teammate on the fleet can open it.
+  Never paste transcript text anywhere it could be indexed or cached.
+
 ## PR open is NOT done — actively wait, never make the user ping
 
 Opening a PR is not a stopping point. After `gh pr create`, **actively wait for
