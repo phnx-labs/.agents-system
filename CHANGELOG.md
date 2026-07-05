@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.44] - 2026-07-05
+
+### Changed
+- **Agents now attach evidence when opening PRs, issues, and tickets.** Every "opening" flow (a PR, a GitHub issue, or a Linear/Jira ticket) is a handoff to a human reviewer, so the agent identifies the flow and attaches what the reviewer needs to judge it without re-running the session: **screenshots and relevant materials** of the user-visible outcome (uploaded to the PR/issue, not merely described; on-disk images referenced by full path), plus **the session transcript kept confidential — always**. The transcript can carry secrets/tokens/paths, so it never goes inline and never touches a public repo/tracker: a secret-gist link (`gh gist create --secret`) on private repos, a local-path reference on public ones. Landed in the always-on `truly-agentic-git-workflow` rule (+ its compiled `rules/AGENTS.md` mirror), the `git-workflow` skill's "Open the PR" step, and the `tickets` command. (#59)
+
 ## [0.1.43] - 2026-07-01
 
 ### Changed
