@@ -47,7 +47,7 @@ fi
 # + progress + milestones + top open issues, for the cwd match), and the active
 # sprint board. Build the JSON body in Python to sidestep GraphQL-in-bash quoting.
 QUERY='{
-  users(first: 100) { nodes { displayName name email active app guest } }
+  users(first: 250) { nodes { displayName name email active app guest } }
   team(id: "'"$TEAM_ID"'") {
     projects(first: 50) {
       nodes {
@@ -102,13 +102,22 @@ try:
         elif not u.get('guest'):
             humans.append((name, email))
 
+    # This is a *brief*, not a directory dump -- a big workspace must not blow up
+    # the injection. Fetch up to the API max (first: 250) so counts are accurate,
+    # then cap what we render and summarize the rest as '+N more'.
+    def capped(rendered, cap):
+        if len(rendered) <= cap:
+            return ', '.join(rendered)
+        return ', '.join(rendered[:cap]) + f', +{len(rendered) - cap} more'
+
     if humans or agents:
         print('## Team & Agents')
         if humans:
-            hs = ', '.join(f'{n} ({e})' if e else n for n, e in sorted(humans, key=lambda x: x[0].lower()))
-            print(f'**Humans:** {hs}')
+            rows = [f'{n} ({e})' if e else n for n, e in sorted(humans, key=lambda x: x[0].lower())]
+            print(f'**Humans ({len(humans)}):** {capped(rows, 15)}')
         if agents:
-            print(f'**Agent members (assignable):** {\", \".join(sorted(set(agents), key=str.lower))}')
+            names = sorted(set(agents), key=str.lower)
+            print(f'**Agent members ({len(names)}, assignable):** {capped(names, 20)}')
         print()
 
     # -- Brief: cwd -> project focus --------------------------------------
