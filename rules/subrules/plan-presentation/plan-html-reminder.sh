@@ -29,8 +29,11 @@ tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || tool="
 # A fresh plan HTML rendered in the last 90 min satisfies the gate. Covers both the
 # canonical `/tmp/plan-<slug>.html` and the `<slug>-plan.html` scratchpad convention.
 # Scan root is /tmp (where the recipe renders); overridable for tests.
+# -L: follow symlinks. On macOS /tmp is a symlink to /private/tmp, and BSD find
+# will NOT descend a symlinked start path without -L — so the gate could never
+# detect a rendered plan on a Mac and blocked ExitPlanMode indefinitely.
 scan_root="${PLAN_HTML_SCAN_ROOT:-/tmp}"
-if find "$scan_root" -maxdepth 6 \( -name 'plan-*.html' -o -name '*-plan.html' \) -mmin -90 \
+if find -L "$scan_root" -maxdepth 6 \( -name 'plan-*.html' -o -name '*-plan.html' \) -mmin -90 \
      -print -quit 2>/dev/null | grep -q .; then
   exit 0
 fi
