@@ -89,9 +89,12 @@ default branch (`main`/`master`/whatever `origin/HEAD` points at). This is
 commit gate is the choke point: even a file changed by raw shell (`>`, `sed -i`,
 `git rm`) on the default branch can never be *committed* there — so nothing lands
 on the default branch outside a worktree + PR. No exceptions, no escape hatch.
-Worktrees (feature branches) and non-git paths (`/tmp`, scratchpad) are
-unaffected. The guard gates only the agent's tool calls — the user's own editor
-and `!`-prefixed session commands are never blocked.
+Worktrees (feature branches), non-git paths (`/tmp`, scratchpad), and
+**gitignored paths** (e.g. the harness memory dir under `.history/`, or
+`.agents/scratch`, `.agents/artifacts`) are unaffected — a gitignored file can
+never be committed, so a write there can't land on the default branch. The guard
+gates only the agent's tool calls — the user's own editor and `!`-prefixed
+session commands are never blocked.
 
 If you catch yourself about to edit a file in a checkout that's on `main`, stop
 and make a worktree first (recipe below).
