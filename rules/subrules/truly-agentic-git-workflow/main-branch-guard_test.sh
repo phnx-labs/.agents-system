@@ -24,6 +24,13 @@ MAIN_REPO="$TMP/main_repo"
 mkdir -p "$MAIN_REPO"; git_q -C "$MAIN_REPO" init
 git_q -C "$MAIN_REPO" commit --allow-empty -m init
 mkdir -p "$MAIN_REPO/sub"; echo x > "$MAIN_REPO/tracked.txt"
+# Gitignored runtime paths inside MAIN_REPO (memory/scratch). A write to a
+# gitignored path can never be committed, so the guard must ALLOW it even on the
+# default branch — this is what the harness memory dir (.history/) relies on.
+printf '.history/\nscratch/\n' > "$MAIN_REPO/.gitignore"
+git_q -C "$MAIN_REPO" add .gitignore
+git_q -C "$MAIN_REPO" commit -m gitignore
+mkdir -p "$MAIN_REPO/.history/memory" "$MAIN_REPO/scratch"
 
 # 2. Repo on a feature branch (no remote -> not main/master -> allow).
 FEAT_REPO="$TMP/feat_repo"
@@ -97,6 +104,17 @@ run_guard 0 "Write on feature branch"            "$(wj Write file_path "$FEAT_RE
 run_guard 0 "Write on clone feature branch"      "$(wj Write file_path "$CLONE_FEAT/z.txt")"
 run_guard 0 "Write in non-git dir"               "$(wj Write file_path "$NOGIT/file.txt")"
 run_guard 0 "Write to /tmp scratch"              "$(wj Write file_path "$TMP/loose.txt")"
+
+# --- File tools: ALLOW gitignored paths even on the default branch (exit 0) ---
+# A gitignored path can never be committed, so writing it can't land on main.
+run_guard 0 "Write gitignored .history/ on main"    "$(wj Write file_path "$MAIN_REPO/.history/memory/note.md")"
+run_guard 0 "Write gitignored scratch/ on main"     "$(wj Write file_path "$MAIN_REPO/scratch/tmp.txt")"
+run_guard 0 "Write NEW gitignored deep path on main" "$(wj Write file_path "$MAIN_REPO/.history/versions/x/deep/new.md")"
+run_guard 0 "Edit gitignored file on main"          "$(wj Edit file_path "$MAIN_REPO/scratch/tmp.txt")"
+run_guard 0 "Write gitignored relative, cwd on main" "$(wj Write file_path "scratch/rel.txt" "$MAIN_REPO")"
+# A TRACKED (non-ignored) path in the same repo must still DENY — the exemption
+# is gitignore-scoped, not a blanket bypass.
+run_guard 2 "Write tracked file still denied (ignore-scoped)" "$(wj Write file_path "$MAIN_REPO/tracked.txt")"
 
 # --- Bash git commit/add: DENY on default branch (exit 2) ---
 run_guard 2 "git -C main commit"                 "$(bj "git -C $MAIN_REPO commit -m x")"

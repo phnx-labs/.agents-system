@@ -5,8 +5,10 @@
 # Enforces the Truly Agentic Git Workflow: no agent tool call may create, update,
 # or delete a file, or `git add` / `git commit`, while a repository is checked out
 # on its DEFAULT branch (main / master / trunk / whatever origin/HEAD points at).
-# All work goes through an isolated worktree + PR. Worktrees (feature branches)
-# and non-git paths (/tmp, scratchpad, loose files) are unaffected.
+# All work goes through an isolated worktree + PR. Worktrees (feature branches),
+# non-git paths (/tmp, scratchpad, loose files), and gitignored paths (harness
+# memory under .history/, .agents/scratch, .agents/artifacts) are unaffected — a
+# gitignored file can never be committed, so it can't reach the default branch.
 #
 # Fires on:
 #   - Write / Edit / MultiEdit / NotebookEdit -> inspects .tool_input.file_path
@@ -97,6 +99,15 @@ case "$tool" in
     done
     [ -d "$d" ] || exit 0
     if on_default_branch "$d"; then
+      # A gitignored path can never be committed, so a write there can't land on
+      # the default branch — allow it. This is what the harness memory dir
+      # (.history/, gitignored) and runtime scratch/artifact dirs rely on;
+      # blocking them was a false positive. Tracked paths (real source, or a
+      # would-be new tracked file) still fall through to the deny below and must
+      # go via a worktree + PR. check-ignore works on not-yet-created paths too.
+      if git -C "$_top" check-ignore -q "$fp" 2>/dev/null; then
+        exit 0
+      fi
       set_deny_reason "editing '$fp'"
       printf '%s\n' "$deny_reason" >&2
       exit 2

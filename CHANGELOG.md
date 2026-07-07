@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.46] - 2026-07-07
+
+### Fixed
+- **`main-branch-guard` no longer false-blocks writes to gitignored paths on the default branch.** The file-tool branch denied any Write/Edit under a repo on its default branch purely from "is this repo on `main`?", without ever consulting `.gitignore` — so it blocked the harness's own memory dir (`~/.claude/…/memory/`, a symlink into the gitignored `~/.agents/.history/`) as well as `.agents/scratch` / `.agents/artifacts`, even though a gitignored file can never be committed and thus can never land on the default branch. The guard now runs `git check-ignore -q` on the target and allows it when ignored; tracked paths — real source, or a would-be-new tracked file — still deny and must go through a worktree + PR (the exemption is gitignore-scoped, not a blanket bypass). Regression-tested with real throwaway repos in `main-branch-guard_test.sh` (gitignored `.history/`/`scratch` allow, tracked still deny). Source: `rules/subrules/truly-agentic-git-workflow/main-branch-guard.sh`, `rule.md`.
+
 ## [0.1.45] - 2026-07-07
 
 ### Changed
