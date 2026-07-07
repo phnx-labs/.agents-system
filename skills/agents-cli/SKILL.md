@@ -38,6 +38,27 @@ The key insight: sessions are your memory. Before starting a task, search for pr
 Use this when you want to delegate a bounded task to another agent and capture its output, rather than spawning a full team.
 
 
+## Host Runs
+
+Run an agent on another machine over SSH. The local CLI is just transport; tmux runs on the remote host.
+
+```bash
+# Interactive TTY session on the remote (no prompt required)
+agents run claude --host yosemite-s0
+
+# Headless task on the remote (still requires a prompt)
+agents run claude "refactor auth" --host yosemite-s0
+
+# Forward --mode, --model, --name, passthrough args after --, and --no-tmux
+agents run claude --host yosemite-s0 --mode edit --model sonnet --name auth-refactor -- --no-tmux
+```
+
+- Omitting the prompt with `--host` takes the interactive path and forwards your local TTY.
+- `--no-follow` is rejected for interactive host runs.
+- `--interactive` and `--headless` are mutually exclusive.
+- The remote machine must already have agents-cli installed and reachable; if not, enroll it with `agents hosts add <name>`.
+
+
 ## Teams: Parallel Multi-Agent Coordination
 
 `agents teams` lets you create named groups of agents working in parallel on a shared task, with optional DAG-style dependencies (`--after`). Each teammate runs in the background; you use `status` to check in.
