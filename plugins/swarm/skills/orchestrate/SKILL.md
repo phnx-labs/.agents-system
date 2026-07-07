@@ -8,7 +8,7 @@ user-invocable: true
 
 # swarm:orchestrate — the fan-out engine
 
-> Distribute and execute a task across parallel agents. This is the shared engine every `/swarm:*` command builds on. The specialized commands (`/swarm:plan`, `/swarm:debug`, `/swarm:test`, `/swarm:qa`) read this skill for the **mechanics**, then layer their own phases and output format on top. It has no command of its own — invoke it through one of those.
+> Distribute and execute a task across parallel agents. This is the shared engine every `/swarm:*` command builds on. `/swarm:run` is the generic mode that applies it to an arbitrary task; the specialized commands (`/swarm:plan`, `/swarm:debug`, `/swarm:test`, `/swarm:qa`) read this skill for the **mechanics**, then layer their own phases and output format on top. It has no command of its own — invoke it through `/swarm:run` or one of the specialized commands.
 
 You are the **orchestrator**. Agents execute; you architect. Bad architecture = bad execution. Your job is to decompose, set boundaries, spawn, monitor, and synthesize — never to single-thread work that could run in parallel.
 
