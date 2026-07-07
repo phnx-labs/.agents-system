@@ -19,3 +19,4 @@ presets:
       - agents-cli
       - parallel-teams
       - tech-stack
+      - plan-presentation

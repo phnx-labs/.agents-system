@@ -12,6 +12,15 @@ Drives native macOS apps through the Computer Helper daemon (Accessibility + Scr
 
 When you need exact flags, run `agents computer <verb> --help`.
 
+## Focus safety — do not steal the user's screen (read first)
+
+The user is usually working on the same Mac. **Element mode does not take over their screen; coordinate mode and `--raise` do.** Default to element mode, and reach for the focus-stealing paths only when you truly need them.
+
+- **Element mode (focus-safe, default):** `describe` → `click --id @eN` / `type --id` / `focus --id` / `ax-action`. These fire Accessibility actions (AXPress / set-AXValue) that **do not activate the app and do not move the cursor** — the user keeps typing in their own window while you act. `--raise` is *ignored* in element mode (element actions don't need the app frontmost), so it can't hijack focus.
+- **Capture is always focus-safe:** `screenshot --window-id <n>` grabs any window across Spaces **without raising it**.
+- **`--raise` and coordinate mode (`--x/--y`) STEAL the screen:** `--raise` brings the app forward and takes keyboard focus; coordinate clicks warp the physical cursor and need the app frontmost. Reserve them for AX-opaque surfaces (VM guests, Chromium/canvas/games) or when the user is away — never to drive an ordinary AppKit app the user can see. The CLI prints a `note:` whenever a verb will cost the user their focus or cursor.
+- **To only *view* a webview (VS Code / Electron), use a browser or the repo's preview harness — not this skill.** Reach for `agents computer` on Electron only for what a browser can't do (window reload, AX text extraction when Screen Recording is denied).
+
 ## Preflight
 
 ```bash
@@ -32,25 +41,26 @@ Find a bundle id: `osascript -e 'id of app "AppName"'`.
 
 ## The Core Loop
 
-Every interaction follows **observe → act → verify**. Never chain actions blind.
+Every interaction follows **observe → act → verify**. Never chain actions blind. The default loop is **focus-safe — no `raise`**, so the user keeps their screen:
 
 ```bash
 agents computer apps                                   # 1. what's running (allow-listed)
-agents computer raise --bundle <id> --title "<win>"    # 2. bring the target forward
-agents computer screenshot --bundle <id> --list --json # 3. enumerate windows
+agents computer screenshot --bundle <id> --list --json # 2. enumerate windows (focus-free)
 agents computer screenshot --bundle <id> --window-id <n> --out /tmp/s.jpg
-agents computer describe --bundle <id>                 # 4. AX tree (element ids @eN)
-agents computer click --bundle <id> --id @e7           # 5. act
-agents computer screenshot ... --out /tmp/s2.jpg       # 6. VERIFY — re-capture, compare
+agents computer describe --bundle <id>                 # 3. AX tree (element ids @eN)
+agents computer click --bundle <id> --id @e7           # 4. act (AXPress — no focus steal)
+agents computer screenshot ... --out /tmp/s2.jpg       # 5. VERIFY — re-capture, compare
 ```
+
+Add `raise` **only** when the target genuinely must be frontmost — an AX-opaque surface (VM guest) or key-window-gated keystrokes (see Focus safety). Raising takes the user's foreground; don't do it to drive an app you can already reach by element id.
 
 A **byte-identical screenshot after an action means the action did not land**. Treat `ok:true` as "the event was posted", not "the app reacted" — only a visible state change is proof.
 
 ## Two Targeting Modes
 
-**AX mode** (preferred): `describe` dumps the accessibility tree; element ids (`@eN`) feed `click --id`, `type --id`, `focus --id`, `ax-action`. Works for native AppKit apps.
+**AX mode** (preferred, focus-safe): `describe` dumps the accessibility tree; element ids (`@eN`) feed `click --id`, `type --id`, `focus --id`, `ax-action`. Works for native AppKit apps and does not activate the app or move the cursor.
 
-**Coordinate mode** (fallback): for AX-opaque surfaces — **VM guests (Parallels), Chromium/UXP/canvas editors, games** — `describe` shows nothing useful inside them. Work from screenshots:
+**Coordinate mode** (fallback, steals focus): for AX-opaque surfaces — **VM guests (Parallels), Chromium/UXP/canvas editors, games** — `describe` shows nothing useful inside them. Coordinate clicks warp the physical cursor and need the app frontmost, so only use this mode when AX can't reach the surface. Work from screenshots:
 
 ```
 global_x = origin_x + pixel_x / scale
@@ -117,7 +127,9 @@ agents computer screenshot --bundle com.parallels.desktop.console --window-id <n
 
 ## Electron Editors (VS Code / VSCodium / Cursor)
 
-The default advice is "prefer `browser`'s `electron-use.md` (CDP)." But you often must drive these via AX instead — to reload a window after installing an extension, or when Screen Recording is denied and screenshots are dead. The webview UI sits in an iframe the AX tree only partially reaches; the rules below are the ones that bite. Bundle ids: `com.microsoft.VSCode`, `com.vscodium`, Cursor varies (`defaults read /Applications/Cursor.app/Contents/Info CFBundleIdentifier`).
+**First: if you only need to SEE a webview, open it in a browser — do not drive the Electron host at all.** Most VS Code/Electron webviews (dashboards, panels) can be rendered standalone via a dev/preview harness (Vite `bun run dev`, a `/preview` route) and screenshotted from a browser, which never touches the user's focus. Driving the app below to *view* a webview installs the extension and steals the screen for nothing.
+
+The default advice is "prefer `browser`'s `electron-use.md` (CDP)." But you often must drive these via AX instead — to reload a window after installing an extension, or when Screen Recording is denied and screenshots are dead. These techniques take the user's focus, so use them only when a browser can't do the job. The webview UI sits in an iframe the AX tree only partially reaches; the rules below are the ones that bite. Bundle ids: `com.microsoft.VSCode`, `com.vscodium`, Cursor varies (`defaults read /Applications/Cursor.app/Contents/Info CFBundleIdentifier`).
 
 - **AX survives a denied Screen Recording grant.** `get-text` and `describe` read the accessibility tree (incl. webview text) with no ScreenCaptureKit. Only `screenshot` needs Screen Recording. When captures time out with "denied Screen Recording permission," **verify with `get-text`**, not screenshots — grep its output for the strings the UI should render.
 - **Reload a window to activate a freshly-installed extension.** Installing writes to disk; the running window keeps its old extension host until reloaded. Command palette → **"Developer: Reload Window"**. Every open window has its own host — reload each. An editor running with **zero windows** needs one first: `code -n <folder>`.

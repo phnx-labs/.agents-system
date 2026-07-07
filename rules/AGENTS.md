@@ -148,6 +148,28 @@ run git — `git worktree add -b` is the allowed, isolated branch-creation path.
 
 Full recipe — worktree creation, PR, after-merge cleanup: the `git-workflow` skill.
 
+## Open with evidence attached — screenshots, artifacts, a confidential transcript
+
+Opening something for a human — a **PR**, a **GitHub issue**, or a **ticket**
+(Linear/Jira) — is a handoff, not a stopping point. Identify which flow you're in
+and attach what the reviewer needs to judge it without re-running your session.
+Every `gh pr create` / `gh issue create` / ticket-open carries:
+
+- **Screenshots and relevant materials of the user-visible outcome** — the rendered
+  UI, the passing test run, the `curl`'d health response, a before/after. If you
+  produced a visual while verifying end-to-end (core-hard-lines #1), it belongs in
+  the body. Upload the image to the PR/issue (`gh pr comment <pr> --body` with the
+  asset, or drag it into the web UI); reference on-disk images by **full path** so
+  the reviewer can click to preview.
+- **A session transcript — kept confidential, always.** The transcript can carry
+  secrets, tokens, internal paths, and raw reasoning, so it **never** goes inline in
+  a PR/issue/ticket body and **never** touches a public repo or public tracker. On a
+  **private** repo / internal tracker, attach it as a **secret gist** and link only:
+  `gh gist create --secret <session-id>.jsonl` → paste the returned URL. On a
+  **public** repo, omit the transcript entirely and instead reference the local path
+  (`<host>:<session-dir>/<session-id>.jsonl`) so a teammate on the fleet can open it.
+  Never paste transcript text anywhere it could be indexed or cached.
+
 ## PR open is NOT done — actively wait, never make the user ping
 
 Opening a PR is not a stopping point. After `gh pr create`, **actively wait for
@@ -267,3 +289,33 @@ Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pa
 | Parallel coding agents | `agents teams` — see `parallel-teams` |
 | Credentials | `agents secrets` — OS keychain-backed |
 | Release/publish | `release` skill |
+
+# Present Plans as Browser-Ready HTML
+
+**Whenever you produce an implementation plan — the harness's native plan mode
+(the `ref-*.md` plan file), the `/plan` command, or `/swarm:plan` — do not leave it
+in terminal scrollback. Render it as a self-contained HTML doc and open it in the
+user's default browser on the machine they sit at.**
+
+This is mechanically reminded by the bundled `plan-html-reminder` hook (PreToolUse on
+`ExitPlanMode`): it nudges you to render + open before you present. The full LOOK — the
+house structure, the product-brand theming, the light/dark toggle, and the open-on-Mac
+transport — lives in the **`plan-render` skill**. Load it and follow it.
+
+- **Structure (fixed).** Hero (kicker · headline · problem statement · metadata chips ·
+  TOC), numbered sections, **≥1 hand-authored inline-SVG diagram** (timeline /
+  architecture / before-after — never mermaid), callouts, tagged tables, code blocks.
+  Start from the skill's `template.html`; `example.html` is the gold reference.
+- **Theme (adopted).** Skin the plan in the **target product's brand** — probe the repo
+  for design tokens, tailwind/CSS vars, logo/manifest colors. Fall back to the dark +
+  light editorial house palette only when the product declares no brand.
+- **Light + dark.** Ship the in-page `◐` toggle, defaulting to the OS
+  `prefers-color-scheme`, so the plan is readable in bright light and dim alike.
+- **Open it proactively, every time.** Resolve the online macOS device from the
+  **Host & Fleet** context (`agents ssh <host> 'open …'` when remote; local `open` /
+  `xdg-open` otherwise). macOS `open` uses the user's **default browser**. **Never
+  hardcode a host** — resolve it from `agents devices`. If the user is away, the plan is
+  waiting in a tab when they return. Skip only the *open* (never the render) when no
+  browser host is reachable.
+
+A plan the user can't see rendered is not presented. Render, open, then discuss.
