@@ -103,6 +103,37 @@ agents run claude "ship it" --secrets r2.backups@yosemite-s1   # bundle@host
   remote `file` bundle, an unlocked remote secrets-agent, or run `view --reveal`
   from an interactive terminal (it forces an SSH TTY so the prompt can surface).
 
+### Push a bundle to another machine (`export --host`) — incl. Windows
+
+```bash
+# Push a bundle over SSH; it lands in the remote's native store. Works to
+# macOS, Linux AND Windows targets (Windows lands in Credential Manager, or the
+# headless file store when there's no logon session).
+agents secrets export linear.app --host win-mini --force
+agents secrets export r2.backups --host yosemite-s0 --host yosemite-s1
+```
+
+You don't do anything different for a Windows host — the push detects the
+remote's platform and drives its `agents secrets import` under PowerShell instead
+of `bash`. (Over a relayed link the push can take ~30-40s; that's the link, not a
+hang.) `--remote-backend file` is POSIX-only and is refused cleanly on Windows.
+
+### Unlock a remote Mac's bundle from the road (`unlock --host`)
+
+```bash
+# Away from the Mac Mini: unlock its FILE-backed bundle by typing the passphrase
+# into YOUR terminal — the prompt surfaces over the ssh -tt session.
+agents secrets unlock linear.app --host mac-mini
+```
+
+`unlock --host <machine> <bundle>` runs the unlock on the remote over `ssh -tt`,
+so the remote's passphrase prompt appears on your terminal. Only **file-backed**
+bundles work this way (their passphrase is a CLI prompt held in the remote's
+secrets-agent, default 7d); a keychain/biometry bundle would pop a **local**
+Touch-ID/passcode sheet on the remote's screen, which can't cross SSH. `--host`
+here is single-valued, so put the bundle name first: `unlock <bundle> --host <machine>`.
+Type the password interactively — it can't be piped.
+
 ## Multiple Accounts on One Website
 
 Name the bundle after the domain (`x.com`, `linkedin.com`) — one bundle per site, any number of accounts inside. Group keys by account handle and give every account a `--note` saying when to use it:
