@@ -1,11 +1,12 @@
 # swarm plugin
 
-Fan a task out across a team of parallel coding agents, then synthesize. The swarm runs on the **`agents teams` CLI** — the modern replacement for the deprecated Swarmify MCP (`@swarmify/agents-cli`, `mcp__Swarm__spawn`). Each command is a different *mode* of the same engine, and each invokes its **same-named skill**.
+Fan a task out across a team of parallel coding agents, then synthesize. The swarm runs on the **`agents teams` CLI** — the modern replacement for the deprecated Swarmify MCP (`@swarmify/agents-cli`, `mcp__Swarm__spawn`). Each command is a different *mode* of the same engine, and each invokes its **same-named skill**. `/swarm:run` is the generic mode; the rest are specializations of it.
 
 ## Commands
 
 | Command | Use when |
 | --- | --- |
+| `/swarm:run` | The **generic** fan-out — any multi-agent task that doesn't fit a specialized mode. Decomposes an arbitrary goal into ≥2 independent tracks, spawns a mixed team, monitors to completion, and synthesizes. The front door to the shared engine; reach for a specialized command below when the task matches one. |
 | `/swarm:plan` | Before building anything non-trivial. Reads the code, **researches the state of the world via web search**, drafts an **OpenSpec-grade change proposal** (`proposal.md` / `tasks.md` / delta spec), then has independent agents plan the same feature *blind* and reconciles where they diverge. |
 | `/swarm:debug` | A non-obvious bug where a wrong diagnosis is expensive. Traces the full data path (file:line at every hop), forms a root-cause hypothesis, then has verifiers on **different model providers**, blind to the hypothesis and **scaled to the bug** (1 for trivial, 3+ for gnarly), confirm it before any fix. |
 | `/swarm:test` | A change wide enough that one agent can't hold every critical path. Splits the scope into areas, covers each in parallel, then synthesizes the cross-cutting tests that only appear across areas. |
@@ -25,4 +26,4 @@ The shared engine — provider discovery (`agents teams doctor` / `agents view -
 
 ## History
 
-These shipped originally as `/swarm`, `/splan`, `/stest`, `/sdebug`, `/sclean`, `/srecap`, `/sconfirm` on the Swarmify MCP. When that MCP was deprecated the commands were folded into the base single-agent commands. This plugin brings the genuinely-multi-agent variants back as first-class `/swarm:*` commands on `agents teams`, trimmed to the four that earn their keep (plan, debug, test, qa) with two upgrades: OpenSpec-grade planning and a hard web-search mandate.
+These shipped originally as `/swarm`, `/splan`, `/stest`, `/sdebug`, `/sclean`, `/srecap`, `/sconfirm` on the Swarmify MCP. When that MCP was deprecated the commands were folded into the base single-agent commands. This plugin brings the genuinely-multi-agent variants back as first-class `/swarm:*` commands on `agents teams` — the generic `/swarm:run` plus the four specialized modes that earn their keep (plan, debug, test, qa) with two upgrades: OpenSpec-grade planning and a hard web-search mandate.
