@@ -1,6 +1,14 @@
 #!/bin/bash
-# SessionStart hook: fetch ALL Linear tasks from active sprint
-# Groups by agent label, shows the RUNNING agent's tasks first, then team status
+# SessionStart hook: inject a short Linear brief + the active-sprint task board.
+#
+# The brief (top of the injection) gives the agent the who/what it needs before
+# picking up work:
+#   - Humans     -- the real people on the team (who to defer to / ping).
+#   - Agents     -- the agent members that can be assigned work (claude, codex, ...).
+#   - Focus      -- if the cwd maps to a Linear project (e.g. this repo `agents-cli`
+#                   -> the "Agents CLI" project), its progress, milestones, and top
+#                   open issues, so the running agent starts on the project it's in.
+# The active-sprint board (grouped by agent label) follows, unchanged.
 
 # Read credentials through the CLI's cross-platform keychain layer (macOS
 # Keychain via /usr/bin/security, Linux via secret-tool + encrypted-file
@@ -22,6 +30,12 @@ self_path=$(realpath "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOUR
 AGENT_SELF="${AGENT_SELF:-$(printf '%s' "$self_path" | sed -n 's#.*/versions/\([^/]*\)/.*#\1#p')}"
 export AGENT_SELF="${AGENT_SELF:-claude}"
 
+# Candidate names to match the cwd against a Linear project. The git repo name is
+# stable across subdirs, so try it first; fall back to the raw cwd basename. The
+# Python side normalizes both ("agents-cli" and "Agents CLI" -> "agentscli").
+git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+export CWD_PROJECT_HINTS="$(basename "$git_root" 2>/dev/null),$(basename "$PWD" 2>/dev/null)"
+
 if [ -z "$LINEAR_API_KEY" ] || [ -z "$TEAM_ID" ]; then
   echo "Linear credentials not found. Add them with:"
   echo '  agents secrets set linear-api-key --value YOUR_KEY'
@@ -29,21 +43,127 @@ if [ -z "$LINEAR_API_KEY" ] || [ -z "$TEAM_ID" ]; then
   exit 0
 fi
 
+# One round trip: workspace users (humans + agent apps), every team project (name
+# + progress + milestones + top open issues, for the cwd match), and the active
+# sprint board. Build the JSON body in Python to sidestep GraphQL-in-bash quoting.
+QUERY='{
+  users(first: 100) { nodes { displayName name email active app guest } }
+  team(id: "'"$TEAM_ID"'") {
+    projects(first: 50) {
+      nodes {
+        name state progress
+        projectMilestones(first: 20) { nodes { name targetDate progress } }
+        issues(first: 6, filter: { state: { type: { nin: ["completed", "canceled"] } } }) {
+          nodes { identifier title priority state { name type } assignee { displayName } }
+        }
+      }
+    }
+    activeCycle {
+      name startsAt endsAt
+      issues(filter: { state: { type: { nin: ["completed", "canceled"] } } }) {
+        nodes { identifier title description state { name type } priority assignee { name } labels { nodes { name } } updatedAt }
+      }
+    }
+  }
+}'
+BODY=$(python3 -c 'import json,sys; print(json.dumps({"query": sys.argv[1]}))' "$QUERY")
+
 result=$(curl -s -X POST https://api.linear.app/graphql \
   -H "Content-Type: application/json" \
   -H "Authorization: $LINEAR_API_KEY" \
-  -d "{
-    \"query\": \"{ team(id: \\\"$TEAM_ID\\\") { activeCycle { name startsAt endsAt issues(filter: { state: { type: { nin: [\\\"completed\\\", \\\"canceled\\\"] } } }) { nodes { identifier title description state { name type } priority assignee { name } labels { nodes { name } } updatedAt } } } } }\"
-  }" 2>/dev/null)
+  -d "$BODY" 2>/dev/null)
 
 echo "$result" | python3 -c "
-import json, sys, os
+import json, sys, os, re
 
 SELF = os.environ.get('AGENT_SELF', 'claude')
+HINTS = [h for h in os.environ.get('CWD_PROJECT_HINTS', '').split(',') if h.strip()]
+
+def norm(s):
+    return re.sub(r'[^a-z0-9]', '', (s or '').lower())
 
 try:
     data = json.load(sys.stdin)
-    cycle = data.get('data', {}).get('team', {}).get('activeCycle')
+    team = data.get('data', {}).get('team') or {}
+
+    # -- Brief: humans + agent members ------------------------------------
+    users = (data.get('data', {}).get('users') or {}).get('nodes', [])
+    humans, agents = [], []
+    for u in users:
+        if not u.get('active', True):
+            continue
+        email = u.get('email') or ''
+        name = u.get('displayName') or u.get('name') or 'unknown'
+        if u.get('app'):
+            # Skip Linear's own built-in integration user; keep assignable agents.
+            if email.endswith('@linear.linear.app') or name == 'linear':
+                continue
+            agents.append(name)
+        elif not u.get('guest'):
+            humans.append((name, email))
+
+    if humans or agents:
+        print('## Team & Agents')
+        if humans:
+            hs = ', '.join(f'{n} ({e})' if e else n for n, e in sorted(humans, key=lambda x: x[0].lower()))
+            print(f'**Humans:** {hs}')
+        if agents:
+            print(f'**Agent members (assignable):** {\", \".join(sorted(set(agents), key=str.lower))}')
+        print()
+
+    # -- Brief: cwd -> project focus --------------------------------------
+    priority_map = {0: 'None', 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low'}
+    projects = (team.get('projects') or {}).get('nodes', [])
+    hint_norms = [norm(h) for h in HINTS if norm(h)]
+
+    matched = None
+    # Exact normalized match wins; else a containment match (>=4 chars, avoids
+    # matching a 2-letter cwd against every project).
+    for p in projects:
+        if norm(p.get('name')) in hint_norms:
+            matched = p
+            break
+    if not matched:
+        for p in projects:
+            pn = norm(p.get('name'))
+            for hn in hint_norms:
+                if len(hn) >= 4 and (hn in pn or pn in hn):
+                    matched = p
+                    break
+            if matched:
+                break
+
+    if matched:
+        prog = matched.get('progress')
+        pct = f' -- {round(prog * 100)}% complete' if isinstance(prog, (int, float)) else ''
+        print(f'### Focus: {matched[\"name\"]} (matched cwd){pct}')
+        ms = (matched.get('projectMilestones') or {}).get('nodes', [])
+        if ms:
+            parts = []
+            for m in ms:
+                mp = m.get('progress')
+                mpct = f' {round(mp * 100)}%' if isinstance(mp, (int, float)) else ''
+                td = f' by {m[\"targetDate\"]}' if m.get('targetDate') else ''
+                parts.append(f'{m[\"name\"]}{td}{mpct}')
+            print(f'**Milestones:** {\"; \".join(parts)}')
+        issues = (matched.get('issues') or {}).get('nodes', [])
+        if issues:
+            issues.sort(key=lambda n: n.get('priority', 4) or 4)
+            print('**Top open issues:**')
+            for n in issues:
+                pri = priority_map.get(n.get('priority', 0), 'None')
+                st = (n.get('state') or {}).get('name', '')
+                a = (n.get('assignee') or {}).get('displayName')
+                who = f' @{a}' if a else ''
+                print(f'- **{n[\"identifier\"]}** ({pri}, {st}){who}: {n[\"title\"]}')
+        print()
+    elif projects:
+        names = ', '.join(p['name'] for p in projects)
+        print(f'_No cwd->project match (team projects: {names})._')
+        print()
+
+    # -- Active-sprint board ----------------------------------------------
+    cycle = team.get('activeCycle')
     if not cycle:
         print('No active sprint in Linear.')
         sys.exit(0)
@@ -54,8 +174,6 @@ try:
     if not nodes:
         print(f'No open tasks in {cycle_name}.')
         sys.exit(0)
-
-    priority_map = {0: 'None', 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low'}
 
     # Group by agent label
     groups = {}
