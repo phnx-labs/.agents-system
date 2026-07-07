@@ -1,45 +1,74 @@
 #!/bin/bash
 # SessionStart hook: inject a short Linear brief + the active-sprint task board.
 #
-# The brief (top of the injection) gives the agent the who/what it needs before
-# picking up work:
-#   - Humans     -- the real people on the team (who to defer to / ping).
-#   - Agents     -- the agent members that can be assigned work (claude, codex, ...).
-#   - Focus      -- if the cwd maps to a Linear project (e.g. this repo `agents-cli`
-#                   -> the "Agents CLI" project), its progress, milestones, and top
-#                   open issues, so the running agent starts on the project it's in.
-# The active-sprint board (grouped by agent label) follows, unchanged.
+# Credentials come from the `linear.app` secrets bundle (LINEAR_API_KEY +
+# LINEAR_TEAM_ID), resolved per-platform:
+#   - macOS: gate on the secrets-agent BROKER holding the bundle. Checking broker
+#     membership (`agents secrets status`) is silent — it never touches the
+#     keychain, so this hook NEVER pops Touch ID at session start. Unlock once a
+#     day with `agents secrets unlock linear.app` (held ~7d) and sessions read
+#     silently after that. If the broker isn't holding it, we skip (no prompt).
+#   - Windows / Linux: there is no secrets-agent (it's macOS-only), so we read the
+#     bundle directly from the native backend (Windows Credential Manager / Linux
+#     libsecret or the headless AES-256-GCM file store) via `agents secrets exec`.
+#     No broker, no biometry, silent every time.
+#
+# The brief (humans, assignable agents, and — when the cwd maps to a Linear
+# project like `agents-cli` -> "Agents CLI" — that project's progress, milestones
+# and top issues) is printed first, then the active-sprint board.
 
-# Read credentials through the CLI's cross-platform keychain layer (macOS
-# Keychain via /usr/bin/security, Linux via secret-tool + encrypted-file
-# fallback) instead of hardcoding the macOS-only `security` binary — which
-# does not exist on Linux and made this hook print "not found" on every
-# launch there. macOS items written by the previous `security -s linear-api-key`
-# convention are read transparently (same account+service lookup).
-LINEAR_API_KEY=$(agents secrets get linear-api-key 2>/dev/null)
-TEAM_ID=$(agents secrets get linear-team-id 2>/dev/null)
-
-# Identify which harness is running this hook so "Your Tasks" reflects the right
-# agent bucket instead of always assuming Claude. Most reliable signal: this
-# script's own resolved path. agents-cli installs one copy per agent under
-# .../versions/<agent>/.../home/.<agent>/hooks/, and each harness invokes ITS
-# copy — so the path names the agent on every launch path (interactive shim,
-# headless runner, sandbox) with no dependency on harness-specific env vars.
-# AGENT_SELF is an explicit override/escape hatch; claude is the last resort.
+# Which agent/harness is running this hook (for the "Your Tasks" bucket). The
+# script's own path names the agent on every launch path; AGENT_SELF overrides.
 self_path=$(realpath "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")
 AGENT_SELF="${AGENT_SELF:-$(printf '%s' "$self_path" | sed -n 's#.*/versions/\([^/]*\)/.*#\1#p')}"
 export AGENT_SELF="${AGENT_SELF:-claude}"
 
-# Candidate names to match the cwd against a Linear project. The git repo name is
-# stable across subdirs, so try it first; fall back to the raw cwd basename. The
-# Python side normalizes both ("agents-cli" and "Agents CLI" -> "agentscli").
+# Candidate names to match the cwd against a Linear project. Git repo name first
+# (stable across subdirs), then the raw cwd basename. Python normalizes both
+# ("agents-cli" and "Agents CLI" -> "agentscli").
 git_root=$(git rev-parse --show-toplevel 2>/dev/null)
 export CWD_PROJECT_HINTS="$(basename "$git_root" 2>/dev/null),$(basename "$PWD" 2>/dev/null)"
 
-if [ -z "$LINEAR_API_KEY" ] || [ -z "$TEAM_ID" ]; then
-  echo "Linear credentials not found. Add them with:"
-  echo '  agents secrets set linear-api-key --value YOUR_KEY'
-  echo '  agents secrets set linear-team-id --value YOUR_TEAM_ID'
+case "$(uname -s 2>/dev/null)" in
+  Darwin) IS_MAC=1 ;;
+  *)      IS_MAC=0 ;;
+esac
+
+# Resolve credentials from the linear.app bundle unless already in the env.
+# IMPORTANT: a session-start hook must never hang or pop Touch ID. So the only
+# call made on the biometry-capable path (macOS) BEFORE we know the bundle is
+# safe to read is `agents secrets status` — a broker-socket query that never
+# touches the keychain. (Do NOT add `agents secrets list` here: piped into a
+# short-circuiting `grep -q` it can SIGPIPE-deadlock and hang the session.)
+if [ -z "$LINEAR_API_KEY" ] || [ -z "$LINEAR_TEAM_ID" ]; then
+  if [ "$IS_MAC" = 1 ]; then
+    # macOS: only read when the broker is already HOLDING the bundle (silent).
+    # If it isn't, skip WITHOUT reading the keychain -> no Touch ID prompt.
+    if ! agents secrets status 2>/dev/null | awk 'NR>2 {print $1}' | grep -qx 'linear.app'; then
+      cat <<'EOF'
+Linear context skipped (linear.app not unlocked). Unlock once (held ~7d):
+  agents secrets unlock linear.app
+EOF
+      exit 0
+    fi
+  fi
+
+  # macOS (broker holds it -> silent) or Windows/Linux (no broker -> direct
+  # Credential Manager / libsecret / file-store read, also silent). We CAPTURE
+  # rather than `exec` so a missing/locked bundle degrades to a clean one-line
+  # skip instead of a raw "bundle not found" (and can never hang). The re-run of
+  # this script inherits the injected LINEAR_* env and _HOOK_SECRETS_TRIED, which
+  # guards against an infinite loop if the bundle lacks one of the two keys.
+  if [ -z "$_HOOK_SECRETS_TRIED" ]; then
+    export _HOOK_SECRETS_TRIED=1
+    if brief=$(agents secrets exec linear.app -- "$0" 2>/dev/null) && [ -n "$brief" ]; then
+      printf '%s\n' "$brief"
+    else
+      echo "Linear context skipped: linear.app bundle unavailable on this host (export it here with 'agents secrets export linear.app --host <this-host>')."
+    fi
+    exit 0
+  fi
+  echo "linear.app is available but missing LINEAR_API_KEY or LINEAR_TEAM_ID."
   exit 0
 fi
 
@@ -48,7 +77,7 @@ fi
 # sprint board. Build the JSON body in Python to sidestep GraphQL-in-bash quoting.
 QUERY='{
   users(first: 250) { nodes { displayName name email active app guest } }
-  team(id: "'"$TEAM_ID"'") {
+  team(id: "'"$LINEAR_TEAM_ID"'") {
     projects(first: 50) {
       nodes {
         name state progress
@@ -178,7 +207,7 @@ try:
         sys.exit(0)
 
     nodes = cycle.get('issues', {}).get('nodes', [])
-    cycle_name = cycle.get('name', 'Current Sprint')
+    cycle_name = cycle.get('name') or 'Current Sprint'
 
     if not nodes:
         print(f'No open tasks in {cycle_name}.')
