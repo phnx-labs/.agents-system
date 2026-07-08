@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.47] - 2026-07-07
+
+### Changed
+- **"Shipping" now explicitly means the change runs on the user's machine — not that it reached a registry.** `core-hard-lines.md` #1 gains a proxy example: "npm publish succeeded" / "the published tarball contains the code" is not "the feature runs on the user's machine". Run the *installed* artifact, confirm the *installed version* carries the change (`agents --version`), and watch for a second install shadowing it on `PATH`. Motivated by a session that called a feature "shipped/live" after `npm publish` + a `grep` of the tarball while the installed binary was still an old version (1.20.19 vs the published 1.20.38) — so the feature was not actually running for the user. Extends the 0.1.45 (#53) anti-hesitation work, which the running config happened to be 10 commits behind — itself an instance of the same published-≠-live gap.
+- **The release banned-stop now names its declarative twin.** `workflow-proactive.md`'s "Should I release?" ban (#53) caught the *question* form; it now also names **"say the word and I'll release / deploy / publish"** as the identical stop in declarative clothing, and points *shipping* at the user-visible surface (run the installed binary — core-hard-lines #1) rather than stopping at "it's on npm".
+- **A verification gap is a problem to solve, not to report.** `core-hard-lines.md` #1 previously read "quote the gap and call it unverified instead" as the response to a ⚠️/hung/skipped/untriggered hop, with "work around it" trailing as a secondary clause — which biased the agent toward *flagging* the gap. Reworded so the first move is to **drive it to done** (fix the failure, work around the blocker, or reach the outcome another way — #9), and "call it unverified" is the **last resort after genuinely exhausting** those. The honesty invariant is unchanged: never claim "confirmed" when evidence shows a gap.
+
 ## [0.1.46] - 2026-07-07
 
 ### Fixed
