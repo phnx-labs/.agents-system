@@ -39,11 +39,42 @@
 
 set -eu
 
+# --- portable JSON field extractor (jq -> node -> python) -------------------
+# jq is absent on Windows git-bash; the old `… | jq …` extraction then returned
+# empty and this guard fail-OPEN'd — the "default branch is untouchable" choke
+# point silently vanished on Windows (agent could edit/commit on main directly).
+# Prefer jq (fast, present on mac/Linux), fall back to node (always shipped with
+# agents-cli) then python. Returns 1 ONLY when NO parser exists -> fail CLOSED.
+_json_field() {  # $1=json  $2=dotted.path
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$1" | jq -r "(.$2) // empty" 2>/dev/null; return 0
+  fi
+  if command -v node >/dev/null 2>&1; then
+    printf '%s' "$1" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{let o=JSON.parse(s);for(const k of process.argv[1].split("."))o=(o==null?null:o[k]);process.stdout.write(o==null?"":String(o))}catch(e){}})' "$2" 2>/dev/null; return 0
+  fi
+  for _py in python3 python; do
+    command -v "$_py" >/dev/null 2>&1 && "$_py" -c '' >/dev/null 2>&1 || continue
+    printf '%s' "$1" | "$_py" -c 'import json,sys
+try: o=json.load(sys.stdin)
+except Exception: o=None
+for k in sys.argv[1].split("."):
+    o=o.get(k) if isinstance(o,dict) else None
+sys.stdout.write("" if o is None else str(o))' "$2" 2>/dev/null
+    return 0
+  done
+  return 1
+}
+
 input=$(cat)
-tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || tool=""
+# Fail CLOSED if no JSON parser is available — the guard can't tell which tool is
+# firing, so it must not silently allow a possible default-branch mutation.
+if ! tool=$(_json_field "$input" tool_name); then
+  printf 'main-branch-guard: no JSON parser (jq/node/python) available — refusing the tool call unchecked (fail-closed). Ensure node or jq is on PATH.\n' >&2
+  exit 2
+fi
 [ -z "$tool" ] && exit 0
 
-cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null) || cwd=""
+cwd=$(_json_field "$input" cwd) || cwd=""
 
 deny_reason=""
 
@@ -83,7 +114,8 @@ then edit under \$REPO/.agents/worktrees/<slug>/, commit there, push, and open a
 # --- File-tool branch ------------------------------------------------------
 case "$tool" in
   Write|Edit|MultiEdit|NotebookEdit)
-    fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null) || fp=""
+    fp=$(_json_field "$input" tool_input.file_path) || fp=""
+    [ -z "$fp" ] && fp=$(_json_field "$input" tool_input.notebook_path)
     [ -z "$fp" ] && exit 0
     # Resolve a relative path against the session cwd.
     case "$fp" in
@@ -121,7 +153,8 @@ esac
 # --- Bash branch: gate `git commit|add|stage` on the default branch --------
 # Fast path: no "git" anywhere -> nothing to police.
 case "$input" in *git*) ;; *) exit 0 ;; esac
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || cmd=""
+# Parser presence already confirmed by the tool_name extraction above.
+cmd=$(_json_field "$input" tool_input.command) || cmd=""
 [ -z "$cmd" ] && exit 0
 
 # Detect `sh|bash -c <inner>` at raw-string level (mirrors git-guard.sh) so a

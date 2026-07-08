@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.48] - 2026-07-07
+
+### Fixed
+- **The destructive-op guards no longer fail OPEN on Windows.** Every guard extracted the command via `jq`, which is absent on Windows git-bash — the fallback `cmd=$(…jq…)||cmd=""; [ -z $cmd ]&&exit 0` then collapsed to `exit 0` (allow) without inspecting anything, so on Windows the guards silently didn't fire (proven by stripping `jq` from PATH: `git reset --hard`, `rm -rf $HOME`, edit/commit on `main`, `gh pr merge --admin`, and `pull`/`rebase` on a dirty tree all passed unguarded). `git-guard`, `rm-guard`, `main-branch-guard`, `merge-guard`, and `01-git-require-clean-tree` now share a portable `_json_field` helper — jq (fast, on mac/Linux) → node (always shipped with agents-cli) → python — and **fail CLOSED** (block with an actionable message) when no parser exists at all. `node`/`python` `JSON.parse` unescape `\n \t \" \\` exactly like `jq -r`, so multi-line/chained command splitting is preserved. No behavior change on macOS/Linux (the jq path is unchanged). Verified 29/29 across normal/no-jq/no-parser conditions plus a live run on a real Windows box (parser resolves to node; `git reset --hard` and `rm -rf <home>` block, `git status` allows). Convenience hooks that hardcode `python3` are a separate follow-up. (#70)
+
 ## [0.1.47] - 2026-07-07
 
 ### Changed
