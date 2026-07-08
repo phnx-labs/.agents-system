@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.49] - 2026-07-08
+
+### Fixed
+- **Re-wired the destructive-op guards that had gone dead.** `git-guard` (blocks `reset`/`checkout`/`stash`/`clean`/rebase-outside-worktree, force-push, branch delete, config write), `rm-guard` (blocks `rm -r` on protected paths — `$HOME`, `~/.ssh`, `/`, …), and `git-require-clean-tree` (blocks `pull`/`rebase`/`--autostash` on a dirty tree) were **not registered on any agent**: their manifest entries had been defined under a stray `run:` key (never parsed by `parseHookManifest`) and were removed in `8b006a6` as "legacy" — so the destructive-op protections the docs describe were not actually firing. They are now correctly declared under `hooks:` (PreToolUse / matcher `Bash`, claude+codex+gemini) and register into settings.json. These cover data-loss ops (`git reset --hard`, `rm -rf $HOME`) that no other wired guard catches. Verified via `registerHooksToSettings` (all three → PreToolUse/Bash, zero errors) and the guards' own behavior tests.
+
 ## [0.1.48] - 2026-07-07
 
 ### Fixed

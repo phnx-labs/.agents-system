@@ -52,3 +52,41 @@ hooks:
       - PreToolUse
     script: 09-mailbox-inject.py
     timeout: 5
+  git-guard:
+    # Blocks destructive git ops (reset/checkout/stash/clean/rebase-outside-worktree,
+    # force-push, branch delete, config write) on the agent's shell. Previously
+    # defined under a stray `run:` key (never parsed) and removed in 8b006a6 as
+    # "legacy"; re-wired here correctly under `hooks:`.
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: git-guard.sh
+    timeout: 5
+  rm-guard:
+    # Blocks `rm -r` on protected paths ($HOME, ~/.ssh, /, ~/src, …). Re-wired
+    # (see git-guard note).
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: rm-guard.sh
+    timeout: 5
+  git-require-clean-tree:
+    # Blocks `git pull`/`rebase`/`--autostash` on a dirty tree (would destroy
+    # uncommitted work).
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - PreToolUse
+    matcher: Bash
+    script: 01-git-require-clean-tree.sh
+    timeout: 5
