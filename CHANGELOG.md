@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.51] - 2026-07-13
+
+### Added
+- **`skills/routines/SKILL.md` — "Pattern: continuous ticket drain".** A recipe for turning an issue-tracker queue into a self-draining pipeline: one triage routine routes tickets to workers by label (single writer, no claim race; opt-out label is human-only), one drain routine per worker lands them end-to-end. Documents the tested design points: label-per-worker partitioning, pilot-label gating, `mode: skip` + `sandbox: false` + the `claude` secrets bundle for headless auth, a staleness-aware overlap lock (a leaked lock must not deadlock the queue), and a verbatim notify one-liner for escalation. Includes a drain-routine YAML template.
+
+### Changed
+- **`plugins/code/skills/loop/SKILL.md`** — two new sections proven in a live fleet drain: "Unattended mode" (no `AskUserQuestion` headless; park blocked tickets with a comment + notify command and continue; verify tracker label filters aren't silently dropped) and "Claim before you build, dedup before you claim" (search open PRs by item ID and `agents sessions --active` before claiming; claim = Todo → In Progress, a best-effort signal with a re-check before first commit; every PR carries its item ID in the title so other loops' dedup can find it; spawned workers never land on the user's interactive machine).
+- **`plugins/code/skills/review/SKILL.md`** — the BLOCKED verdict no longer dead-ends on `AskUserQuestion` in unattended runs: the reviewer states the verdict and reasons in output for the orchestrator to park and notify.
+- **`plugins/code/.claude-plugin/plugin.json`** — bumped to 0.7.1.
+
 ## [0.1.50] - 2026-07-12
 
 ### Fixed

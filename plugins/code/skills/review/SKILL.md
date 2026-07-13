@@ -243,7 +243,7 @@ Post one comment to the PR via `gh pr comment <N> --body-file <synthesized>.md`.
 |---|---|
 | READY TO MERGE | `gh pr merge <N> --rebase --auto` (if CI green) or merge directly if CI is N/A. Rebase preserves the PR's individual commits; squash only for throwaway-WIP commit series. Then close the worktree. |
 | CHANGES REQUESTED | Leave the comment. Iterate inside the same worktree — additional commits, `git push`. Do NOT spawn a fresh review until changes land. |
-| BLOCKED | Surface to the user via `AskUserQuestion`. Don't unilaterally close or revert. |
+| BLOCKED | Surface to the user via `AskUserQuestion`. In an unattended run (headless/cron, no interactive user), skip the question — state the BLOCKED verdict and its reasons in your output so the orchestrator can park the ticket and notify. Don't unilaterally close or revert. |
 
 A red required check isn't automatically a code problem. Before you treat "CI failing" as CHANGES REQUESTED, read the **step-level** conclusions, not just the job's pass/fail — `gh api repos/<owner>/<repo>/actions/jobs/<id> --jq '.steps[] | "\(.conclusion)\t\(.name)"'`. Self-hosted runners flake: a job shows "fail" when only its `checkout`/`setup`/cache step died on a stale workspace, while the actual test step never ran. That's infra — fix the runner or re-run the failed jobs (`gh run rerun <run-id> --failed`), don't send a clean PR back for changes it doesn't need.
 

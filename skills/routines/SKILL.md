@@ -168,6 +168,42 @@ agents routines remove daily-standup
 
 Routines run with the permissions you grant them. Agents only see directories and tools you allow — same model as `agents run --mode plan/edit/full`. Use `--mode plan` for routines that should never write.
 
+## Pattern: continuous ticket drain
+
+Two routines turn an issue-tracker queue into a self-draining pipeline: a **triage** routine on one machine routes tickets to workers by label, and a **drain** routine on each worker lands them end-to-end (worktree → PR → CI → review → merge → close). Tested design points:
+
+- **Partition by label, not by project.** One drain routine per worker machine, keyed to a label like `agent:<worker>`. Tickets from any project share the queue; the ticket's project or `repo:*` label decides which checkout the loop works in.
+- **One triage writer.** A single routine assigns `agent:<worker>` labels — one writer means no cross-machine claim race. Give triage no routing discretion: an opt-out label (e.g. `agent:hold`) is human-only, because a ticket triage diverts pings nobody, while a ticket the drain parks notifies the user.
+- **Gate with a pilot label first.** Route only tickets carrying an opt-in label until you trust the loop; widen by removing the gate.
+- **`mode: skip`, `sandbox: false`.** Headless drains need full permissions, and (today) `sandbox: false` so the spawned agent sees real credentials — see "Headless claude auth" in the routines design doc. Auth headlessly via a secrets bundle named `claude` holding `CLAUDE_CODE_OAUTH_TOKEN`; the daemon injects it into scheduled runs. Manual `agents routines run` does not inject it — wrap with `agents secrets exec claude -- agents routines run <name>`.
+- **Overlap lock with staleness.** Cron has no per-job overlap guard yet, so the drain prompt takes a lock dir (`mkdir /tmp/drain-<worker>.lock`) first, exits if it exists and is younger than the routine timeout, steals it if older (a leaked lock from a dead run must not deadlock the queue), and removes it on every exit path.
+- **Escalation.** Give the prompt a verbatim notify one-liner (any messaging CLI). Blocked tickets get parked with a comment plus that ping; the loop continues.
+
+Drain routine template (`drain-<worker>.yml`, register with `agents routines add drain-<worker>.yml`):
+
+```yaml
+name: drain-<worker>
+schedule: "*/30 * * * *"
+agent: claude
+mode: skip
+timeout: 2h
+sandbox: false
+prompt: |
+  Unattended fleet drain on <worker>. No interactive user: never call
+  AskUserQuestion, never wait for input.
+  Overlap guard: mkdir /tmp/drain-<worker>.lock first; if it exists and is
+  younger than 2 hours, exit immediately; if older, steal it. Remove it on
+  every exit path.
+  Queue: invoke the code:loop skill in unattended mode. Fetch tickets from
+  your tracker filtered to label agent:<worker> and status Todo.
+  Notify command (verbatim, substitute ticket ID and blocker):
+  <your messaging-CLI one-liner>
+  Blocked ticket: park it with a comment, run the notify command, continue.
+  Queue empty: remove the lock, exit with a one-paragraph summary.
+```
+
+The `code:loop` skill's "Unattended mode" and "Claim before you build" sections carry the rest of the contract (dedup against open PRs and active sessions, claim via Todo → In Progress, ticket ID in every PR title).
+
 ## Quick reference
 
 | Command | Purpose |
