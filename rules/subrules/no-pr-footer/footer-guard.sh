@@ -5,7 +5,9 @@
 # inline body carries the "Generated with Claude Code" promo footer. Muqsit's
 # standing rule: that line is garbage and must never reach a PR/issue/commit.
 #
-# Reads the hook JSON from stdin, extracts .tool_input.command via jq.
+# Reads the hook JSON from stdin, extracts the tool command via jq. Claude Code
+# sends it under snake_case .tool_input.command; Grok CLI sends camelCase
+# .toolInput.command — read either so the footer block works on both harnesses.
 # Exits 0 (allow) or 2 (deny, message on stderr). Only inline bodies are seen;
 # a footer injected via --body-file is invisible here (acceptable — the common
 # failure mode in the retro was an inline --body heredoc).
@@ -17,7 +19,7 @@ case "$input" in
   *) exit 0 ;;
 esac
 
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || cmd=""
+cmd=$(printf '%s' "$input" | jq -r '(.tool_input.command // .toolInput.command) // empty' 2>/dev/null) || cmd=""
 [ -n "$cmd" ] || exit 0
 
 # Only the body-bearing subcommands.

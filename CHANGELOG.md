@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.50] - 2026-07-12
+
+### Fixed
+- **The PreToolUse guard hooks are now harness-portable across Claude Code and Grok CLI.** Claude Code sends hook JSON in snake_case (`tool_name`, `tool_input.command`, `tool_input.file_path`); Grok CLI sends camelCase (`toolName`, `toolInput.command`) and names plan-exit `exit_plan_mode` (not `ExitPlanMode`). All four guards read only snake_case, so under Grok `main-branch-guard`, `merge-guard`, and `footer-guard` extracted empty strings and **silently failed OPEN** (the default-branch, admin-bypass, and PR-footer rails were dead on Grok), while `plan-html-reminder` **failed CLOSED**: its `[ -n "$tool" ] && [ "$tool" != "ExitPlanMode" ] && exit 0` defensive check fell *through* on an empty tool name, so it hit the plan-HTML freshness gate and exited 2, **blocking every tool call** in a Grok session whenever no `/tmp/plan-*.html` was fresher than 90 minutes (seen live in a Grok session 2026-07-12). The three fail-open guards now read `tool_name // toolName` and `tool_input.* // toolInput.*` across all three parser branches of their shared `_json_field` helper (jq → node → python), preserving the "no parser → fail CLOSED" behavior for `main-branch-guard`/`merge-guard` unchanged. `plan-html-reminder` now resolves the tool name across both harnesses, recognizes both `ExitPlanMode` and `exit_plan_mode`, and — as a REMINDER hook — **fails OPEN** (exit 0) whenever the tool name is empty or unrecognized, so it can never again block an unrelated tool call. Verified across jq/node-only/python-only parser conditions and with camelCase-payload regression cases added to each guard's `*_test.sh` (`main-branch-guard` 61/0, `merge-guard` 42/0, new `footer-guard_test.sh` 11/0, `plan-html-reminder` 8/0).
+
 ## [0.1.49] - 2026-07-08
 
 ### Fixed

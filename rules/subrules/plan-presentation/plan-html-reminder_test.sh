@@ -48,6 +48,26 @@ run 2 "ExitPlanMode, only a stale plan html -> block" "$EPM"
 rm -f "$SCAN"/*.html 2>/dev/null || true
 run 0 "Write tool -> allow (not gated)" '{"tool_name":"Write","tool_input":{"file_path":"/x"}}'
 
+# --- Harness portability: Grok CLI camelCase payloads ---
+# Grok sends camelCase `toolName` and names plan-exit `exit_plan_mode`.
+
+# 6. Grok exit_plan_mode with an empty scan root -> BLOCK (the gate must still fire).
+rm -f "$SCAN"/*.html 2>/dev/null || true
+run 2 "Grok exit_plan_mode, no rendered plan -> block" \
+  '{"toolName":"exit_plan_mode","toolInput":{"plan":"x"}}'
+
+# 7. Grok exit_plan_mode after a fresh render -> ALLOW.
+: > "$SCAN/plan-grok.html"
+run 0 "Grok exit_plan_mode, fresh plan html -> allow" \
+  '{"toolName":"exit_plan_mode","toolInput":{"plan":"x"}}'
+
+# 8. THE BUG: a Grok camelCase NON-plan tool with NO fresh plan HTML must ALLOW.
+# The old `-n && != ExitPlanMode` test fell through on an empty resolved name and
+# exited 2, blocking EVERY tool call in a Grok session. A reminder must fail OPEN.
+rm -f "$SCAN"/*.html 2>/dev/null || true
+run 0 "Grok camelCase run_terminal_command, no plan html -> allow (not blocked)" \
+  '{"toolName":"run_terminal_command","toolInput":{"command":"npm test"}}'
+
 echo "----"
 echo "pass=$pass fail=$fail"
 [ "$fail" = 0 ]
