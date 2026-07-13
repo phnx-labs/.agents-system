@@ -21,10 +21,22 @@ set -eu
 
 input=$(cat)
 
-# Matcher already scopes us to ExitPlanMode, but confirm defensively — never block
-# anything else if the manifest is ever widened.
-tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || tool=""
-[ -n "$tool" ] && [ "$tool" != "ExitPlanMode" ] && exit 0
+# Matcher already scopes us to the plan-exit tool, but confirm defensively — this
+# is a REMINDER hook, so it must ONLY ever fire on a genuine plan-exit and fail
+# OPEN (allow) for anything else. Read the tool name across harnesses: Claude Code
+# sends snake_case .tool_name = "ExitPlanMode"; Grok CLI sends camelCase
+# .toolName = "exit_plan_mode".
+#
+# The gate runs ONLY when the tool is a recognized plan-exit tool. If the name is
+# empty (unknown/unparsed harness) or anything else, exit 0 — a reminder must
+# never block an unrelated tool call. (The old `-n && != ExitPlanMode` test
+# fell THROUGH on an empty name and blocked EVERY tool call in a Grok session
+# whenever no fresh plan HTML existed — the exact bug this fixes.)
+tool=$(printf '%s' "$input" | jq -r '(.tool_name // .toolName) // empty' 2>/dev/null) || tool=""
+case "$tool" in
+  ExitPlanMode|exit_plan_mode) ;;   # recognized plan-exit -> run the render gate below
+  *) exit 0 ;;                       # empty / unknown / any other tool -> allow
+esac
 
 # A fresh plan HTML rendered in the last 90 min satisfies the gate. Covers both the
 # canonical `/tmp/plan-<slug>.html` and the `<slug>-plan.html` scratchpad convention.

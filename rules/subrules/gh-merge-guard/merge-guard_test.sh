@@ -34,6 +34,24 @@ check() {
   fi
 }
 
+# checkc — same as check, but wraps the command in a Grok CLI camelCase payload
+# (toolInput). The old snake_case-only extraction resolved empty under Grok and
+# fail-OPEN'd, waving `gh pr merge --admin` through.
+checkc() {
+  want=$1
+  desc=$2
+  cmd=$3
+  json=$(printf '%s' "$cmd" | jq -Rs '{toolInput:{command:.}}')
+  printf '%s' "$json" | "$GUARD" >/dev/null 2>&1
+  got=$?
+  if [ "$got" -eq "$want" ]; then
+    pass=$((pass + 1))
+  else
+    fail=$((fail + 1))
+    printf 'FAIL: %s (want exit %s, got %s)\n  cmd: %s\n' "$desc" "$want" "$got" "$cmd"
+  fi
+}
+
 # --- Should BLOCK (exit 2): a genuine --admin bypass merge ---
 check 2 "plain admin merge"          "gh pr $M 40 $A"
 check 2 "admin + squash"             "gh pr $M 40 --squash $A"
@@ -93,6 +111,14 @@ check 0 "cat-heredoc doc body mentions it" "$hd"
 check 0 "bare cat heredoc mentions it"  "$(printf 'cat <<EOF\ndocs: gh pr %s 40 %s\nEOF' "$M" "$A")"
 check 0 "gh body-file heredoc mentions it" \
   "$(printf 'gh pr create --body-file - <<EOF\ndocs: gh pr %s 40 %s\nEOF' "$M" "$A")"
+
+# --- Harness portability: Grok CLI camelCase payloads (toolInput.command) ---
+checkc 2 "camelCase plain admin merge"     "gh pr $M 40 $A"
+checkc 2 "camelCase admin + squash"        "gh pr $M 40 --squash $A"
+checkc 2 "camelCase sh -c quoted bypass"   "sh -c 'gh pr $M 40 $A'"
+checkc 0 "camelCase legit squash merge"    "gh pr $M 40 --squash --delete-branch"
+checkc 0 "camelCase body mentions it only" \
+  "gh pr create --body \"never run gh pr $M 40 $A, it bypasses protection\""
 
 printf -- '---\nmerge-guard: %s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

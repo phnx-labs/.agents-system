@@ -40,21 +40,37 @@ input=$(cat)
 # empty and this guard fail-OPEN'd (waved `gh pr merge --admin` through). Prefer
 # jq (fast, present on mac/Linux), fall back to node (always shipped with
 # agents-cli) then python. Returns 1 ONLY when NO parser exists -> fail CLOSED.
-_json_field() {  # $1=json  $2=dotted.path
+#
+# Harness portability: Claude Code sends snake_case (tool_input.command); Grok
+# CLI sends camelCase (toolInput.command). A call passes the snake_case path as
+# $2 and its camelCase equivalent as an optional $3 — the first path that
+# resolves non-empty wins. Keeping the fallback in the extractor keeps all three
+# parser branches uniform.
+_json_field() {  # $1=json  $2=dotted.path  [$3=alternate.dotted.path]
   if command -v jq >/dev/null 2>&1; then
-    printf '%s' "$1" | jq -r "(.$2) // empty" 2>/dev/null; return 0
+    if [ -n "${3:-}" ]; then
+      printf '%s' "$1" | jq -r "((.$2) // (.$3)) // empty" 2>/dev/null
+    else
+      printf '%s' "$1" | jq -r "(.$2) // empty" 2>/dev/null
+    fi
+    return 0
   fi
   if command -v node >/dev/null 2>&1; then
-    printf '%s' "$1" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{let o=JSON.parse(s);for(const k of process.argv[1].split("."))o=(o==null?null:o[k]);process.stdout.write(o==null?"":String(o))}catch(e){}})' "$2" 2>/dev/null; return 0
+    printf '%s' "$1" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const dig=(o,p)=>{for(const k of p.split("."))o=(o==null?null:o[k]);return o};try{let o=JSON.parse(s);let v=dig(o,process.argv[1]);if((v==null||v==="")&&process.argv[2])v=dig(o,process.argv[2]);process.stdout.write(v==null?"":String(v))}catch(e){}})' "$2" "${3:-}" 2>/dev/null; return 0
   fi
   for _py in python3 python; do
     command -v "$_py" >/dev/null 2>&1 && "$_py" -c '' >/dev/null 2>&1 || continue
     printf '%s' "$1" | "$_py" -c 'import json,sys
 try: o=json.load(sys.stdin)
 except Exception: o=None
-for k in sys.argv[1].split("."):
-    o=o.get(k) if isinstance(o,dict) else None
-sys.stdout.write("" if o is None else str(o))' "$2" 2>/dev/null
+def dig(o,p):
+    for k in p.split("."):
+        o=o.get(k) if isinstance(o,dict) else None
+    return o
+v=dig(o,sys.argv[1])
+if (v is None or v=="") and len(sys.argv)>2 and sys.argv[2]:
+    v=dig(o,sys.argv[2])
+sys.stdout.write("" if v is None else str(v))' "$2" "${3:-}" 2>/dev/null
     return 0
   done
   return 1
@@ -68,7 +84,7 @@ esac
 
 # Fail CLOSED if no JSON parser is available — a guard that cannot read the
 # command must not wave a possible admin-bypass merge through.
-if ! cmd=$(_json_field "$input" tool_input.command); then
+if ! cmd=$(_json_field "$input" tool_input.command toolInput.command); then
   printf 'merge-guard: no JSON parser (jq/node/python) available — cannot verify the merge command; refusing (fail-closed).\n' >&2
   exit 2
 fi

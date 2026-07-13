@@ -45,21 +45,37 @@ set -eu
 # point silently vanished on Windows (agent could edit/commit on main directly).
 # Prefer jq (fast, present on mac/Linux), fall back to node (always shipped with
 # agents-cli) then python. Returns 1 ONLY when NO parser exists -> fail CLOSED.
-_json_field() {  # $1=json  $2=dotted.path
+#
+# Harness portability: Claude Code sends snake_case fields (tool_name,
+# tool_input.command); Grok CLI sends camelCase (toolName, toolInput.command).
+# So a call passes the snake_case path as $2 and its camelCase equivalent as an
+# optional $3 — the first path that resolves non-empty wins. Keeping the fallback
+# in the extractor (not the call sites) keeps all three parser branches uniform.
+_json_field() {  # $1=json  $2=dotted.path  [$3=alternate.dotted.path]
   if command -v jq >/dev/null 2>&1; then
-    printf '%s' "$1" | jq -r "(.$2) // empty" 2>/dev/null; return 0
+    if [ -n "${3:-}" ]; then
+      printf '%s' "$1" | jq -r "((.$2) // (.$3)) // empty" 2>/dev/null
+    else
+      printf '%s' "$1" | jq -r "(.$2) // empty" 2>/dev/null
+    fi
+    return 0
   fi
   if command -v node >/dev/null 2>&1; then
-    printf '%s' "$1" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{let o=JSON.parse(s);for(const k of process.argv[1].split("."))o=(o==null?null:o[k]);process.stdout.write(o==null?"":String(o))}catch(e){}})' "$2" 2>/dev/null; return 0
+    printf '%s' "$1" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const dig=(o,p)=>{for(const k of p.split("."))o=(o==null?null:o[k]);return o};try{let o=JSON.parse(s);let v=dig(o,process.argv[1]);if((v==null||v==="")&&process.argv[2])v=dig(o,process.argv[2]);process.stdout.write(v==null?"":String(v))}catch(e){}})' "$2" "${3:-}" 2>/dev/null; return 0
   fi
   for _py in python3 python; do
     command -v "$_py" >/dev/null 2>&1 && "$_py" -c '' >/dev/null 2>&1 || continue
     printf '%s' "$1" | "$_py" -c 'import json,sys
 try: o=json.load(sys.stdin)
 except Exception: o=None
-for k in sys.argv[1].split("."):
-    o=o.get(k) if isinstance(o,dict) else None
-sys.stdout.write("" if o is None else str(o))' "$2" 2>/dev/null
+def dig(o,p):
+    for k in p.split("."):
+        o=o.get(k) if isinstance(o,dict) else None
+    return o
+v=dig(o,sys.argv[1])
+if (v is None or v=="") and len(sys.argv)>2 and sys.argv[2]:
+    v=dig(o,sys.argv[2])
+sys.stdout.write("" if v is None else str(v))' "$2" "${3:-}" 2>/dev/null
     return 0
   done
   return 1
@@ -68,13 +84,13 @@ sys.stdout.write("" if o is None else str(o))' "$2" 2>/dev/null
 input=$(cat)
 # Fail CLOSED if no JSON parser is available — the guard can't tell which tool is
 # firing, so it must not silently allow a possible default-branch mutation.
-if ! tool=$(_json_field "$input" tool_name); then
+if ! tool=$(_json_field "$input" tool_name toolName); then
   printf 'main-branch-guard: no JSON parser (jq/node/python) available — refusing the tool call unchecked (fail-closed). Ensure node or jq is on PATH.\n' >&2
   exit 2
 fi
 [ -z "$tool" ] && exit 0
 
-cwd=$(_json_field "$input" cwd) || cwd=""
+cwd=$(_json_field "$input" cwd) || cwd=""   # cwd is shared by both harnesses
 
 deny_reason=""
 
@@ -114,8 +130,8 @@ then edit under \$REPO/.agents/worktrees/<slug>/, commit there, push, and open a
 # --- File-tool branch ------------------------------------------------------
 case "$tool" in
   Write|Edit|MultiEdit|NotebookEdit)
-    fp=$(_json_field "$input" tool_input.file_path) || fp=""
-    [ -z "$fp" ] && fp=$(_json_field "$input" tool_input.notebook_path)
+    fp=$(_json_field "$input" tool_input.file_path toolInput.file_path) || fp=""
+    [ -z "$fp" ] && fp=$(_json_field "$input" tool_input.notebook_path toolInput.notebook_path)
     [ -z "$fp" ] && exit 0
     # Resolve a relative path against the session cwd.
     case "$fp" in
@@ -154,7 +170,7 @@ esac
 # Fast path: no "git" anywhere -> nothing to police.
 case "$input" in *git*) ;; *) exit 0 ;; esac
 # Parser presence already confirmed by the tool_name extraction above.
-cmd=$(_json_field "$input" tool_input.command) || cmd=""
+cmd=$(_json_field "$input" tool_input.command toolInput.command) || cmd=""
 [ -z "$cmd" ] && exit 0
 
 # Detect `sh|bash -c <inner>` at raw-string level (mirrors git-guard.sh) so a

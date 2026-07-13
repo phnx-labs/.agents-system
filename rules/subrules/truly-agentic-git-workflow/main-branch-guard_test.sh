@@ -98,6 +98,14 @@ wj() { # write-tool json: <tool> <field> <path> [cwd]
 bj() { # bash json: <cmd> [cwd]
   jq -n --arg c "$1" --arg cwd "${2:-}" '{tool_name:"Bash", cwd:$cwd, tool_input:{command:$c}}'
 }
+# Grok CLI camelCase variants (toolName / toolInput) — harness portability.
+wjc() { # camelCase write-tool json: <tool> <field> <path> [cwd]
+  jq -n --arg t "$1" --arg f "$2" --arg p "$3" --arg cwd "${4:-}" \
+    '{toolName:$t, cwd:$cwd, toolInput:{($f):$p}}'
+}
+bjc() { # camelCase bash json: <cmd> [cwd]
+  jq -n --arg c "$1" --arg cwd "${2:-}" '{toolName:"Bash", cwd:$cwd, toolInput:{command:$c}}'
+}
 
 # --- File tools: DENY on default branch (exit 2) ---
 run_guard 2 "Write tracked file on main"        "$(wj Write file_path "$MAIN_REPO/tracked.txt")"
@@ -177,6 +185,22 @@ run_guard 2 "worktree add -b, refs/heads/ ref"     "$(bj "git -C $CLONE worktree
 run_guard 0 "worktree add -b, refs/remotes/ ref"   "$(bj "git -C $CLONE worktree add -b feat/q3 $TMP/wt_q3 refs/remotes/origin/trunk")"
 # DENY: --force interleaved before -b with a local base still caught.
 run_guard 2 "worktree add --force -b, local base"  "$(bj "git -C $CLONE worktree add --force -b feat/q4 $TMP/wt_q4 trunk")"
+
+# --- Harness portability: Grok CLI camelCase payloads (toolName/toolInput) ---
+# The old snake_case-only extraction resolved empty under Grok and fail-OPEN'd,
+# killing the default-branch choke point. These must behave exactly like their
+# snake_case twins above.
+run_guard 2 "camelCase Write tracked file on main"  "$(wjc Write file_path "$MAIN_REPO/tracked.txt")"
+run_guard 2 "camelCase Edit file on main"           "$(wjc Edit file_path "$MAIN_REPO/tracked.txt")"
+run_guard 2 "camelCase NotebookEdit on main"        "$(wjc NotebookEdit notebook_path "$MAIN_REPO/nb.ipynb")"
+run_guard 2 "camelCase Write relative, cwd on main" "$(wjc Write file_path "tracked.txt" "$MAIN_REPO")"
+run_guard 0 "camelCase Write on feature branch"     "$(wjc Write file_path "$FEAT_REPO/tracked.txt")"
+run_guard 0 "camelCase Write gitignored on main"    "$(wjc Write file_path "$MAIN_REPO/scratch/tmp.txt")"
+run_guard 2 "camelCase git commit, cwd on main"     "$(bjc "git commit -m x" "$MAIN_REPO")"
+run_guard 2 "camelCase git -C main commit"          "$(bjc "git -C $MAIN_REPO commit -m x")"
+run_guard 0 "camelCase git commit on feature branch" "$(bjc "git -C $FEAT_REPO commit -m x")"
+run_guard 2 "camelCase worktree add -b, local base" "$(bjc "git -C $CLONE worktree add -b feat/cc1 $TMP/wt_cc1 trunk")"
+run_guard 0 "camelCase worktree add -b, origin base" "$(bjc "git -C $CLONE worktree add -b feat/cc2 $TMP/wt_cc2 origin/trunk")"
 
 printf -- '---\nmain-branch-guard: %s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
