@@ -51,39 +51,52 @@ fi
 # agents stopping WITHOUT claiming done ("waiting for CI/review") and being
 # marked completed with stranded PRs.
 #
-# Precision guard: only PR URLs that appear as a bare `gh pr create` result
-# line in tool output count as session-created (mentioning or reviewing
-# someone else's PR does not trigger the gate). Fail-open: no gh, network
-# down, parse errors — allow the stop.
+# Precision guard: a PR counts as session-created only when its URL appears
+# in the tool_result of a tool_use whose command ran `pr create` — the two are
+# paired by tool_use_id, so viewing/reviewing someone else's PR (even in a
+# session that also created PRs) never triggers the gate. Fail-open: no gh,
+# network down, parse errors — allow the stop.
 if command -v gh >/dev/null 2>&1; then
   created_prs=$(python3 -c "
 import json, re, sys
 
+PR_RE = re.compile(r'https://github\.com/[\w.-]+/[\w.-]+/pull/\d+')
+
+create_ids = set()
 urls = []
 try:
     with open(sys.argv[1]) as f:
-        for line in f:
-            line = line.strip()
-            if not line or 'pull/' not in line:
+        for raw in f:
+            raw = raw.strip()
+            if not raw:
                 continue
-            # A gh pr create result is the PR URL on its own line inside tool
-            # output; match bare URLs, tolerating surrounding quotes/escapes.
-            for m in re.finditer(r'https://github\.com/[\w.-]+/[\w.-]+/pull/\d+', line):
-                u = m.group(0)
-                # Require create-context on the same transcript line: either a
-                # gh pr create invocation or the URL standing alone in a result.
-                if 'pr create' in line or re.search(r'[\"\\\\n>\s]' + re.escape(u) + r'[\"\\\\n<\s]', line):
-                    if u in urls:
-                        urls.remove(u)
-                    urls.append(u)
-    # Only ones whose creation context exists in this transcript
+            try:
+                rec = json.loads(raw)
+            except Exception:
+                continue
+            msg = rec.get('message') if isinstance(rec.get('message'), dict) else rec
+            content = msg.get('content')
+            if not isinstance(content, list):
+                continue
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get('type') == 'tool_use':
+                    cmd = str((block.get('input') or {}).get('command', ''))
+                    if 'pr create' in cmd:
+                        create_ids.add(block.get('id'))
+                elif block.get('type') == 'tool_result' and block.get('tool_use_id') in create_ids:
+                    for m in PR_RE.finditer(json.dumps(block.get('content', ''))):
+                        u = m.group(0)
+                        if u in urls:
+                            urls.remove(u)
+                        urls.append(u)
     print('\n'.join(urls[-3:]))
 except Exception:
     pass
 " "$TRANSCRIPT_PATH" 2>/dev/null || true)
 
-  # Gate only when the transcript actually ran a pr create
-  if [ -n "$created_prs" ] && grep -q "pr create" "$TRANSCRIPT_PATH" 2>/dev/null; then
+  if [ -n "$created_prs" ]; then
     open_prs=""
     while IFS= read -r pr_url; do
       [ -z "$pr_url" ] && continue
@@ -98,10 +111,10 @@ except Exception:
       # if it explicitly hands it off (named owner/babysitter) — restating that
       # after this gate fires once is enough to pass (stop_hook_active).
       has_handoff=$(echo "$INPUT_JSON" | python3 -c "
-import json, sys
+import json, re, sys
 msg = json.load(sys.stdin).get('last_assistant_message', '').lower()
-phrases = ['handed off', 'hand-off', 'handoff', 'handing this off', 'will babysit', 'is babysitting', 'takes over from here', 'owns this pr', 'owns the pr']
-print('yes' if any(p in msg for p in phrases) else 'no')
+pat = r'\b(handed off|hand-off|handoff|handing (this|it) off|will babysit|is babysitting|takes over from here|owns (this|the) pr)\b'
+print('yes' if re.search(pat, msg) else 'no')
 " 2>/dev/null || echo "no")
 
       if [ "$has_handoff" != "yes" ]; then
@@ -190,7 +203,8 @@ with open(sys.argv[1]) as f:
             continue
         try:
             entry = json.loads(line)
-            if entry.get('role') == 'assistant':
+            msg = entry.get('message') if isinstance(entry.get('message'), dict) else {}
+            if (entry.get('role') or msg.get('role')) == 'assistant':
                 turns += 1
         except (json.JSONDecodeError, KeyError):
             continue
@@ -213,9 +227,10 @@ with open(sys.argv[1]) as f:
             continue
         try:
             entry = json.loads(line)
-            if entry.get('role') != 'user':
+            msg = entry.get('message') if isinstance(entry.get('message'), dict) else {}
+            if (entry.get('role') or msg.get('role')) != 'user':
                 continue
-            content = entry.get('content', '')
+            content = entry.get('content', '') or msg.get('content', '')
             if isinstance(content, list):
                 texts = []
                 for c in content:
