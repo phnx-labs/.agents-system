@@ -25,12 +25,14 @@ _to() {
 
 input="$(cat)"
 
-cwd="$(printf '%s' "$input" | python3 -c 'import json,sys
+eval "$(printf '%s' "$input" | python3 -c 'import json,shlex,sys
 try:
-    print(json.load(sys.stdin).get("cwd","") or "")
+    d = json.load(sys.stdin)
 except Exception:
-    print("")' 2>/dev/null || true)"
-[ -z "$cwd" ] && exit 0
+    d = {}
+print("cwd=%s" % shlex.quote(d.get("cwd","") or ""))
+print("self_sid=%s" % shlex.quote(d.get("session_id","") or ""))' 2>/dev/null || echo 'cwd=""; self_sid=""')"
+[ -z "${cwd:-}" ] && exit 0
 [ -d "$cwd" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0
@@ -45,25 +47,36 @@ if command -v gh >/dev/null 2>&1; then
     2>/dev/null || true)"
 fi
 
-# Other active agent sessions working in this checkout (incl. its worktrees).
-# `agents sessions --active` groups sessions under directory headers; capture
-# the blocks whose header contains this repo's path (absolute or ~-relative).
+# Other active agent sessions working in this checkout (incl. its worktrees),
+# on THIS machine only (--local). --json gives structured rows, so filtering
+# is on the real cwd field with a path boundary — repo "…/agents" does not
+# swallow "…/agents-cli" — instead of scraping the human-formatted tree. The
+# session this hook is starting for (session_id in the hook input) is dropped.
 sessions=""
 if command -v agents >/dev/null 2>&1; then
-  repo_tilde="${repo/#$HOME/\~}"
-  sessions="$(_to 5 agents sessions --active 2>/dev/null | awk -v abs="$repo" -v til="$repo_tilde" '
-    # Header lines start with a path token. Match on path BOUNDARIES so that
-    # repo "…/agents" does not swallow "…/agents-cli": exact match, or the
-    # header path continues with "/" (a worktree or subdir of this repo).
-    /^[[:space:]]*[~\/]/ {
-      p = $1
-      inblock = (p == abs || p == til || index(p, abs "/") == 1 || index(p, til "/") == 1)
-      if (inblock) print
-      next
-    }
-    inblock && /^[[:space:]]+[0-9a-f-]/ { print; next }
-    /^[^[:space:]]/ { inblock = 0 }
-  ' | head -12 || true)"
+  sessions="$(_to 5 agents sessions --active --json --local 2>/dev/null | python3 -c '
+import json, sys
+repo, self_sid = sys.argv[1], sys.argv[2]
+try:
+    rows = json.load(sys.stdin)
+except Exception:
+    rows = []
+out = []
+for r in rows if isinstance(rows, list) else []:
+    if not isinstance(r, dict):
+        continue
+    cwd = r.get("cwd") or ""
+    sid = r.get("sessionId") or ""
+    if cwd != repo and not cwd.startswith(repo + "/"):
+        continue
+    if self_sid and sid == self_sid:
+        continue
+    status = r.get("activity") or r.get("status") or ""
+    topic = " ".join((r.get("topic") or "").split())[:70]
+    out.append("- %s %s [%s] %s" % (sid[:8], r.get("kind") or "?", status, topic))
+for line in out[:12]:
+    print(line)
+' "$repo" "${self_sid:-}" 2>/dev/null || true)"
 fi
 
 [ -z "$prs" ] && [ -z "$sessions" ] && exit 0
