@@ -26,7 +26,7 @@ import json
 import hashlib
 import tempfile
 
-MIN_BYTES = 16 * 1024  # ~400 lines — below this, reading whole is fine
+MIN_BYTES = 16 * 1024  # ~200-400 lines depending on line length; below this, reading whole is fine
 
 # formats mq can map/extract (from `mq --help`), lowercased, no dot
 SUPPORTED = {
