@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""PreToolUse hook (Read): nudge `mq` before the agent reads a large file whole.
+
+Fires only on the Read tool. When the target is a large (>=16 KiB) file in a
+format `mq` supports (code, docs, data, Office), it injects a one-time — per
+session + per file — suggestion to map the file with `mq <file> .tree` and
+extract just the needed section instead of pulling the whole file into context.
+
+Advisory only: it NEVER blocks the read (always exit 0). Fail-open everywhere —
+any error is swallowed so a nudge can never break a tool call.
+
+Skips (already efficient, or not mq-addressable):
+  - a targeted Read (offset/limit set) — the agent is already narrowing.
+  - small files (<16 KiB) — reading whole is fine.
+  - unsupported/binary formats (images, archives, no extension).
+  - a file already nudged this session (dedup marker in tmp).
+
+Why: a fleet audit found `mq` invoked 0 times across 835 sessions / 3 days while
+62% of tool calls were context reads — whole-file dumps and the same file re-read
+up to 34x per session. The tool already collapses that; this closes the reach-gap
+at the moment of the read. Claude only — relies on PreToolUse additionalContext.
+"""
+import os
+import sys
+import json
+import hashlib
+import tempfile
+
+MIN_BYTES = 16 * 1024  # ~400 lines — below this, reading whole is fine
+
+# formats mq can map/extract (from `mq --help`), lowercased, no dot
+SUPPORTED = {
+    # docs
+    "md", "mdx", "markdown", "html", "htm", "pdf", "rst", "adoc",
+    # data
+    "json", "jsonl", "ndjson", "yaml", "yml", "csv", "tsv", "xml", "toml",
+    "xlsx", "docx", "pptx",
+    # code
+    "ts", "tsx", "js", "jsx", "mjs", "cjs", "py", "go", "rs", "java", "kt",
+    "c", "cc", "cpp", "h", "hpp", "swift", "rb", "php", "sh", "bash", "zsh",
+    "lua", "scala", "cs", "sql",
+}
+
+
+def _marker_for(session_id, path):
+    key = hashlib.sha1(f"{session_id}:{path}".encode("utf-8", "replace")).hexdigest()
+    d = os.path.join(tempfile.gettempdir(), "agents-mq-nudge")
+    return d, os.path.join(d, key)
+
+
+def main():
+    raw = sys.stdin.read()
+    try:
+        payload = json.loads(raw) if raw.strip() else {}
+    except Exception:
+        return  # fail open
+
+    if payload.get("tool_name") != "Read":
+        return
+    ti = payload.get("tool_input") or {}
+    if not isinstance(ti, dict):
+        return
+
+    # Already a targeted read — the agent is narrowing; don't nudge.
+    if ti.get("offset") is not None or ti.get("limit") is not None:
+        return
+
+    path = ti.get("file_path")
+    if not isinstance(path, str) or not path:
+        return
+
+    ext = os.path.splitext(path)[1].lstrip(".").lower()
+    if ext not in SUPPORTED:
+        return
+
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return
+    if size < MIN_BYTES:
+        return
+
+    session_id = str(payload.get("session_id") or os.getppid())
+    mdir, marker = _marker_for(session_id, os.path.abspath(path))
+    try:
+        os.makedirs(mdir, exist_ok=True)
+        # O_CREAT|O_EXCL: first nudge wins; a second read of the same file no-ops.
+        fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        os.close(fd)
+    except FileExistsError:
+        return  # already nudged this file this session
+    except OSError:
+        pass  # can't write marker — still nudge once (fail open toward helping)
+
+    kb = size // 1024
+    note = (
+        f"[mq] About to read `{os.path.basename(path)}` whole (~{kb} KiB). If you "
+        f"need only part of it, map it first with `mq {path} .tree` (sections + "
+        f"line ranges), then extract just what you need: "
+        f"`mq {path} '.section(\"<name>\") | .text'`. mq supports this format "
+        f"({ext}) — code, docs, data, and Office, not only markdown. Reading the "
+        f"whole file is fine if you genuinely need all of it; skip mq then."
+    )
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "additionalContext": note,
+        }
+    }))
+
+
+if __name__ == "__main__":
+    main()
