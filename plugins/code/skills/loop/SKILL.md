@@ -40,6 +40,16 @@ When you stop on a single item, you park it with a clear note and move to the ne
 
 When you stop on a queue-wide signal, you halt the loop and surface the signal. The user decides whether to resume.
 
+## Unattended mode
+
+When the loop runs with no interactive user — a headless `-p` run, a cron routine, a fleet drain — the stop conditions above still hold, but their surface changes: there is no one to ask, so you never call `AskUserQuestion` and never wait for input.
+
+The notify command, when there is one, is a shell one-liner given verbatim in the invocation prompt (e.g. a messaging-CLI send). Run it exactly as given, substituting the item ID and blocker into its message. If the invocation defines none, skip notification silently — the ticket comment is the durable record.
+
+- A single-item blocker (design choice, missing credential, BLOCKED review verdict): move the ticket to your tracker's parked state (Blocked if the workspace has one, else Backlog) with a comment stating exactly what is needed and why you could not decide it yourself, run the notify command, and continue with the next item.
+- A queue-wide halt signal: run the notify command, then exit with the summary. Never idle waiting for a human.
+- Label queues: fetch with your tracker CLI filtered to the label plus the Todo state — and verify the label filter actually applies; some tracker CLIs silently drop a label filter when an assignee/agent filter is also present.
+
 ## How parallelism works
 
 Parallelism is a tool, not a goal.
@@ -82,6 +92,20 @@ The argument tells you where the work comes from:
 - No argument → resume. Read `_meta/queue.json` from the last loop run, or infer from current branch / open PR state.
 
 Whatever the source, you normalize to a queue. Each item gets an ID, a title, a body, an acceptance criterion. If the source does not have an acceptance criterion, you read enough context to write one — and you check it with the user only if it is genuinely ambiguous.
+
+## Claim before you build, dedup before you claim
+
+Duplicate work is the classic multi-agent (and multi-human) waste. Before you touch an item, prove nobody is already on it:
+
+- **Existing PR?** Search the target repo for an open PR referencing the item ID or a matching branch: `gh pr list --state open --search "<ID>"` (and scan `gh pr list --state open --json headRefName,title` for obvious matches). If one exists, do not reimplement — switch to the queue-of-one "land this one thing" path on that PR, or if it is clearly someone else's in-flight work, skip the item with a ticket comment linking the PR.
+- **Active agent already on it?** `agents sessions --active` shows every running session across the fleet. If a live session or teammate references the item, skip it this round with a note — never race it.
+- **Then claim it.** Before the first commit, move the item Todo → In Progress in your tracker. Label-queue drains fetch Todo only, so a claimed item disappears from every other loop's next fetch. This is a best-effort cross-machine signal, not a true lock — two loops polling in the same window can both see the item before either claims. Re-check the item's status right before your first commit, and if a PR for it appeared meanwhile, fall back to the dedup rule above.
+
+The order matters: dedup first (a PR or session means the claim belongs to someone else), claim second, build third.
+
+**Make your own work findable.** Every PR you open carries the item ID in its title (`docs(routines): <summary> (PROJ-123)`) and body. The dedup search above only works if PRs are discoverable by ID — a PR without one is invisible to every other loop and will get reimplemented.
+
+**Where parallelism runs:** teammates and subagents you spawn stay on the machine the loop runs on, or the declared worker pool — never dispatch workers onto the user's interactive machine (the one they sit at; check `agents devices`). An unattended drain box is a worker; the user's laptop is not.
 
 ## Tools you compose
 
