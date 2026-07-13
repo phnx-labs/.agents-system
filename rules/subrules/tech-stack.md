@@ -4,7 +4,7 @@
 
 | Task | Tool |
 | --- | --- |
-| Query large docs (.md, .html, .pdf) | `mq` — for files 100+ lines, probe then extract |
+| Read a large file (200+ lines) or map an unfamiliar dir | `mq` — probe structure (`.tree`), then extract only the section you need. Works on **code (ts/py/go/…), docs (md/html/pdf), data (json/yaml/csv), Office** — not just docs. See `context-query-mq`. |
 | Issue tracker (Linear/GitHub/Jira) | `/tickets` command — auto-detects |
 | Browser automation | `browser` skill (a.k.a. `agents browser`) |
 | Interactive terminal (REPLs, TUIs) | `agents pty` — see `agents pty --help` |
