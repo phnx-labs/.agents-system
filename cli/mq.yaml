@@ -8,27 +8,35 @@ description: |
   processor (mqlang.org) — do not `brew install mq`, it's a different tool.
 homepage: https://github.com/muqsitnawaz/mq
 
-# Identity-aware check: our mq prints "mq <version>" / "mq dev". A bare `which`
-# would also match the unrelated Homebrew mq, so we run --version (exit 0 on
-# our binary) rather than just probing PATH.
+# Runs `mq --version` (verifies the binary runs, not just that it's on PATH).
+# NOTE: this check inspects the exit code only — it canNOT tell our mq apart
+# from the unrelated Homebrew `mq` (mqlang.org), which also exits 0. If that
+# tool is on PATH, `agents doctor` will report mq present but it's the wrong
+# binary. The collision is a docs-level warning (see description) — the manifest
+# schema can't express a stdout-identity match. Don't `brew install mq`.
 check: mq --version
 
 # Install from the project's own GitHub release tarballs (per-platform, no Go
 # toolchain required). Each tarball carries the `mq` binary at its root, which
 # the binary method extracts onto PATH (/usr/local/bin). Bump the version tag
 # when cutting a new mq release.
+#
+# Platform keys are `<process.platform>-<process.arch>` as the CLI computes them
+# (Node/Bun): arch is `x64`, NOT `amd64` — the URL filenames say `amd64`
+# (GoReleaser convention), but the manifest KEYS must be `x64` or the method
+# never matches on Intel/x86_64 hosts.
 install:
   - binary:
       darwin-arm64:
         url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_darwin_arm64.tar.gz
         extract: mq
-      darwin-amd64:
+      darwin-x64:
         url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_darwin_amd64.tar.gz
         extract: mq
       linux-arm64:
         url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_linux_arm64.tar.gz
         extract: mq
-      linux-amd64:
+      linux-x64:
         url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_linux_amd64.tar.gz
         extract: mq
 
