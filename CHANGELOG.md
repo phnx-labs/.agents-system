@@ -8,6 +8,9 @@
 - **`rules/subrules/context-query-mq.md` — "query structure before reading whole files" discipline.** Probe with `mq <file> .tree`, extract the one section, never re-read the same file to hunt different parts. Grounded in a fleet audit: `mq` invoked 0 times across 835 sessions in 3 days while 62% of all tool calls were context reads (whole-file dumps; the same file re-read up to 34× per session).
 - **`hooks/10-mq-read-nudge.py` — PreToolUse Read nudge (wired in `agents.yaml`).** When the agent is about to read a large (≥16 KiB) supported file whole, it injects a one-time (per session + per file) suggestion to map + extract with `mq` instead. Advisory only — never blocks; skips targeted reads (offset/limit set), small files, and unsupported/binary formats; dedups via an `O_EXCL` marker so a file is nudged at most once per session. Fail-open everywhere. Claude only (relies on PreToolUse `additionalContext`). Disable from the user side with `enabled: false` if it proves noisy.
 
+### Fixed
+- **`rules/rules.yaml` — register `context-query-mq` in the default preset.** The subrule file shipped but was absent from the explicit `subrules:` list, so it never compiled into the agents' memory file (verified live: the file synced but its content was missing from `CLAUDE.md`). Added it after `tech-stack`.
+
 ### Changed
 - **`rules/subrules/tech-stack.md` — corrected the `mq` tool-map row.** Was "Query large docs (.md, .html, .pdf)"; now "Read a large file (200+ lines) or map an unfamiliar dir → `mq`" with the full format list (code/docs/data/Office) and a pointer to `context-query-mq`.
 
