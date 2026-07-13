@@ -34,3 +34,11 @@ agents teams start my-feature --watch
 ```
 
 Every brief includes Mission, Full scope, Owns, Must NOT touch, concrete code pattern, success criteria, and ends with the line from core-hard-lines #8. The `/teams` command is the long-form playbook.
+
+## Completion contract (every edit-mode brief)
+
+A teammate whose work produces a PR is done when the PR is **merged or explicitly handed off to a named owner** — nothing else counts. "PR open, CI green, waiting for reviewer" is NOT completed: it's the top observed way team output gets stranded (an entire 11-teammate run once ended with every PR unmerged). Every edit-mode brief must include the line:
+
+> Your task is complete only when your PR is merged, or you have handed it off by naming who/what now owns it. If you are waiting on CI or review, keep waiting with a background watch — do not stop.
+
+Mechanical backstop: the `verify-work-complete` Stop hook blocks a session from stopping with an open PR it created and no handoff — but the brief line is what makes teammates drive to merge instead of arguing with the gate.

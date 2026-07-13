@@ -7,6 +7,14 @@ set -euo pipefail
 # Exit 0 = allow stop
 # Exit 2 = block stop, stderr becomes feedback to Claude
 
+# Portable timeout: macOS ships neither `timeout` nor `gtimeout` by default.
+_to() {
+  if command -v timeout >/dev/null 2>&1; then timeout "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then gtimeout "$@"
+  else shift; "$@"
+  fi
+}
+
 INPUT_JSON=$(cat)
 
 # Check stop_hook_active first — prevent infinite loops
@@ -34,6 +42,90 @@ print(f'LAST_MSG_LEN={len(lm)}')
 if [ -z "${TRANSCRIPT_PATH:-}" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
   exit 0
 fi
+
+# --- Open-PR abandonment gate ------------------------------------------------
+# A session that CREATED pull requests may not stop while any is still open,
+# unless the final message explicitly hands the PR off. "PR open, waiting for
+# reviewer" is not a stop state — merged-or-handed-off is done. This fires
+# independently of the done-claim check below: the observed failure mode is
+# agents stopping WITHOUT claiming done ("waiting for CI/review") and being
+# marked completed with stranded PRs.
+#
+# Precision guard: only PR URLs that appear as a bare `gh pr create` result
+# line in tool output count as session-created (mentioning or reviewing
+# someone else's PR does not trigger the gate). Fail-open: no gh, network
+# down, parse errors — allow the stop.
+if command -v gh >/dev/null 2>&1; then
+  created_prs=$(python3 -c "
+import json, re, sys
+
+urls = []
+try:
+    with open(sys.argv[1]) as f:
+        for line in f:
+            line = line.strip()
+            if not line or 'pull/' not in line:
+                continue
+            # A gh pr create result is the PR URL on its own line inside tool
+            # output; match bare URLs, tolerating surrounding quotes/escapes.
+            for m in re.finditer(r'https://github\.com/[\w.-]+/[\w.-]+/pull/\d+', line):
+                u = m.group(0)
+                # Require create-context on the same transcript line: either a
+                # gh pr create invocation or the URL standing alone in a result.
+                if 'pr create' in line or re.search(r'[\"\\\\n>\s]' + re.escape(u) + r'[\"\\\\n<\s]', line):
+                    if u in urls:
+                        urls.remove(u)
+                    urls.append(u)
+    # Only ones whose creation context exists in this transcript
+    print('\n'.join(urls[-3:]))
+except Exception:
+    pass
+" "$TRANSCRIPT_PATH" 2>/dev/null || true)
+
+  # Gate only when the transcript actually ran a pr create
+  if [ -n "$created_prs" ] && grep -q "pr create" "$TRANSCRIPT_PATH" 2>/dev/null; then
+    open_prs=""
+    while IFS= read -r pr_url; do
+      [ -z "$pr_url" ] && continue
+      state=$(_to 5 gh pr view "$pr_url" --json state --jq .state 2>/dev/null || echo "")
+      if [ "$state" = "OPEN" ]; then
+        open_prs="${open_prs}${pr_url}"$'\n'
+      fi
+    done <<< "$created_prs"
+
+    if [ -n "$open_prs" ]; then
+      # Handoff escape: the final message may legitimately stop with an open PR
+      # if it explicitly hands it off (named owner/babysitter) — restating that
+      # after this gate fires once is enough to pass (stop_hook_active).
+      has_handoff=$(echo "$INPUT_JSON" | python3 -c "
+import json, sys
+msg = json.load(sys.stdin).get('last_assistant_message', '').lower()
+phrases = ['handed off', 'hand-off', 'handoff', 'handing this off', 'will babysit', 'is babysitting', 'takes over from here', 'owns this pr', 'owns the pr']
+print('yes' if any(p in msg for p in phrases) else 'no')
+" 2>/dev/null || echo "no")
+
+      if [ "$has_handoff" != "yes" ]; then
+        cat >&2 <<PRGATE
+STOP GATE: This session created pull request(s) that are still OPEN:
+
+$open_prs
+An open PR is not a finished task — merged-or-handed-off is done. Before
+stopping you must do ONE of:
+1. Keep driving it: watch CI (background gh pr checks --watch), get the
+   non-author review, and merge on green.
+2. Hand it off EXPLICITLY: name who or what now owns the PR (a person, a
+   session, a watcher) in your final message.
+3. If stopping is genuinely correct (e.g. blocked on input only the user can
+   give), state exactly what is blocking and what happens next.
+
+Then finish your final message and stop again.
+PRGATE
+        exit 2
+      fi
+    fi
+  fi
+fi
+# --- end open-PR abandonment gate ---------------------------------------------
 
 # Check if Claude is claiming completion
 is_claiming_done=$(echo "$INPUT_JSON" | python3 -c "
