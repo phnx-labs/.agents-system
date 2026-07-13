@@ -6,11 +6,15 @@
 #   Notification            -> agent needs you      -> write sentinel
 #   Stop / UserPromptSubmit  -> you engaged/resumed  -> clear sentinel
 #
-# Sentinel file: ~/.agents/.cache/state/attention/<session_id>  (empty; presence
-# is the signal). The menu-bar helper (LocalState.attentionSessionIds) reads this
-# dir; without it, "NEEDS YOU" only reflects cloud tasks + failed routines.
+# Sentinel file: ~/.agents/.cache/state/attention/<session_id>. Presence is the
+# signal; mtime is when the session flagged; CONTENT is the notification message
+# (what the agent is waiting on — permission text / question), one line, so the
+# menu bar can show the actual ask instead of a generic "awaiting input". The
+# menu-bar helper (LocalState.attentionMarks) reads this dir; without it,
+# "NEEDS YOU" only reflects cloud tasks + failed routines.
 #
-# session_id and hook_event_name arrive on stdin as JSON (Claude/Codex/Gemini).
+# session_id, hook_event_name, and message arrive on stdin as JSON
+# (Claude/Codex/Gemini).
 set -euo pipefail
 
 input="$(cat)"
@@ -20,11 +24,13 @@ try:
     d = json.load(sys.stdin)
     print(d.get("session_id","") or "")
     print(d.get("hook_event_name","") or "")
+    print(" ".join(str(d.get("message","") or "").split()))
 except Exception:
-    print(""); print("")' 2>/dev/null || printf '\n\n')"
+    print(""); print(""); print("")' 2>/dev/null || printf '\n\n\n')"
 
 sid="$(printf '%s' "$parsed" | sed -n 1p)"
 event="$(printf '%s' "$parsed" | sed -n 2p)"
+msg="$(printf '%s' "$parsed" | sed -n 3p)"
 [ -z "$sid" ] && exit 0
 
 dir="$HOME/.agents/.cache/state/attention"
@@ -32,7 +38,7 @@ dir="$HOME/.agents/.cache/state/attention"
 case "$event" in
   Notification)
     mkdir -p "$dir"
-    : > "$dir/$sid"
+    printf '%s' "$msg" > "$dir/$sid"
     ;;
   Stop|UserPromptSubmit)
     rm -f "$dir/$sid" 2>/dev/null || true
