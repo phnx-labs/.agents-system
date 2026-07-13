@@ -19,4 +19,5 @@ presets:
       - agents-cli
       - parallel-teams
       - tech-stack
+      - context-query-mq
       - plan-presentation
