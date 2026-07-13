@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.52] - 2026-07-13
+
+### Added
+- **`hooks/08-inject-repo-inflight.sh` — SessionStart injection of the repo's in-flight state.** Every session starting inside a git repo now sees the repo's open PRs (`gh pr list`, number/title/branch/draft) and the other agent sessions currently active in that checkout (`agents sessions --active`, filtered to the repo with path-boundary matching so `agents` does not swallow `agents-cli`) before it takes work. AX-by-injection: "check what's already owned before opening a PR / spawning teammates / adopting a task" is delivered as state, not an instruction to remember — targeting the two observed failure modes of duplicate PRs for the same scope and taking over a surface another live session is mid-flight on. Fail-open everywhere (no repo, no gh, no agents CLI, timeouts → silent exit 0), portable `timeout` shim for stock macOS. Wired for claude+codex+gemini; covered by `08-inject-repo-inflight_test.sh` (8 cases incl. the path-prefix collision) and smoked against a live repo. A "see what's in flight" row is added to the tech-stack tool map.
+- **The `verify-work-complete` Stop gate is now wired — and blocks PR abandonment.** The script existed but was never registered in `agents.yaml`, so nothing fired; every issue-drain teammate stopped with stranded PRs. Now wired (claude, Stop event) and extended with an open-PR abandonment gate: a session that *created* a PR (precision-matched from `gh pr create` context in the transcript — reviewing someone else's PR does not trigger it) may not stop while that PR is still OPEN unless the final message explicitly hands it off to a named owner. "PR open, CI green, waiting for reviewer" is not a stop state — merged-or-handed-off is done. Fail-open on missing gh/network; `stop_hook_active` prevents loops. Covered by `00-agent-verify-work-complete_test.sh` (6 cases).
+
+### Changed
+- **`rules/subrules/parallel-teams.md` — completion contract for edit-mode briefs.** Every edit-mode teammate brief must state that the task is complete only when the PR is merged or explicitly handed off to a named owner (an entire 11-teammate run once ended with every PR unmerged). The `verify-work-complete` Stop gate is the mechanical backstop; the brief line is what makes teammates drive to merge instead of arguing with the gate.
+
 ## [0.1.51] - 2026-07-13
 
 ### Added

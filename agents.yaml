@@ -8,6 +8,31 @@ hooks:
       - SessionStart
     script: 05-session-start-autosync.sh
     timeout: 5
+  verify-work-complete:
+    # Stop gate: (a) blocks done-claims that lack end-to-end verification,
+    # (b) blocks stopping while a PR this session CREATED is still open with
+    # no explicit handoff — "waiting for reviewer" is not a stop state.
+    # Existed as a script but was never wired; every issue-drain teammate
+    # stopped with stranded PRs because nothing fired. Claude-only: relies on
+    # last_assistant_message + exit-2 stderr feedback semantics.
+    agents:
+      - claude
+    events:
+      - Stop
+    script: 00-agent-verify-work-complete.sh
+    timeout: 20
+  inject-repo-inflight:
+    # SessionStart: inject open PRs + active sessions for the cwd repo so an
+    # agent sees what is already owned before duplicating a PR's scope or
+    # taking over a live session's surface. Fail-open on missing gh/agents.
+    agents:
+      - claude
+      - codex
+      - gemini
+    events:
+      - SessionStart
+    script: 08-inject-repo-inflight.sh
+    timeout: 10
   attention-sentinel:
     agents:
       - claude
