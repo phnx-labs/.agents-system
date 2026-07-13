@@ -1,0 +1,40 @@
+name: mq
+description: |
+  Structure-aware context query for agents — probe a document/directory's
+  structure, then extract only the section you need, instead of reading whole
+  files into context. Supports Markdown, HTML, PDF, JSON, YAML, CSV, XLSX,
+  DOCX, PPTX, and source Code (Go/Python/TS/Rust/...). This is the agents'
+  own `mq` (github.com/muqsitnawaz/mq), NOT the Homebrew `mq` markdown
+  processor (mqlang.org) — do not `brew install mq`, it's a different tool.
+homepage: https://github.com/muqsitnawaz/mq
+
+# Identity-aware check: our mq prints "mq <version>" / "mq dev". A bare `which`
+# would also match the unrelated Homebrew mq, so we run --version (exit 0 on
+# our binary) rather than just probing PATH.
+check: mq --version
+
+# Install from the project's own GitHub release tarballs (per-platform, no Go
+# toolchain required). Each tarball carries the `mq` binary at its root, which
+# the binary method extracts onto PATH (/usr/local/bin). Bump the version tag
+# when cutting a new mq release.
+install:
+  - binary:
+      darwin-arm64:
+        url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_darwin_arm64.tar.gz
+        extract: mq
+      darwin-amd64:
+        url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_darwin_amd64.tar.gz
+        extract: mq
+      linux-arm64:
+        url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_linux_arm64.tar.gz
+        extract: mq
+      linux-amd64:
+        url: https://github.com/muqsitnawaz/mq/releases/download/v0.3.9/mq_linux_amd64.tar.gz
+        extract: mq
+
+post_install: |
+  mq is now on PATH. Query structure before reading whole files:
+    mq <dir>/  '.tree | depth(1)'      # what's here
+    mq <file>  .tree                    # sections + line ranges
+    mq <file>  '.section("Name") | .text'   # extract just what you need
+  Works on code, docs, JSON/YAML/CSV, and Office formats — not only markdown.
