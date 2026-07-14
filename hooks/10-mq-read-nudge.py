@@ -3,8 +3,12 @@
 
 Fires only on the Read tool. When the target is a large (>=16 KiB) file in a
 format `mq` supports (code, docs, data, Office), it injects a one-time — per
-session + per file — suggestion to map the file with `mq <file> .tree` and
-extract just the needed section instead of pulling the whole file into context.
+session + per file — suggestion to extract just the needed part in a single mq
+call (`mq <file> '.section("X") | .text'` / `.search`) instead of reading the
+whole file. It explicitly steers AWAY from the `.tree`->`.section` dance for a
+named target: an A/B measured that two-call dance at ~2.3x the cost and ~2x the
+latency of just reading, while one-call mq is ~18% cheaper AND faster. `.tree`
+is for discovering unknown structure or amortized repeat access only.
 
 Advisory only: it NEVER blocks the read (always exit 0). Fail-open everywhere —
 any error is swallowed so a nudge can never break a tool call.
