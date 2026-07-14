@@ -95,11 +95,15 @@ def main():
     kb = size // 1024
     note = (
         f"[mq] About to read `{os.path.basename(path)}` whole (~{kb} KiB). If you "
-        f"need only part of it, map it first with `mq {path} .tree` (sections + "
-        f"line ranges), then extract just what you need: "
-        f"`mq {path} '.section(\"<name>\") | .text'`. mq supports this format "
-        f"({ext}) — code, docs, data, and Office, not only markdown. Reading the "
-        f"whole file is fine if you genuinely need all of it; skip mq then."
+        f"already know the part you need, get it in ONE mq call instead of reading "
+        f"the whole file:\n"
+        f"  mq {path} '.section(\"<name>\") | .text'   (a specific function/section)\n"
+        f"  mq {path} '.search(\"<term>\")'            (find + show matches)\n"
+        f"Go straight to that one call — do NOT run `.tree` first for a target you "
+        f"can already name (the map-then-extract dance costs more than just reading). "
+        f"Run `mq {path} .tree` first ONLY to discover an unknown structure, or if "
+        f"you'll read this file more than once. mq handles this format ({ext}) — code, "
+        f"docs, data, Office. If you genuinely need the whole file, just read it."
     )
     print(json.dumps({
         "hookSpecificOutput": {

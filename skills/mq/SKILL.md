@@ -11,6 +11,27 @@ description: "Structure-aware context query for large files — probe structure,
 File or dir → mq query → structure/section enters your context → you reason → answer
 ```
 
+## When to use mq — and when NOT
+
+mq's benefit is a smaller context footprint; its cost is per-call round-trips. Net
+win only when the saving beats the overhead. This is a real tradeoff, measured — not
+"always mq".
+
+| Situation | Do this |
+|---|---|
+| You **know** the function/section you want | **One call:** `mq <file> '.section("Name") \| .text'` or `mq <file> '.search("term")'`. Beats reading the whole file (~18% cheaper + faster, measured). |
+| You'll read the **same big file repeatedly** | `.tree` once, then many cheap `.section` extracts. Map amortizes. |
+| **Unfamiliar directory** / search across files | `mq dir/ '.tree \| depth(1)'`, `mq dir/ '.search("x")'` — one call replaces many grep+cat. |
+| Large file (200+ lines), you need a **slice** | Extract the slice; don't slurp the file. |
+| **Small file (<~100 lines)** | Just `Read` it — mq's round-trip costs more than the file. |
+| **One-shot** read, you need **most/all** of the file | Just `Read` it (targeted with offset/limit if you know the slice). |
+
+**The #1 pitfall — the `.tree`→`.section` dance for a target you already named.**
+If the task names the thing, do NOT run `.tree` first. That two-call dance was
+measured **2.3× more expensive and ~2× slower** than just reading the file — worse
+than doing nothing. `.tree` is for *discovering* an unknown structure, not for a
+target you can name. Go straight to the one-call extract.
+
 ## It is NOT a docs-only tool
 
 `mq --help` lists its formats: **Markdown, HTML, PDF, JSON, YAML, CSV, XLSX, DOCX, PPTX, and Code (Go / Python / TS / Rust / …)**. So `mq` maps the structure of a **source file** just as well as a markdown doc:
@@ -26,15 +47,21 @@ Reach for it on the `.ts`/`.py`/`.go` file you were about to `cat` — not only 
 
 ## The Pattern
 
+**Fast path (most tasks) — one call.** If you can name the target, extract it directly:
 ```
-1. Map      →  mq <dir>/ '.tree | depth(1)'      → what's here (files, sizes, sections)
-2. Narrow   →  mq <file> .tree                     → sections/symbols + line ranges
-3. Find     →  mq <path> '.search("term")'         → section-level matches across files
-4. Extract  →  mq <file> '.section("Name") | .text'→ only the part you need
-5. Reason   →  you compute the answer from what's now in context
+mq <file> '.section("Name") | .text'    → the one function/section you need
+mq <file> '.search("term")'             → find + show matches in one shot
 ```
 
-Your context accumulates structure; you do the final reasoning. Don't re-query what you already see.
+**Exploration path — only when the structure is unknown, or you'll revisit the file:**
+```
+1. Map     →  mq <dir>/ '.tree | depth(1)'         → what's here (files, sizes, sections)
+2. Narrow  →  mq <file> .tree                        → sections/symbols + line ranges
+3. Extract →  mq <file> '.section("Name") | .text'   → the part you now know you need
+```
+
+Don't run the exploration path for a target you can already name — that's the #1
+pitfall above. Your context accumulates structure; don't re-query what you already see.
 
 ## Quick Reference
 
