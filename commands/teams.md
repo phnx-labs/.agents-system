@@ -70,6 +70,20 @@ agents teams status <team-name>
 agents teams logs <team-name> <role>
 ```
 
+## Resume / Message a Teammate
+
+When a teammate stops with more to do (PR left open, hit a turn cap, needs redirecting), re-enter its **own** session with a follow-up instead of finishing by hand or spawning a fresh, context-less teammate.
+
+```bash
+# Resume a stopped teammate — its own session, your message as the next turn:
+agents teams resume <team-name> <role> "review's in — merge the PR, then release"
+
+# Same command, auto-routed by state (running -> mailbox steer, stopped -> resume):
+agents teams message <team-name> <role> "skip the flaky test for now"
+```
+
+Works for every harness — resume delegates to `agents run --resume`. Also nudge a still-running teammate: the message is steered into its mailbox and read at its next tool call.
+
 ## Cleanup
 
 ```bash
