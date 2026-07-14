@@ -29,7 +29,7 @@ Permission mode controls what the agent can do.
 
 | Mode | What it allows |
 |------|----------------|
-| `plan` (default) | Read-only — research, audit, analysis. No writes, no shell side-effects. |
+| `plan` (default) | Read-only where supported. Unsupported harnesses warn and degrade to their safest native mode (usually writable `edit`); headless Kimi rejects `plan`. |
 | `edit` | Read + write files; prompts for shell / risky operations |
 | `auto` | Harness-native automatic approval: Claude/Copilot use the smart classifier; Droid uses `--auto high`; Kimi uses `--auto` interactively, while headless `-p` already auto-approves and emits no mode flag. |
 | `skip` | Last-resort bypass of every permission prompt. Direct exec uses the native unsafe flag; ACP selects a protocol permission option. `full` remains an alias. |
@@ -68,6 +68,11 @@ Codex has no native smart-classifier mode, so `agents run codex --mode auto` res
 to sandboxed `edit` and can still prompt. `agents run codex --mode skip` instead
 bypasses approvals **and** removes the sandbox. Harnesses without a native bypass flag
 reject direct-exec `skip`.
+
+**`plan` is not universally read-only.** Agents without a native read-only mode
+(including Antigravity, Cursor, and Kiro) warn and degrade `plan` to their safest native
+mode, which is usually writable `edit`. Headless Kimi has no read-only equivalent and
+rejects `plan` instead of silently running writable.
 
 ## Reasoning effort and model
 
