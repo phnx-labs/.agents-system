@@ -86,10 +86,16 @@ mq file.md   .metadata                     mq log.jsonl '.record(7)'
 ```bash
 cat src/lib/router.ts        # dumps 800 lines into context for one function
 ```
-**Good** — map then extract:
+**Good** — if you can name the target, extract it in ONE call:
 ```bash
-mq src/lib/router.ts .tree                        # see the structure
-mq src/lib/router.ts '.section("handleRequest") | .text'   # get only that
+mq src/lib/router.ts '.section("handleRequest") | .text'   # just that function, one call
+```
+**Also bad** — running `.tree` first for a target you already named:
+```bash
+mq src/lib/router.ts .tree                        # unnecessary discovery step...
+mq src/lib/router.ts '.section("handleRequest") | .text'   # ...you knew the name already
+# the two-call dance measured 2.3x costlier + ~2x slower than just reading. Use .tree
+# ONLY when the structure is unknown, or you'll extract from this file more than once.
 ```
 
 **Bad** — re-`cat`/`grep` the same large file repeatedly to find different things. That's the single most common waste: the same file gets re-read many times in one session. Map it once with `.tree`; the structure stays in your context.
@@ -107,9 +113,13 @@ Warm cache (after first parse): a 30K-line markdown dir `.tree` in <1s; 123 PDFs
 ## Examples by task
 
 ```bash
-# Understand a source module          mq src/api.ts .tree ; mq src/api.ts '.section("POST /users") | .text'
-# Find how auth works across a repo    mq src/ '.search("auth")' ; mq src/auth.ts '.section("Overview") | .text'
-# Pull one section from a big doc      mq GUIDE.md .tree ; mq GUIDE.md '.section("Deploy") | .text'
-# Query a PDF report                   mq report.pdf .tree ; mq report.pdf '.section("Results") | .text'
-# Inspect a JSONL session              mq session.jsonl '.search("deploy")' ; mq session.jsonl '.record(8)'
+# Named target -> ONE call (the common case):
+#   Pull one function            mq src/api.ts '.section("createUser") | .text'
+#   Pull one doc section         mq GUIDE.md   '.section("Deploy") | .text'
+#   Pull a PDF section           mq report.pdf '.section("Results") | .text'
+# Unknown target -> search or map first, THEN extract:
+#   Find how auth works          mq src/ '.search("auth")'     # locate it...
+#                                mq src/auth.ts '.section("Overview") | .text'   # ...then extract
+#   Explore an unfamiliar file   mq src/api.ts .tree           # only when you don't know the section names
+# Inspect a JSONL session        mq session.jsonl '.search("deploy")' ; mq session.jsonl '.record(8)'
 ```
