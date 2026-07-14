@@ -33,12 +33,18 @@ agents teams start my-feature --watch
 
 | Command | Description | Example |
 |---------|-------------|---------|
+| `list` | List your teams, most recent activity first | `agents teams list` |
 | `create` | Start a new team | `agents teams create my-team` |
 | `add` | Add a teammate | `agents teams add my-team claude "Task" --name role` |
 | `start` | Launch pending teammates | `agents teams start my-team --watch` |
 | `status` | Check who's working | `agents teams status my-team` |
+| `active` | List every teammate running right now, across all teams | `agents teams active` |
+| `resume` | Resume a stopped teammate — re-enter its own session with a message | `agents teams resume my-team backend "review's in — merge it"` |
+| `message` | Send a follow-up: steers a running teammate, resumes a stopped one | `agents teams message my-team qa "skip the flaky test"` |
+| `stop` | Stop a running teammate (resume it later with `resume`) | `agents teams stop my-team frontend` |
+| `pr-watch` | Watch the PRs a team opened and react (fix red CI / review comments) | `agents teams pr-watch my-team` |
 | `logs` | Read teammate output | `agents teams logs my-team frontend` |
-| `remove` | Remove a teammate | `agents teams remove my-team frontend` |
+| `remove` | Remove a stopped teammate's logs | `agents teams remove my-team frontend` |
 | `disband` | Stop all and remove | `agents teams disband my-team` |
 | `doctor` | Check installed agents | `agents teams doctor` |
 
@@ -135,6 +141,20 @@ agents teams status my-feature --since 2026-04-24T09:00:00-07:00
 # Read one teammate's log
 agents teams logs my-feature frontend
 ```
+
+## Resume / Message a Teammate
+
+A teammate often stops with more to do — a PR left open awaiting review, a headless run that hit a turn cap, a task worth redirecting. `agents teams resume` re-enters that teammate's **own** session with your message as the next user turn, so it picks up with full context instead of you finishing by hand or spawning a fresh, context-less teammate.
+
+```bash
+# Nudge a teammate that stopped with its PR open:
+agents teams resume my-feature backend "review's in — rebase-merge the PR, then release"
+
+# teams message is the same command, auto-routed by the teammate's state:
+agents teams message my-feature qa "skip the flaky screenshot test for now"
+```
+
+Routing: a **running** teammate is steered via its mailbox (delivered at its next tool call, no re-launch); a **stopped** one (completed / failed / stopped) is **resumed** — re-launched through its original backend/worktree and flipped back to `running`; a **pending** one is refused until you `teams start` it. Every harness: resume delegates to `agents run --resume` (native for Claude/Codex, `/continue` replay for the rest).
 
 ## Best Practices
 
