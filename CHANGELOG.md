@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.54] - 2026-07-14
+
+### Changed
+- **`skills/run/SKILL.md` — document permission modes without encouraging the bypass.** Replaces the legacy `full` recommendation with primary `plan` / `edit` / `auto` / `skip` modes, marks `skip` as a last resort, maps direct-exec skip to every native harness flag (including Codex `--dangerously-bypass-approvals-and-sandbox`/`--yolo` and Claude Code `--dangerously-skip-permissions`), explains ACP permission-option selection, distinguishes Codex sandboxed `auto` from unsandboxed `skip`, and distinguishes Kimi's interactive `--auto` from its already-auto-approved headless `-p` path.
+
 ## [0.1.53] - 2026-07-13
 
 ### Added
