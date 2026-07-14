@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.54] - 2026-07-14
+
+### Added
+- **`plugins/swarm/skills/orchestrate/SKILL.md` — caveat: `agents teams doctor` `signedIn` is config-level, not a live auth check.** A stale-authed provider (droid observed) reports signed-in and then 401s at spawn ("Authentication failed. Please log in using /login or set a valid FACTORY_API_KEY") while its reviewer slot silently produces nothing. Guidance: smoke-test a load-bearing provider with `agents run <agent> --mode skip --timeout 1m "Reply with exactly OK"` before fanning out. Grounded in the gh-monitor mars migration session (2026-07-13), where doctor reported droid signed-in and both dispatched droid reviewers failed.
+- **`skills/agents-cli/SKILL.md` — "Calling `agents` from automation" section.** `agents` resolves node via `/usr/bin/env node`; under a minimal PATH (launchd/systemd units, cron, git hooks) every call dies with `env: node: No such file or directory`, silently when stderr is redirected. Observed live: a launchd dashboard job's `agents ssh` pull no-oped until a node bin dir was added to PATH.
+
 ## [0.1.53] - 2026-07-13
 
 ### Added
