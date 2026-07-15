@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.56] - 2026-07-15
+
+### Added
+- **`commands/hibernate.md` — adopt the `/hibernate` slash command into the system repo, with its permission footgun fixed.** `/hibernate` schedules a macOS launchd one-shot that resumes **the same** claude session at a future wall-clock time to re-check a slow external wait (an approval, a soaking deploy, a review you can't hurry) — no summary, no hand-back to the user. It was an **orphan**: it only ever existed as an untracked copy in per-version agent homes (`~/.agents/.history/versions/claude/*/home/.claude/commands/`), never tracked here, so the fleet never had it under version control. The wake wrapper previously resumed via `claude --print --dangerously-skip-permissions --resume "$SID"` — a persistent, auto-launched job carrying a **blanket permission bypass**. It now resumes via `agents run claude --resume "$SID" --mode auto`: the smart permission classifier (auto-approves safe ops, still prompts/blocks risky), **never** `--dangerously-skip-permissions`. Delivered to every install via `agents repo pull system` + `agents repo refresh claude`.
+
 ## [0.1.55] - 2026-07-15
 
 ### Added
