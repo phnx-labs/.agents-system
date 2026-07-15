@@ -93,7 +93,7 @@ WAKE FROM HIBERNATION. You scheduled this wake yourself via /hibernate to re-che
 
 ## Step 3 - Schedule the launchd one-shot
 
-Write a wrapper that resumes the session directly (authenticated, skip mode so it can act) then self-cleans, and a per-session launchd plist that fires it at the wake time.
+Write a wrapper that resumes the session directly (authenticated, `--mode auto` so it can act safely — auto-approves safe ops, prompts on risky) then self-cleans, and a per-session launchd plist that fires it at the wake time.
 
 ```bash
 U=$(id -u)
