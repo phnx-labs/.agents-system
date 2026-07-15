@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.55] - 2026-07-15
+
+### Added
+- **Built-in `check-updates` routine (`routines/check-updates.yml`).** The first routine shipped in the system repo. It keeps `agents-cli` and the shared `.system` config repo current on every machine: checks the installed vs. latest npm version and upgrades when behind (skipping local `0.0.0-dev` builds), runs `agents repo pull system`, and fires a native desktop notification (`osascript`/`notify-send`, best-effort) when anything changed — otherwise stays quiet. Runs Mondays 09:00, self-updating **per box** (no SSH fan-out, no designated primary), so a one-laptop user and a large fleet are both covered. Delivered to every install via `agents repo pull system`; the daemon fires it once agents-cli supports system-layer routines (agents-cli ≥ the release that adds `getSystemRoutinesDir` unioning). Users override it with a same-named `~/.agents/routines/` file or disable it via `agents routines disable check-updates` — the shipped file is never mutated in place.
+
 ## [0.1.54] - 2026-07-14
 
 ### Changed

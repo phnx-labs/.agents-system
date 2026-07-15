@@ -1,0 +1,51 @@
+# Built-in routine: keep agents-cli + the shared .system config repo current.
+#
+# Shipped in the system repo (gh:phnx-labs/.agents-system), so every install that
+# runs `agents repo pull system` receives it, and the daemon fires it once it
+# supports system-layer routines. Users override it with a same-named routine in
+# ~/.agents/routines/, or disable it with `agents routines disable check-updates`
+# (which writes a disabling user copy — this file is never mutated in place).
+#
+# Design: EACH box self-updates independently (no `devices:` restriction, no SSH
+# fan-out, no designated "primary"). Every machine in the fleet keeps itself
+# current, so the fleet collectively stays current — robust for a single laptop or
+# a large fleet alike.
+name: check-updates
+schedule: 0 9 * * 1        # Mondays 09:00 (daemon-local time)
+agent: claude
+mode: edit
+effort: low
+timeout: 15m
+enabled: true
+prompt: >
+  Keep THIS machine's `agents-cli` install and the shared `.system` config repo
+  current, and notify the user if anything changed. Every box in the fleet runs
+  this routine independently and self-updates — do NOT SSH to other machines.
+
+  Do these steps on this machine only. Never fail the whole routine because one
+  step errors: record the failure and continue.
+
+  1. Check for an agents-cli update. Installed version: `agents --version`. Latest
+     on npm: `npm view @phnx-labs/agents-cli version`. If installed is older than
+     latest, upgrade with `npm install -g @phnx-labs/agents-cli@latest`, then
+     re-read `agents --version` to confirm.
+     - If `agents --version` reports a `0.0.0-dev.<sha>` build, a LOCAL DEV BUILD is
+       on PATH — do NOT npm-install over it. Record "dev build — skipped" and
+       continue to step 2.
+     - If `npm` fails as a missing lazy zsh function (`_lazy_nvm_load` / `FUNCNEST`),
+       invoke the binary directly (`/opt/homebrew/bin/npm` on macOS, otherwise
+       `command -v npm`).
+
+  2. Update the shared system config repo (`~/.agents/.system/`, origin
+     gh:phnx-labs/.agents-system): run `agents repo pull system`. Note whether it
+     pulled new commits or was already up to date.
+
+  3. If ANYTHING changed (agents-cli was upgraded OR `.system` pulled new commits),
+     send the user a native desktop notification — best effort, swallow any failure
+     (headless servers have no display):
+     - macOS:  `osascript -e 'display notification "<what changed>" with title "agents-cli: updates applied"'`
+     - Linux:  `command -v notify-send >/dev/null && notify-send "agents-cli: updates applied" "<what changed>"`
+     If nothing changed, do not notify.
+
+  Finish with a one-line summary of what was checked and what changed — it is
+  captured in the routine run log (`agents routines runs`).
