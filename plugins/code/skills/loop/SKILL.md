@@ -74,7 +74,12 @@ A few mechanics bite often enough to name. These are grain, not law — read the
 
 ## What done means
 
-Done means merged. Not "PR open." Not "tests green locally." Not "approved but not yet clicked." Merged, CI green on `main`, worktree removed, branch deleted, ticket closed with a link to the PR.
+Done means merged. Not "PR open." Not "tests green locally." Not "approved but not yet clicked." Merged, CI green on `main`, worktree removed, branch deleted, ticket closed **with an audit comment** (below).
+
+**Close with an audit trail — not a bare status flip.** Moving a ticket to Done without recording *how* is a silent close: when a merge or release later goes bad, whoever digs in has nothing but the diff. Every close posts a comment carrying:
+- **PR link + merge SHA** — the durable anchor. The PR holds the diff, the review verdict, and CI forever; the SHA proves it reached `main`. Map ticket→PR→SHA with `git log origin/main --oneline | grep <TICKET>` (check *every* repo the change could land in — squash titles sometimes drop the ticket tag; fall back to `gh pr list --search`).
+- **A readable transcript of the session that did the work**, so the reasoning is recoverable. Render it with `agents sessions <id> --markdown` (for a host/worker run, run that on the worker, or `agents hosts logs <name>`), then `gh gist create --secret <file>.md` and link the returned URL. **Secret gist, never inline and never public** — transcripts carry secrets, tokens, and internal paths, and the tracker is private.
+- For an **already-fixed** close with no new PR, cite the prior PR that shipped it **and verify that PR exists and is actually relevant** before trusting the close — an unverified "already done" is how a real gap gets buried. Self-corrections (marked Done early, re-opened, rebased) belong on the ticket too.
 
 For a **distributable, merged is the middle, not the end.** If the item ships a VS Code extension, a published CLI, or a deployed web app, users don't run `main` — merge alone reaches nobody. Route it through `code:ship`: publish, confirm the public channel actually serves the new version, activate it where it runs, verify the real surface. "Merged" on a distributable without a ship pass is a half-landed item; say so in the summary rather than calling it done.
 
