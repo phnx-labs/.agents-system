@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.56] - 2026-07-15
+
+### Changed
+- **`check-updates` now runs as a `command:` (shell) routine instead of an LLM agent.** The routine's work — compare installed vs. latest `agents-cli`, `npm install -g` when behind, fast-forward `~/.agents/.system`, and desktop-notify on change — is deterministic, so it no longer spins up a Claude agent. This removes the failure mode where the daemon's account rotation dispatched the update-check to a logged-out agent version and the run died on "Not logged in · /login" — a `command:` routine has no auth, token, or rate-limit surface. Uses a direct `git merge --ff-only` for the `.system` update (working around `agents repo pull system` not fast-forwarding). **Requires** agents-cli with command-mode routines (the release adding `JobConfig.command`); do not distribute before that ships, or older installs reject the routine.
+
 ## [0.1.55] - 2026-07-15
 
 ### Added
