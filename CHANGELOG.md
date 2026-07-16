@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.57] - 2026-07-16
+
+### Changed
+- **`hooks/07-inject-device-topology.sh` now injects live fleet resources, not just reachability.** The SessionStart "Host & Fleet" block previously listed each machine's platform and online/relayed/offline state (from the fast `agents devices list --json`, which is registry-only). It now also captures the rendered `agents devices list` table — the only surface that carries the live probe — and appends each reachable box's **load / memory / headroom** (`idle`/`light`/`busy`/`loaded`) plus the **fleet capacity summary** (total cores · free/total RAM across reachable devices). The guidance line gains a "prefer an idle/light box when offloading work off this machine" nudge, since that offload decision is the agent's to make and the built-in scheduler isn't utilization-aware. The probe SSHes each reachable box, bounded at ~2.5s/box in parallel; if it fails or returns nothing the block degrades cleanly to the previous reachability-only output (verified), and a missing registry still stays silent. Shellcheck-clean (the pre-existing SC2016 info on the intentionally single-quoted Python block is unchanged).
+
 ## [0.1.56] - 2026-07-15
 
 ### Changed
