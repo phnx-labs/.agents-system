@@ -1,0 +1,175 @@
+---
+description: Hibernate until a future time, then wake THIS same session (full context, no transfer) to check on a long-running wait — approval, deploy, review, anything that takes hours to days.
+---
+
+You are putting the current session into hibernation. Argument: $ARGUMENTS
+
+Use this when you are blocked on something slow and external — an approval that takes 1-7 business days, a deploy soaking, a review you can't hurry, a build on another machine — and there is genuinely nothing to do until it resolves. Instead of idling or handing the wait back to the user, you schedule your own wake-up, end the turn, and let the process exit. At the wake time a scheduled job resumes **this exact session** with your full context intact (no summary, no re-briefing) and drops you back in to check on it.
+
+> **Why a launchd one-shot, not a routine.** The wake must resume the *actual* session so it reopens with full context. A `routines`-fired job spawns a *fresh* headless agent, and a fresh agent handed "run this command" for a session it has no memory of correctly refuses it as prompt injection — so the routine path cannot wake a hibernated session today. A launchd one-shot runs `agents run claude --resume` directly (no relay agent) — which resumes the *actual* session natively under the smart permission classifier (`--mode auto`, **never** `--dangerously-skip-permissions`) — and even catches up if the laptop was asleep at the wake time. (When `agents routines` gains native `--resume`, this switches to a one-line routine; until then, launchd.)
+
+> **Prerequisite.** macOS, and `agents run claude` must be able to launch non-interactively — it drives the wake and manages claude auth itself. Concrete probe: `agents secrets exec claude.ai -- printenv CLAUDE_CODE_OAUTH_TOKEN` prints a token (same underlying auth `agents run` uses). For a logged-in Rush user it does. If it prompts or is empty, the wake can't authenticate — fix that first.
+
+> **`/hibernate` vs `/done` vs `/finish`** — `/done` self-exits because the work is *delivered*. `/finish` refuses to stop and drives to delivery. `/hibernate` is for work that is *neither done nor blocked-forever*: it's waiting on wall-clock time. You come back and finish it yourself later — the user doesn't have to remember to ping you.
+
+## Step 0 - Parse the argument
+
+`$ARGUMENTS` is `<when> [reason]`:
+
+- **`<when>`** — how long to hibernate. Accept human forms and convert to an absolute local wall-clock time:
+  - relative: `8h`, `30h`, `5d`, `5 days`, `2 weeks`, `45m`
+  - named: `next week`, `next Thursday 9am`, `tomorrow morning`
+  - absolute: `2026-07-20 09:00`
+- **`[reason]`** — free text: what you are waiting for. If omitted, infer it from the conversation (what blocked you). You MUST have a concrete reason — "check on X" where X is specific.
+
+Compute the wake time and break it into calendar fields (launchd needs month/day/hour/minute):
+
+```bash
+WHEN='+30H'                                  # translate <when> to a `date -v` offset, or use an absolute date
+read -r MON DAY HR MIN <<<"$(date -v$WHEN '+%-m %-d %-H %-M')"
+WAKE_HUMAN="$(date -v$WHEN '+%a %b %-d, %-I:%M %p')"
+echo "waking $WAKE_HUMAN  (month=$MON day=$DAY hour=$HR min=$MIN)"
+```
+
+Sanity-check: it must be in the future and match the user's intent. Echo it back in human terms ("waking Wednesday ~9am, in about 30 hours"). launchd catches up a missed calendar time when the machine wakes, so a laptop asleep at the exact minute still fires.
+
+## Step 1 - Capture identity, cwd, and a durable wake note
+
+Read these from the environment — do not guess them:
+
+```bash
+SID="$CLAUDE_CODE_SESSION_ID"                       # this session
+HOST="$(scutil --get LocalHostName 2>/dev/null || hostname -s)"
+CWD="$(pwd)"                                         # the resume must run from the ORIGINAL cwd
+echo "session=$SID host=$HOST cwd=$CWD"
+```
+
+`claude --resume` finds the transcript under `projects/<cwd-hash>/`, so the wake must `cd "$CWD"` first. The transcript is local to `$HOST` — a hibernation scheduled here only wakes here. If `$CLAUDE_CODE_SESSION_ID` is empty, derive the id from the transcript filename in `CLAUDE_CONFIG_DIR/projects/<cwd-hash>/<id>.jsonl`; do not proceed without a real id.
+
+Write a durable hibernation note — this is what the woken session reads first, so make it crisp and self-contained. **The note is re-entrant: create it fresh only on the FIRST hibernation; on a re-hibernation the note already exists and its `Wakes so far` / `Give up after` MUST be preserved (you incremented the count on wake) — never clobber them back to a template.**
+
+```bash
+mkdir -p ~/.rush/hibernate
+NOTE=~/.rush/hibernate/"$SID".md
+if [ -f "$NOTE" ]; then
+  # Re-hibernation: keep the running count + deadline; just refresh the wake time.
+  # (You already bumped "Wakes so far" per the on-wake checklist before calling /hibernate.)
+  echo "existing note — preserving Wakes-so-far + deadline; update only the 'Waking at' line"
+  # Edit just the "Waking at:" line in "$NOTE" to <WAKE_HUMAN>; leave everything else intact.
+else
+  cat > "$NOTE" <<EOF
+# Hibernation note
+- Session: $SID
+- Hibernated at: $(date '+%Y-%m-%d %H:%M %Z')
+- Waking at: <WAKE_HUMAN>
+- Waiting for: <REASON — be specific>
+- Give up after: <HARD DEADLINE — an absolute date past which re-hibernating is pointless, e.g. "2026-07-25; MS approval SLA is 7 business days">
+- Wakes so far: 0   (cap: 6 — after this many pending-wakes, stop re-hibernating and escalate)
+
+## On wake, do this
+1. Increment "Wakes so far" in this note (edit the line) BEFORE deciding to re-hibernate.
+2. Check whether <REASON> has resolved. Concrete check: <the exact command / inbox / URL / PR / API call to look at>.
+3. If RESOLVED → continue the task from where you left off (your full transcript is loaded).
+4. If STILL PENDING **and** before the give-up deadline **and** under the wake cap → run /hibernate again with a *longer* interval than last time (never re-hibernate shorter than the previous gap).
+5. If PENDING but past the deadline OR at the wake cap → stop re-hibernating. Telegram Jeff with the status, then end the turn. Do not loop forever.
+6. If it now needs Muqsit (his face/voice/identity, a decision, a payment) → Telegram Jeff, then hibernate or stop.
+
+## Context I'll want
+<2-4 lines: the task, the PR/ticket, the machine, whatever future-you needs to not re-derive it>
+EOF
+  echo "wrote fresh $NOTE"
+fi
+```
+
+On the first hibernation, fill every `<...>` placeholder with real values before writing — the note is useless if it's a template.
+
+## Step 2 - Compose the wake prompt
+
+Short and quote-free; the detail lives in the note and your transcript:
+
+```
+WAKE FROM HIBERNATION. You scheduled this wake yourself via /hibernate to re-check a long-running wait. Read your hibernation note at <NOTE>, re-read your recent messages, then check on it. Resolved -> continue the task. Still pending -> /hibernate again with a longer backoff. Needs Muqsit -> Telegram Jeff. You own this wait; do not ask the user to remind you.
+```
+
+## Step 3 - Schedule the launchd one-shot
+
+Write a wrapper that resumes the session directly (authenticated, `--mode auto` so it can act safely — auto-approves safe ops, prompts on risky) then self-cleans, and a per-session launchd plist that fires it at the wake time.
+
+```bash
+U=$(id -u)
+GEN="$(date +%s)-$$"                       # unique per wake GENERATION — see the note below
+LABEL="com.rush.hibernate.${SID}.${GEN}"
+PLIST=~/Library/LaunchAgents/"$LABEL".plist
+WRAP=~/.rush/hibernate/"${SID}.${GEN}".wake.sh
+LOG=~/.rush/hibernate/"$SID".wake.log       # shared per-session log (append) is fine
+
+cat > "$WRAP" <<EOF
+#!/bin/bash
+export PATH="$PATH"                       # launchd's env is minimal; bake the current PATH in
+cd "$CWD" 2>/dev/null && \\
+  agents run claude --resume "$SID" --mode auto "<WAKE_PROMPT>" >> "$LOG" 2>&1
+RC=\$?
+# If the wake could not run (cwd gone, auth lost, resume failed), do NOT let the wait
+# vanish silently — ping Muqsit. Best-effort.
+if [ \$RC -ne 0 ]; then
+  ssh muqsit@mac-mini "openclaw message send --channel telegram --account default --target 6078999250 --message 'hibernate wake FAILED for session $SID (rc='\$RC') — see $LOG'" >> "$LOG" 2>&1 || true
+fi
+# Self-clean THIS generation only (label/plist/wrap are GEN-scoped, so a re-hibernation's
+# newer generation is untouched). Order matters: remove files FIRST, then bootout — bootout
+# kills this very process, so anything after it never runs.
+rm -f "$PLIST" "$WRAP"
+launchctl bootout gui/$U/"$LABEL"
+EOF
+chmod +x "$WRAP"
+
+cat > "$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$WRAP</string></array>
+  <key>StartCalendarInterval</key><dict>
+    <key>Month</key><integer>$MON</integer><key>Day</key><integer>$DAY</integer>
+    <key>Hour</key><integer>$HR</integer><key>Minute</key><integer>$MIN</integer>
+  </dict>
+  <key>RunAtLoad</key><false/>
+</dict></plist>
+EOF
+chmod 600 "$PLIST"
+launchctl bootstrap gui/$U "$PLIST"
+```
+
+Notes:
+- **The `$GEN` nonce is load-bearing — do not key the label on the bare session id.** A re-hibernation is issued *from inside* the resumed `claude` process, which is running *inside the previous wake's wrapper* (the wrapper blocks on that `claude` call). If the new job reused the old label/paths, `launchctl bootstrap` would fail on the still-loaded old label, and the old wrapper's self-clean would then delete the new job's files and boot out the shared label — leaving nothing armed. The session would wake exactly once, ever, while Step 4 falsely reports the stale old job as "armed." A fresh `$GEN` per wake keeps generations independent so the loop survives.
+- Substitute the real `<WAKE_PROMPT>` (Step 2) into the wrapper; keep it in double quotes.
+- `--mode auto` lets the woken session act with the **smart permission classifier** — it auto-approves safe ops and still prompts/blocks on risky ones. **Never** `--mode skip` / `--dangerously-skip-permissions`: a persistent, auto-launched job must not carry a blanket permission bypass. The user issuing `/hibernate` is the authorization; `auto` keeps risky operations gated. (If a wake genuinely needs to run something the classifier would block, prefer a narrower allow-list over widening the mode.)
+- `StartCalendarInterval` drops the year, so it fires on the next occurrence of that month/day — the wrapper boots the job out on first fire, so it runs exactly once.
+- `agents run claude --resume` resumes the session natively and manages claude auth itself — no `agents secrets exec` wrapper, no `--dangerously-skip-permissions`, no routines daemon.
+
+## Step 4 - Verify the job is armed
+
+Do not claim you're hibernating until the job is loaded with the right fire time:
+
+```bash
+launchctl print gui/$(id -u)/"$LABEL" 2>/dev/null | grep -iE "state|StartCalendarInterval" -A4 | head
+```
+
+Confirm the label is loaded and the calendar fields match your wake time. If it's missing, fix it before ending the turn — a `/hibernate` that didn't arm is a silent data-loss of the whole wait.
+
+## Step 5 - Hibernate (end the turn)
+
+There is no self-kill tool, and you must not `kill` your own process mid-turn (it can truncate the transcript you're about to resume). Hibernating = **stop emitting tool calls and return a final message**:
+
+- **Headless / auto / cron agent** (e.g. an OpenClaw agent, an `agents run` dispatch): ending the turn exits the process naturally — that *is* your self-exit. Nothing else to do.
+- **Interactive terminal session**: ending the turn hands the prompt back; the window is yours to close. Say so plainly.
+
+Final message shape:
+
+```
+Hibernating until <WAKE_HUMAN> (~<relative>). Waiting on: <reason>.
+Wake job: <label> armed for <wake time> — verified loaded.
+On wake I resume THIS session with full context and check on it myself — no ping needed.
+[If interactive: safe to close this window.]
+```
+
+Then stop. Do not ask whether to proceed, do not offer alternatives, do not add a trailing question — you are hibernating.
