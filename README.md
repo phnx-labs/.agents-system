@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@phnx-labs/agents-cli"><img src="https://img.shields.io/npm/v/@phnx-labs/agents-cli.svg?style=flat-square&label=agents-cli" alt="npm version"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license"></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license MIT">
   <img src="https://img.shields.io/badge/PRs-welcome-a3e635?style=flat-square" alt="PRs welcome">
   <img src="https://img.shields.io/badge/layer-system-22d3ee?style=flat-square" alt="system layer">
 </p>
@@ -77,6 +77,7 @@ Slash commands are prompt templates — `commands/<name>.md` becomes `/<name>`, 
 | `/finish` | Drive the current task to done end-to-end instead of stopping at a recap or partial handoff |
 | `/prune` | Delete merged branches and worktrees, locally and on origin (conservative) |
 | `/continue` · `/recover` · `/restore` | Resume one session / recover many crashed sessions / restore state |
+| `/hibernate` | Sleep this same session until a future time, then wake it (full context) to check on a long wait |
 | `/tickets` | Work with the issue tracker (auto-detects Linear/GitHub/Jira) |
 | `/teams` | Spawn parallel agents for a task |
 | `/monitors` | Set up a durable event-triggered watcher — watch a source, fire an agent/routine/notification on change |
