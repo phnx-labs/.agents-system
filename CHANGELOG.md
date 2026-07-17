@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.58] - 2026-07-16
+
+### Changed
+- **`skills/plan-render/SKILL.md` — plans now land a viewable PDF in the user's `~/Downloads`, and durable HTML lives in the project.** The render previously wrote one self-contained HTML to `/tmp` and opened it in the browser — which strands the plan when the agent runs on a headless Linux node while the user views on a Mac/Windows laptop (an HTML in a remote `/tmp` is not viewable, and control-room viewing is mostly off-fleet). The skill now: (1) writes the durable HTML to **`<repo>/.agents/plans/plan-<slug>.html`** when the project has an `.agents/` dir (next to the code it describes, indexable by the future download portal), falling back to `/tmp` otherwise; (2) generates a **PDF** from that HTML via the browser stack (`agents browser` → CDP `Page.printToPDF`, which drives the machine's installed Chromium-family browser) and **copies both PDF and HTML into `~/Downloads` on the machine the user actually sits at** — directly if local, else `scp` + run the block via `agents ssh <host>`; (3) still opens the interactive HTML in the default browser. Degrades cleanly: no `~/Downloads` (headless/VM) skips the copy, no reachable browser skips the PDF+open — the durable HTML is always written. Verified end-to-end on zion: `example.html` → 7-page PDF + HTML both in `~/Downloads` (note: `agents browser pdf`'s `[output]` positional is ignored in current builds, so the recipe captures the auto-saved path). Delivered to every install via `agents repo pull system` + `agents repo refresh claude`.
+
 ## [0.1.57] - 2026-07-16
 
 ### Changed

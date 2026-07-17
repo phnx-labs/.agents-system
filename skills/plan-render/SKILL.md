@@ -1,7 +1,7 @@
 ---
 name: plan-render
 description: "Render an implementation plan as a self-contained, magazine-quality HTML doc — a fixed house structure (hero, chips, TOC, hand-authored inline-SVG diagrams, callouts, tagged tables, code) skinned in the target product's brand (dark + light editorial fallback with an in-page toggle), then opened in the user's default browser on the machine they sit at. The canonical LOOK for plan mode, /plan Step 9, and /swarm:plan. Triggers on: render a plan, present a plan, plan-as-HTML, open the plan in the browser, plan mode, show the plan visually."
-allowed-tools: Bash(scp*), Bash(agents ssh*), Bash(open*), Bash(xdg-open*), Bash(find*), Write
+allowed-tools: Bash(scp*), Bash(agents ssh*), Bash(agents browser*), Bash(open*), Bash(xdg-open*), Bash(find*), Bash(cp*), Bash(mkdir*), Bash(test*), Bash(git rev-parse*), Write
 user-invocable: true
 ---
 
@@ -13,8 +13,22 @@ by double-click) and open it in the user's default browser on the machine they s
 This is the single source of the plan LOOK; `/plan` Step 9 and `/swarm:plan` reference it.
 
 Start from **`template.html`** (in this skill dir); **`example.html`** is the gold
-reference (the remote-run bookkeeping plan). Write the filled copy to
-`/tmp/plan-<slug>.html`.
+reference (the remote-run bookkeeping plan).
+
+## Where to write it
+
+The render produces **one durable artifact** — the HTML. Pick its home once, up front:
+
+- **Project-scoped plan** — if the repo you're working in has an **`.agents/` directory**
+  (`ROOT=$(git rev-parse --show-toplevel 2>/dev/null)`; `test -d "$ROOT/.agents"`), write to
+  `"$ROOT/.agents/plans/plan-<slug>.html"` (`mkdir -p "$ROOT/.agents/plans"` first). This
+  keeps the plan **next to the code it describes** — durable, greppable, and the source the
+  future download portal indexes. `.agents/` is scratch/artifact space (gitignored in these
+  repos), so the file never lands on a branch.
+- **No project / no `.agents/` dir** — fall back to `/tmp/plan-<slug>.html`.
+
+Set `HTML` to that path; every step below refers to `$HTML`. The HTML is self-contained
+(inline CSS, no CDN) so it opens offline by double-click **and** converts cleanly to PDF.
 
 ## Structure — fixed house layout
 
@@ -57,31 +71,55 @@ toggle even when re-skinning to a brand that defines both light and dark tokens.
 light accent is darkened for AA contrast on a light surface (`--accent:#4d7c0f` in the
 fallback); pick a similarly contrast-safe accent when theming.
 
-## Open it on the machine the user sits at
+## Deliver it — land a viewable copy on the machine the user sits at
 
-Render, then open — **proactively, every time**, so an away user finds it waiting.
+The core rule: **the user must be able to open the plan on the machine in front of them.**
+An HTML in `/tmp` on a headless Linux node is not viewable — most control-room viewing
+happens on a Mac or Windows laptop. So always land a **PDF** (portable, opens everywhere,
+what the download portal will track) in the **user's `~/Downloads`** on the machine they sit
+at, and open the interactive HTML in their browser. Do this **proactively, every time**, so
+an away user finds it waiting.
 
-1. Identify the browser host from the **Host & Fleet** context injected at session start
-   (`hooks/07-inject-device-topology.sh`): the **online macOS device** where the user sits.
-   Resolve it dynamically — **never hardcode a host name**. If several Macs are online,
-   prefer online+direct; ask once only if genuinely ambiguous.
-2. Open it:
-   - **On that host already** (`hostname` matches): `open /tmp/plan-<slug>.html` (macOS) /
-     `xdg-open` (Linux). macOS `open` uses the user's **default browser**.
-   - **Remote** (you're on a Linux node): copy over and open there —
-     ```bash
-     scp /tmp/plan-<slug>.html <browser-host>:/tmp/ \
-       && agents ssh <browser-host> 'open /tmp/plan-<slug>.html'
-     ```
-3. Tell the user it opened in their browser, with a 2–3 line summary and the path.
+1. **Resolve the viewing machine.** From the **Host & Fleet** context injected at session
+   start (`hooks/07-inject-device-topology.sh`), find the **online macOS device** where the
+   user sits — resolve it dynamically, **never hardcode a host name**. If several Macs are
+   online, prefer online+direct; ask once only if genuinely ambiguous.
 
-Skip the open (not the render) only when there is **no reachable browser host**
-(headless-only fleet) — say so, and still write the `.html`.
+2. **Make the PDF + drop it in Downloads + open the HTML.** Run this block **on the viewing
+   machine** — directly if you're already on it (`hostname` matches), else `scp $HTML` over
+   and run the same block via `agents ssh <host>`. PDF is generated with the browser stack
+   (`agents browser`, which drives the machine's installed Chromium-family browser via CDP):
+
+   ```bash
+   SLUG=<slug>; HTML=<path-you-copied-to>      # e.g. /tmp/plan-$SLUG.html on the viewer
+   agents browser start --task plan-$SLUG >/dev/null 2>&1
+   agents browser navigate --task plan-$SLUG --url "file://$HTML" >/dev/null
+   sleep 1
+   # NOTE: the [output] positional is ignored in current builds — capture the auto-saved path.
+   PDF=$(agents browser pdf --task plan-$SLUG 2>&1 | grep -oE '/[^ ]+\.pdf' | tail -1)
+   agents browser done --task plan-$SLUG >/dev/null 2>&1
+   if [ -d "$HOME/Downloads" ]; then                 # true on Mac + most Linux desktops
+     cp "$PDF" "$HOME/Downloads/plan-$SLUG.pdf"
+     cp "$HTML" "$HOME/Downloads/plan-$SLUG.html"     # HTML too — interactive, offline
+   fi
+   open "$HTML" 2>/dev/null || xdg-open "$HTML" 2>/dev/null   # default browser
+   ```
+
+3. Tell the user it opened in their browser and the PDF is in **Downloads**, with a 2–3 line
+   summary and the paths.
+
+**Graceful degradation** (never block the plan on any of these):
+- **No `~/Downloads`** (headless Linux / VM): skip the copy — that's fine, say so.
+- **No reachable browser** on the viewer (no Chromium-family browser installed, or a
+  headless-only fleet): skip the PDF and the open — still write the durable `$HTML` and tell
+  the user where it is and how to open it.
 
 ## Checklist before you present
 
-- [ ] Self-contained HTML at `/tmp/plan-<slug>.html`, opens offline.
+- [ ] Self-contained HTML written to `$HTML` — `<repo>/.agents/plans/` if the project has an
+      `.agents/` dir, else `/tmp` — opens offline.
 - [ ] Skinned in the product's brand, or the house fallback if none.
 - [ ] ≥1 hand-authored inline-SVG figure; no mermaid, no CDN.
 - [ ] Light/dark toggle present, defaults to `prefers-color-scheme`.
-- [ ] Opened on the resolved online Mac's default browser (or headless noted).
+- [ ] PDF + HTML copied to the viewer's `~/Downloads` (or degradation noted).
+- [ ] HTML opened on the resolved online Mac's default browser (or headless noted).
