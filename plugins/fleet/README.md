@@ -23,15 +23,7 @@ skill.
 | Command | What it does |
 | --- | --- |
 | `/fleet:sync` | Pulls **every registered DotAgent repo** (`system`, `user`, and any extra) to `origin` latest on **every online device**, then refreshes the installed agents. Non-destructive: `git merge --ff-only` only — it reports repos blocked by local edits instead of clobbering them. Handles the fast-forward workaround (`agents repo pull` doesn't FF), the transient GitHub-SSH throttle (retry once), and Windows PowerShell quoting. Ends with a repo × device matrix. |
-
-## Planned
-
-- `/fleet:onboard` — bring a **bare new device** up to fleet parity: introspect a
-  healthy reference node, then install agents-cli, register + clone the repos, install
-  the shared fleet SSH key, fix the non-interactive PATH, and sync the device registry
-  on the target. Agent credentials are provisioned only through sanctioned paths
-  (`agents secrets`, `agents login`) with explicit authorization — **never** by copying
-  credential files host-to-host.
+| `/fleet:onboard <device>` | Brings a **bare new device** up to fleet parity: introspects a healthy reference node, then installs agents-cli, the agent CLIs, the DotAgent repos, the shared fleet SSH key, the non-interactive PATH shim, the device registration, and agent auth. **Discovery-first** — it reads `agents <cmd> --help` + `agents doctor` at run time rather than hardcoding a CLI surface that drifts. Additive + idempotent (installs only what's missing). Credentials via sanctioned paths only (`agents secrets`, `agents login`, `agents setup`) with explicit authorization — **never** copied host-to-host. |
 
 ## Safety bar
 
