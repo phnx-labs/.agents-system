@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.66] - 2026-07-17
+
+### Added
+- **New `share` plugin — `/share:public` and `/share:private`.** One-step publishing of an agent-generated HTML artifact (a plan, viz, or report) to a shareable link on the user's own Cloudflare R2 (zero egress, ~$0), wrapping the `agents share` CLI (shipped in agents-cli 1.20.66). `/share:public` posts a public link with an auto-generated Open Graph cover (a 1200×630 screenshot of the page's hero) so it unfurls into a preview card in Slack/iMessage/Twitter/Discord; `/share:private` posts an unlisted, auto-expiring (`--expire 7d`) link with no preview card — unguessable but still public-read, and the command is explicit that it is *not* authenticated. Both check `agents share status` first and point at `agents share setup`/`join` if unconfigured. Ships a `share` skill (the deeper reference — setup, public vs private, naming, cost, OG covers) and a plugin README with an example preview card. Registered in `marketplace.json`; listed in the root README plugin table.
+
 ## [0.1.65] - 2026-07-17
 
 ### Fixed
