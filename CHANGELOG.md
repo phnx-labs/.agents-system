@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.64] - 2026-07-17
+
+### Fixed
+- **`plugins/fleet/` now registers — added the missing `.claude-plugin/plugin.json` manifest.** The fleet plugin shipped in 0.1.60/0.1.61 with `/fleet:sync` and `/fleet:onboard` but **without a plugin manifest**, so it was never materialized into any agent home — the two commands silently failed to appear in the completion menu on every device (every other plugin — `code`, `git`, `cloud`, `swarm`, `social` — carries a `.claude-plugin/plugin.json`; `fleet` was the sole exception). Adding the manifest (name/version/description/author, matching the sibling plugins) makes `agents repos refresh` pick the plugin up so `/fleet:sync` and `/fleet:onboard` register. Ironically the command needed to propagate this fix fleet-wide (`/fleet:sync`) was itself the thing broken by its absence.
+
 ## [0.1.63] - 2026-07-17
 
 ### Added
