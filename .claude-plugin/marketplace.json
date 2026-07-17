@@ -28,6 +28,16 @@
       }
     },
     {
+      "name": "fleet",
+      "source": "./plugins/fleet",
+      "description": "fleet — fleet-wide operations across every machine registered with `agents devices`. `/fleet:sync` pulls every registered DotAgent repo (system, user, and extras) to origin latest on every online device, then refreshes the installed agents — non-destructive (git merge --ff-only only; reports repos blocked by local edits instead of clobbering), handling the fast-forward workaround, the transient GitHub-SSH throttle, and Windows PowerShell quoting, ending with a repo x device matrix. `/fleet:onboard <device>` brings a bare new device up to fleet parity (agents-cli, agent CLIs, DotAgent repos, shared SSH key, PATH shim, device registration, agent auth) — discovery-first, additive, idempotent, credentials via sanctioned paths only, never copied host-to-host.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Muqsit Nawaz",
+        "email": "contact@trp.so"
+      }
+    },
+    {
       "name": "git",
       "source": "./plugins/git",
       "description": "git \u2014 pure git plumbing commands that aren't tied to code logic. `/git:prune` removes merged branches and worktrees with hard data-loss guards (skips anything with uncommitted changes, stashes, unmerged commits, locks, or detached HEAD), using `git rev-list --count origin/$MAIN..HEAD == 0` as the load-bearing 'nothing to lose' check. `/git:tag-release` creates and pushes an annotated release tag (never force, never re-points an existing tag). The code-aware loop (`/commit`, `/review`, `/sprint`) lives in the `code` plugin.",
