@@ -114,14 +114,21 @@ WAKE_VISIBLE=0   # 1 = try a visible terminal tab (short interactive waits); 0 =
 
 # Inner resume script: interactive TUI for a visible tab (--raw -i keeps it open),
 # or headless -p when invoked with WAKE_HEADLESS=1 (the floor). Both resume the SAME
-# session under the smart permission classifier.
+# session under the smart permission classifier. The interactive branch RUNS (not
+# execs) so it can observe a resume that never starts: a terminal launcher
+# (ghostty -e / osascript) returns 0 on window-launch, NOT on resume success, so the
+# wrapper's opened=1 can't tell a live tab from a dead one — this in-tab rc check is
+# the only place a failed visible wake is observable, and it pings rather than lose it.
 cat > "$INNER" <<EOF
 #!/bin/bash
 cd "$CWD" 2>/dev/null || exit 1
+_ping() { ssh muqsit@mac-mini "openclaw message send --channel telegram --account default --target 6078999250 --message '\$1'" >>"$LOG" 2>&1 || true; }
 if [ "\${WAKE_HEADLESS:-0}" = "1" ]; then
   agents run claude --resume "$SID" --mode auto -p "<WAKE_PROMPT>"
 else
-  exec agents run claude --resume "$SID" --mode auto --raw -i "<WAKE_PROMPT>"
+  agents run claude --resume "$SID" --mode auto --raw -i "<WAKE_PROMPT>"
+  RC=\$?
+  [ \$RC -ne 0 ] && _ping "hibernate VISIBLE wake resume failed in-tab for session $SID (rc=\$RC) — see $LOG"
 fi
 EOF
 chmod +x "$INNER"
@@ -181,6 +188,7 @@ Notes:
 - **The `$GEN` nonce is load-bearing — do not key the label on the bare session id.** A re-hibernation is issued *from inside* the resumed `claude` process, which is running *inside the previous wake's wrapper* (the wrapper blocks on that `claude` call). If the new job reused the old label/paths, `launchctl bootstrap` would fail on the still-loaded old label, and the old wrapper's self-clean would then delete the new job's files and boot out the shared label — leaving nothing armed. The session would wake exactly once, ever, while Step 4 falsely reports the stale old job as "armed." A fresh `$GEN` per wake keeps generations independent so the loop survives.
 - Substitute the real `<WAKE_PROMPT>` (Step 2) into the **inner** script — it appears twice (the headless `-p` branch and the interactive `--raw -i` branch); keep both in double quotes.
 - **Visible tab uses an interactive resume** (`--raw -i`) so the TUI stays open for the user; the headless floor uses `-p` (prompt → auto-headless, prints and exits). Same session, same `--mode auto` either way. `--raw` spawns the agent directly in the tab (no tmux re-attach wrapper).
+- **The visible branch RUNS the resume, it does not `exec` it — deliberately.** A terminal launcher (`ghostty -e`, `osascript`) exits 0 when the *window* opens, not when the *resume* succeeds, so the wrapper's `opened=1` cannot distinguish a live tab from one whose resume died on launch. Keeping the inner script as the tab's parent lets it check the resume's exit code and Telegram-ping on failure — closing the only seam where a visible wake could vanish silently. (A user manually quitting the TUI can trip a benign false-positive ping; erring toward a stray ping over a lost wait is the intended direction.)
 - **Don't wake a session you're actively sitting in headlessly.** A headless `-p` resume of a session that's also live in a foreground TUI briefly double-attaches one transcript. For short interactive waits prefer `WAKE_VISIBLE=1` (a fresh tab is a clean second surface); the headless floor is for when no one's watching anyway.
 - `--mode auto` lets the woken session act with the **smart permission classifier** — it auto-approves safe ops and still prompts/blocks on risky ones. **Never** `--mode skip` / `--dangerously-skip-permissions`: a persistent, auto-launched job must not carry a blanket permission bypass. The user issuing `/hibernate` is the authorization; `auto` keeps risky operations gated. (If a wake genuinely needs to run something the classifier would block, prefer a narrower allow-list over widening the mode.)
 - `StartCalendarInterval` drops the year, so it fires on the next occurrence of that month/day — the wrapper boots the job out on first fire, so it runs exactly once.
