@@ -91,6 +91,7 @@ Plugins bundle related skills, commands, hooks, and subagents into one installab
 | `cloud` | Rush Cloud dispatch: `/cloud:run` documents native `rush cloud run` for Claude Code/Codex cloud workers; `/cloud:accounts` covers Rush login and connected Claude/Codex credential setup |
 | `code` | Coding-workflow loop — `/code:loop`, `/code:dispatch`, `/code:verify`, `/code:review`, `/code:ship`, `/code:sprint`, `/code:quality`, `/code:learn`, `/commit` |
 | `git` | Pure git plumbing (no code logic) — `/git:prune` prunes merged branches and worktrees with hard data-loss guards; `/git:tag-release` cuts and pushes an annotated release tag |
+| `share` | Publish an agent-generated HTML artifact (plan, viz, report) to a shareable link on your own Cloudflare R2 (~$0) — `/share:public` posts a public link with an auto OG cover (unfurls into a preview card); `/share:private` posts an unlisted, auto-expiring link with no card. Wraps `agents share` |
 
 ## Rules
 
