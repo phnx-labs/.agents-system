@@ -12,9 +12,12 @@ device**, then refresh the installed agents. End state: no device is behind on a
 repo, and a matrix shows exactly what synced, what's blocked by local edits, and
 what's unreachable.
 
-This is a curated recipe on top of `agents devices run` / `agents repo` — its value
-is the fast-forward workaround, the per-platform handling, the throttle retry, and
-the honest report. **Do not reinvent the fan-out engine.**
+This is a curated recipe on top of `agents ssh` + `agents repo` — its value is the
+fast-forward workaround, the per-platform handling, the throttle retry, and the honest
+report. It fans out with a per-device `agents ssh` loop **on purpose** (not a single
+`agents devices run` broadcast): each device has a different repo set, each repo needs
+its own fast-forward + classification, and the FF workaround is per-repo — more than one
+broadcast command expresses.
 
 ## HARD LINE — NEVER CLOBBER LOCAL WORK
 
@@ -55,13 +58,20 @@ shell** (`bash -lc "…"`) so agents-cli is on PATH:
 ```bash
 # For each registered repo path R on the device (system=~/.agents/.system,
 # user=~/.agents, extra=~/.agents-<alias>):
-DEF=$(git -C "$R" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
-git -C "$R" fetch origin --quiet            # retry ONCE on transient GitHub SSH throttle (see below)
+# Resolve the default branch. origin/HEAD is routinely UNSET on long-lived checkouts,
+# so set it first, then fall back to main — never merge against a bare "origin/".
+git -C "$R" remote set-head origin --auto >/dev/null 2>&1
+DEF=$(git -C "$R" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##'); [ -z "$DEF" ] && DEF=main
+git -C "$R" fetch origin --quiet || git -C "$R" fetch origin --quiet   # retry once on any non-zero exit (throttle)
 BEFORE=$(git -C "$R" rev-parse --short HEAD)
-git -C "$R" merge --ff-only "origin/$DEF"   # non-destructive; may abort on local drift
+git -C "$R" merge --ff-only "origin/$DEF"; RC=$?   # non-destructive; aborts (RC!=0) on local drift/divergence
 AFTER=$(git -C "$R" rev-parse --short HEAD)
-# classify: synced (BEFORE!=AFTER) | up-to-date (already current) |
-#           blocked (merge printed "Not possible to fast-forward" / "local changes")
+# CLASSIFY ON EXIT CODE FIRST — never on output strings or BEFORE==AFTER alone
+# (a committed-divergence abort leaves BEFORE==AFTER, so an "up-to-date" check that
+#  ran first would misreport a blocked repo as clean):
+#   RC != 0                    -> blocked   (local changes OR diverged commits — reported, never forced)
+#   RC == 0 && BEFORE != AFTER -> synced    (fast-forwarded)
+#   RC == 0 && BEFORE == AFTER -> up-to-date
 ```
 Then **once per device, after all its repos**: `agents repo refresh` (materializes
 the pulled skills/commands/plugins into the installed agent homes).
@@ -71,9 +81,10 @@ that bites (learned the hard way): use `Set-Location` then **plain `git`** (not
 `git -C`), and **no nested double-quotes** inside `powershell -Command "…"`:
 
 ```powershell
-Set-Location $env:USERPROFILE\.agents\.system; git fetch origin; git merge --ff-only origin/main
+Set-Location $env:USERPROFILE\.agents\.system; git remote set-head origin --auto 2>$null; $def=(git symbolic-ref --short refs/remotes/origin/HEAD) -replace '^origin/',''; if (-not $def) { $def='main' }; git fetch origin; git merge --ff-only "origin/$def"; $rc=$LASTEXITCODE
 ```
-(repeat per repo path; then `agents repo refresh`).
+Classify on `$rc` exactly as POSIX (`$rc -ne 0` → blocked). Repeat per repo path; then
+`agents repo refresh`. (Detect the default branch here too — don't hardcode `main`.)
 
 ### 3. Gotchas — bake these in, don't rediscover them
 
@@ -81,9 +92,10 @@ Set-Location $env:USERPROFILE\.agents\.system; git fetch origin; git merge --ff-
   command uses `git merge --ff-only origin/<default>` directly. (Upstream fix belongs
   in agents-cli; until then, this is the workaround.)
 - **Transient GitHub SSH throttle:** a `fetch` can fail with
-  `kex_exchange_identification: read: Software caused connection abort`. It's not a
-  real outage — TCP:22 and auth are fine. **Retry the fetch once** before marking the
-  repo/device failed.
+  `kex_exchange_identification: read: Software caused connection abort` (non-zero
+  exit). It's not a real outage — TCP:22 and auth are fine. **Retry the fetch once on
+  any non-zero exit** (key on the exit code, not the message string — the phrasing
+  shifts) before marking the repo/device failed.
 - **Non-interactive PATH:** a bare `agents ssh <dev> 'agents …'` may not find
   agents-cli. Use `bash -lc "…"` (posix) so the login PATH is loaded.
 
