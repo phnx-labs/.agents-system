@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.59] - 2026-07-16
+
+### Added
+- **`skills/visualize/` — a new general-purpose skill: turn any concept, dataset, or codebase/session finding into ONE self-contained, shareable HTML visual (infographic · explainer · status-dashboard · data-story · comparison).** It is the sibling of `plan-render`, reusing that skill's engine verbatim — brand-probe theming, the light/dark `◐` toggle, the hand-authored-inline-SVG-never-mermaid rule, the self-contained/no-CDN constraint, and the open-on-the-user's-Mac transport — but drops the plan-specific framing (the `plan mode` kicker, "files touched" chips, "go / reshape" footer, and the context→design→files section taxonomy) so it applies to arbitrary context, not just implementation plans. This closes a real gap: nothing owned "context → interactive shareable HTML explainer" — `visual-styles`/`image` produce raster PNGs, `rush:slides` outputs PPTX, `rush:pdf` a print doc, and `plan-render` is plan-scoped. Ships `template.html` (the generalized house template) and `example.html` (a fully-themed neon "fleet status" dashboard as the gold reference). Bakes in three recipes learned the hard way building that page: (1) single-page full-bleed **poster PDF** export via Playwright's bundled `chrome-headless-shell`, sized to exact content height — because paginated Letter slices a screen-designed visual into broken bordered sheets; (2) guard count-up/entrance animations under `navigator.webdriver` so headless print doesn't snapshot zeros; (3) Chromium *forks* (Comet) can't `--headless`-print (the updater hijacks the launch) — use Playwright's Chromium. Auto-discovered like every skill (no registry entry). Delivered to every install via `agents repo pull system` + `agents repo refresh claude`.
+
 ## [0.1.58] - 2026-07-16
 
 ### Changed
