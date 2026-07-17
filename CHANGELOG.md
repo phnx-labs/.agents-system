@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.65] - 2026-07-17
+
+### Fixed
+- **Declared `fleet` in `.claude-plugin/marketplace.json` — it was the only plugin dir in the repo not listed in the marketplace seed.** 0.1.64 added the plugin manifest so `agents repos refresh` regenerates local marketplace membership and `fleet` registers; this completes the fix for the npm-shipped path, where `.claude-plugin/marketplace.json` is the seed a fresh install reads (before any local regenerate). Every sibling plugin (`cloud`, `code`, `git`, `social`, `swarm`) was already declared; `fleet` is now too, so a clean install of the system layer sees `/fleet:sync` and `/fleet:onboard` without needing a refresh first.
+
 ## [0.1.64] - 2026-07-17
 
 ### Fixed
