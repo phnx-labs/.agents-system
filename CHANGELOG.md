@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.67] - 2026-07-17
+
+### Fixed
+- **`/fleet:sync` now propagates plugins to EVERY installed agent version, not just the default.** The refresh step (`agents repos refresh -y`) only materializes into the **default** version home per agent (the one `~/.claude` points at). On a box that runs **multiple versions of the same agent** — e.g. several Claude versions each signed into a different account — the non-default homes stayed stale, so a plugin newly added to the repo (this is exactly how `fleet` itself, and then `share`, went missing) **never appeared in whichever account the user was actually running**. The command now adds an `agents plugins sync` pass after refresh for any plugin not yet `everywhere` (detected from `agents plugins list`), on both the POSIX and Windows branches, and calls out that an already-running session needs a **restart** before a freshly-synced command appears. Without this, `/fleet:sync` could report a clean sync while the user still couldn't see the very commands it shipped.
+
 ## [0.1.66] - 2026-07-17
 
 ### Added

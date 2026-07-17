@@ -79,6 +79,27 @@ on the box: claude, codex, gemini, grok, opencode, …), **not just the default*
 agent argument — a bare `agents repos refresh claude` refreshes only claude and leaves the
 other agents stale — and keep `-y` so an unattended run never blocks on a prompt.
 
+**Then propagate plugins to EVERY installed version, not just the default** —
+`agents plugins sync <name>` per newly-added/updated plugin (no agent arg = all
+agents + all versions). This is the step people miss: `agents repos refresh` only
+materializes into the **default** version home per agent (the one `~/.claude`
+points at). A box that runs **multiple versions of the same agent** — e.g. several
+Claude versions, one signed into each account (a real setup: 2.1.207/2.1.187/
+2.1.181/2.1.170 side by side) — leaves the **non-default** version homes stale, so
+a plugin added to the repo (like `fleet` itself) **never appears in the account you
+happen to be running**. The tell: `agents plugins list` shows the plugin as
+`N of M installs` instead of `everywhere`. Fix it in the sync:
+
+```bash
+# after refresh, sync any plugin that isn't 'everywhere' to all installed versions
+agents plugins list 2>/dev/null | awk 'NR>1 && $0 !~ /everywhere/ {print $1}' \
+  | while read -r p; do [ -n "$p" ] && agents plugins sync "$p" >/dev/null 2>&1; done
+```
+
+Commands load at **agent startup**, so a version that was already running when it got
+the plugin needs a **restart of that session** before the new command appears — call
+that out in the report rather than letting the user think the sync failed.
+
 **On a Windows device** — PowerShell over `agents ssh <dev>`, and mind the quoting
 that bites (learned the hard way): use `Set-Location` then **plain `git`** (not
 `git -C`), and **no nested double-quotes** inside `powershell -Command "…"`:
@@ -87,8 +108,10 @@ that bites (learned the hard way): use `Set-Location` then **plain `git`** (not
 Set-Location $env:USERPROFILE\.agents\.system; git remote set-head origin --auto 2>$null; $def=(git symbolic-ref --short refs/remotes/origin/HEAD) -replace '^origin/',''; if (-not $def) { $def='main' }; git fetch origin; git merge --ff-only "origin/$def"; $rc=$LASTEXITCODE
 ```
 Classify on `$rc` exactly as POSIX (`$rc -ne 0` → blocked). Repeat per repo path; then
-`agents repos refresh -y` (all agent types, unattended). (Detect the default branch here
-too — don't hardcode `main`.)
+`agents repos refresh -y` (all agent types, unattended), then the same
+`agents plugins sync` pass for any plugin not `everywhere` (all installed versions —
+Windows boxes run multiple agent versions too). (Detect the default branch here too —
+don't hardcode `main`.)
 
 ### 3. Gotchas — bake these in, don't rediscover them
 
