@@ -66,20 +66,25 @@ Slash commands are prompt templates — `commands/<name>.md` becomes `/<name>`, 
 
 | Command | Purpose |
 |---------|---------|
+| **Plan & build** | |
 | `/plan` | Plan with research, code reading, artifacts, optional team review |
 | `/debug` | Root-cause analysis with a full evidence chain |
 | `/clean` | Remove tech debt, consolidate duplicates |
 | `/test` | Test critical paths with parallel validation |
-| `/recap` | Summarize state — facts first, hypotheses grounded |
+| **Ship & review** | |
 | `/commit` | Alias of `/code:commit` — split into max logical commits, push in background |
 | `/review` | Alias of `/code:review` — review every PR the session opened, then merge / request-changes per verdict |
 | `/done` | Verify work is complete, test, release, file tickets for the remainder |
 | `/finish` | Drive the current task to done end-to-end instead of stopping at a recap or partial handoff |
 | `/prune` | Delete merged branches and worktrees, locally and on origin (conservative) |
+| **Recap & resume** | |
+| `/recap` | Summarize state — facts first, hypotheses grounded |
 | `/continue` · `/recover` · `/restore` | Resume one session / recover many crashed sessions / restore state |
 | `/hibernate` | Sleep this same session until a future time, then wake it (full context) to check on a long wait |
+| **Coordinate** | |
 | `/tickets` | Work with the issue tracker (auto-detects Linear/GitHub/Jira) |
 | `/teams` | Spawn parallel agents for a task |
+| **Observe** | |
 | `/monitors` | Set up a durable event-triggered watcher — watch a source, fire an agent/routine/notification on change |
 | `/output` | Fleet-wide token-burn + shipped-output report over a window, rendered as an HTML dashboard + PDF |
 
