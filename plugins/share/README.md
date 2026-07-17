@@ -14,6 +14,17 @@ one step, backed by **your own** Cloudflare R2 (zero egress, ~$0). Wraps the
 Both resolve `<file>` from the argument, else the most recent HTML artifact of the
 session, else they ask.
 
+## Example
+
+`/share:public plan.html` publishes the page and auto-generates a cover from its hero,
+so the link unfurls into a card like this:
+
+![Example OG preview card — a shared agents-cli plan](https://share.agents-cli.sh/agi-cli-agents-share-666643.png)
+
+The cover is a 1200×630 screenshot of the page's own hero — no design step, no AI, ~$0.
+Paste `https://share.agents-cli.sh/<slug>` into Slack / iMessage / Twitter/X / Discord
+and it renders the card above.
+
 ## Requirements
 
 - [`agents-cli`](https://github.com/phnx-labs/agents-cli) on `$PATH`.
