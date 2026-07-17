@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.68] - 2026-07-17
+
+### Changed
+- **`/hibernate` wakes are now context-aware, not always headless.** The wake transport is chosen from the wait length: a **short wait (< ~2h) from an interactive session** wakes into a **visible terminal tab** (Ghostty → iTerm → Terminal.app), while a **long/away wait** stays **headless + Telegram** as before. The wrapper always keeps a **headless floor** — if a visible tab is requested but no GUI terminal is installed, it resumes headless anyway and pings Muqsit, so the wait fires regardless of presentation (the terminal is never a hard dependency). Previously every wake resumed headless in the background, so a short interactive wait came back invisibly. Adds a tiny inner resume script (interactive `--raw -i` for the tab, `-p` for the floor) to keep terminal launchers quote-clean.
+
 ## [0.1.67] - 2026-07-17
 
 ### Fixed
