@@ -107,8 +107,10 @@ Fleet** context — never hardcode a host; `scp` + `agents ssh` if you're remote
        await b.close(); console.log("poster "+h+"px");})();' 2>&1 | tail -1
    ```
 
-   (For a normal multi-page document PDF instead, use the `agents browser pdf` CDP path from
-   `plan-render` — but for posters/infographics the single-page render above is the one.)
+   (The `+6` is print-margin slop; on a near-empty *stub* page it can spill onto a 2nd page —
+   harmless for any real content-sized visual, which stays one page. For a normal multi-page
+   document PDF instead, use the `agents browser pdf` CDP path from `plan-render` — but for
+   posters/infographics the single-page render above is the one.)
 
 3. Tell the user it opened + the PDF path, with a 2–3 line summary.
 
