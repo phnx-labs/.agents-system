@@ -3,7 +3,7 @@
 ## [0.1.69] - 2026-07-17
 
 ### Fixed
-- **`/hibernate` visible wake can no longer vanish silently.** The 0.1.68 context-aware wake set `opened=1` when a terminal launcher (`ghostty -e` / `osascript`) returned 0 — but those exit on *window-launch*, not on the *resume* actually starting, so a tab that opened but whose resume died would suppress the headless floor with no notification (a narrow silent-loss seam flagged in review, confined to `WAKE_VISIBLE=1`). The interactive inner script now **runs** the resume instead of `exec`-ing it, checks the exit code, and Telegram-pings on failure — so a dead visible wake is always observable. Erring toward a rare false-positive ping (e.g. a user manually quitting the TUI) over ever losing a wait.
+- **`/hibernate` visible wake can no longer vanish silently.** The 0.1.68 context-aware wake set `opened=1` when a terminal launcher (`ghostty -e` / `osascript`) returned 0 — but those exit on *window-launch*, not on the *resume* actually starting, so a tab that opened but whose resume died would suppress the headless floor with no notification (a narrow silent-loss seam flagged in review, confined to `WAKE_VISIBLE=1`). The interactive inner script now **runs** the resume instead of `exec`-ing it, checks the exit code, and Telegram-pings on failure — so a dead visible wake is always observable. It pings on *any* non-zero exit (dismissing the tab with Ctrl-C exits 130, so a normal end can ping too); we don't whitelist clean-quit codes because a real death can also exit 130 — erring toward a stray ping over ever losing a wait.
 
 ## [0.1.68] - 2026-07-17
 
