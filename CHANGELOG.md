@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.61] - 2026-07-16
+
+### Added
+- **`plugins/fleet/commands/onboard.md` — `/fleet:onboard <device>`: bring a bare new machine up to fleet parity.** Takes a device with little/none of the setup (agents-cli not installed, repos not cloned, no fleet SSH key, agent auth missing) and brings it to the same state as a healthy node: install agents-cli + the agent CLIs, register/clone the DotAgent repos, install the shared fleet SSH key, fix the non-interactive PATH shim, register the device + sync the registry, and provision agent auth. It **productizes the manual enrollment this fleet did by hand** (the yosemite m-node setup). Deliberately **discovery-first, not over-refined**: the agents-cli command surface drifts, so the command instructs the agent to read `agents <area> --help` + **`agents doctor`** (the ground truth for what's present vs missing) at run time and prefer **`agents setup`** on a bare box — treating the doc as the goal + map, not exact keystrokes. Additive + idempotent (installs only what `doctor` shows missing; never tears down existing setup). Hard line on **credentials: never copied host-to-host** — agent auth and the fleet SSH key are provisioned only through sanctioned paths (`agents secrets`, `agents login`, `agents setup`) with explicit authorization, and any credential that can't be provisioned that way is handed to the user, not improvised. Verification includes **node-to-node reachability both ways** (proves the fleet SSH key took — the exact thing broken before the mesh fix). Moves `/fleet:onboard` from "Planned" to a shipped command in the plugin README.
+
 ## [0.1.60] - 2026-07-16
 
 ### Added
