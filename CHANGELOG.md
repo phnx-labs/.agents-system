@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.60] - 2026-07-16
+
+### Added
+- **`plugins/fleet/` — a new plugin for fleet-wide operations, with its first command `/fleet:sync`.** `/fleet:sync` pulls **every registered DotAgent repo** (`system`, `user`, and any team/extra a device registered) to `origin` latest on **every online device**, then refreshes the installed agents — ending with a repo × device matrix. It's a curated recipe on top of `agents devices` / `agents repo`, encoding the exact sequence (and gotchas) rather than making anyone re-derive them live: (1) the **fast-forward workaround** — `agents repo pull <alias>` doesn't fast-forward, so it uses `git merge --ff-only origin/<default>` directly (upstream fix belongs in agents-cli); (2) a **retry** on the transient `kex_exchange_identification … Software caused connection abort` GitHub-SSH throttle; (3) **login-shell** invocation (`bash -lc`) so agents-cli is on the non-interactive PATH; (4) the **Windows PowerShell** branch (`Set-Location` + plain `git`, no `-C`, no nested quotes). Hard line: **never clobber local work** — `git merge --ff-only` only, never `reset`/`checkout`/`clean`/`stash`/`pull`/`--force`; `user` and team repos are user-authored and each machine carries different local drift, so a repo that can't fast-forward is *reported* (`blocked (local changes)`), not forced. Does not auto-commit/push local edits (a future explicit `--push`). `/fleet:onboard` (bootstrap a bare new device to fleet parity, credentials via sanctioned paths only) is scoped as the planned follow-up. Delivered to every install via `agents repo pull system` + `agents repo refresh claude` (or `/fleet:sync` once live).
+
 ## [0.1.59] - 2026-07-16
 
 ### Added
