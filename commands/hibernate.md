@@ -91,9 +91,16 @@ Short and quote-free; the detail lives in the note and your transcript:
 WAKE FROM HIBERNATION. You scheduled this wake yourself via /hibernate to re-check a long-running wait. Read your hibernation note at <NOTE>, re-read your recent messages, then check on it. Resolved -> continue the task. Still pending -> /hibernate again with a longer backoff. Needs Muqsit -> Telegram Jeff. You own this wait; do not ask the user to remind you.
 ```
 
-## Step 3 - Schedule the launchd one-shot
+## Step 3 - Choose the wake transport, then schedule the launchd one-shot
 
-Write a wrapper that resumes the session directly (authenticated, `--mode auto` so it can act safely — auto-approves safe ops, prompts on risky) then self-cleans, and a per-session launchd plist that fires it at the wake time.
+**Pick the transport from the wait length — context-aware, not always the same:**
+
+- **Short wait (< ~2h) from an interactive session → wake into a visible terminal tab.** You're likely still near the machine; a real tab (Ghostty → iTerm → Terminal.app) beats a silent background resume you'd never notice. Set `WAKE_VISIBLE=1`.
+- **Long wait (≥ ~2h), or an away / headless / cron context → headless + Telegram.** A window popping open on an unattended machine hours or days later is worse than a notification. Set `WAKE_VISIBLE=0` (the default).
+
+The wrapper honors `WAKE_VISIBLE` but **always keeps a headless floor**: if a visible tab is requested and no GUI terminal is installed, it resumes headless anyway and pings Muqsit. The wait must fire regardless of presentation — the terminal is just how it's shown, never a hard dependency.
+
+Write two things: a tiny **inner resume script** (so terminal launchers exec a bare path — no nested-quote hell), and the **wrapper** that picks the transport and self-cleans. Plus the per-session launchd plist.
 
 ```bash
 U=$(id -u)
@@ -101,23 +108,54 @@ GEN="$(date +%s)-$$"                       # unique per wake GENERATION — see 
 LABEL="com.rush.hibernate.${SID}.${GEN}"
 PLIST=~/Library/LaunchAgents/"$LABEL".plist
 WRAP=~/.rush/hibernate/"${SID}.${GEN}".wake.sh
+INNER=~/.rush/hibernate/"${SID}.${GEN}".resume.sh
 LOG=~/.rush/hibernate/"$SID".wake.log       # shared per-session log (append) is fine
+WAKE_VISIBLE=0   # 1 = try a visible terminal tab (short interactive waits); 0 = headless + Telegram
+
+# Inner resume script: interactive TUI for a visible tab (--raw -i keeps it open),
+# or headless -p when invoked with WAKE_HEADLESS=1 (the floor). Both resume the SAME
+# session under the smart permission classifier.
+cat > "$INNER" <<EOF
+#!/bin/bash
+cd "$CWD" 2>/dev/null || exit 1
+if [ "\${WAKE_HEADLESS:-0}" = "1" ]; then
+  agents run claude --resume "$SID" --mode auto -p "<WAKE_PROMPT>"
+else
+  exec agents run claude --resume "$SID" --mode auto --raw -i "<WAKE_PROMPT>"
+fi
+EOF
+chmod +x "$INNER"
 
 cat > "$WRAP" <<EOF
 #!/bin/bash
 export PATH="$PATH"                       # launchd's env is minimal; bake the current PATH in
-cd "$CWD" 2>/dev/null && \\
-  agents run claude --resume "$SID" --mode auto "<WAKE_PROMPT>" >> "$LOG" 2>&1
-RC=\$?
-# If the wake could not run (cwd gone, auth lost, resume failed), do NOT let the wait
-# vanish silently — ping Muqsit. Best-effort.
-if [ \$RC -ne 0 ]; then
-  ssh muqsit@mac-mini "openclaw message send --channel telegram --account default --target 6078999250 --message 'hibernate wake FAILED for session $SID (rc='\$RC') — see $LOG'" >> "$LOG" 2>&1 || true
+LOG="$LOG"; INNER="$INNER"
+ping() { ssh muqsit@mac-mini "openclaw message send --channel telegram --account default --target 6078999250 --message '\$1'" >>"\$LOG" 2>&1 || true; }
+
+# Visible-tab path: try Ghostty, then iTerm, then Terminal.app. opened=1 on first success.
+opened=0
+if [ "$WAKE_VISIBLE" = "1" ]; then
+  if [ -x /Applications/Ghostty.app/Contents/MacOS/ghostty ]; then
+    /Applications/Ghostty.app/Contents/MacOS/ghostty -e "\$INNER" >>"\$LOG" 2>&1 && opened=1
+  elif [ -d /Applications/iTerm.app ]; then
+    osascript -e "tell application \"iTerm\" to create window with default profile command \"\$INNER\"" >>"\$LOG" 2>&1 && opened=1
+  elif [ -d /System/Applications/Utilities/Terminal.app ] || [ -d /Applications/Utilities/Terminal.app ]; then
+    osascript -e "tell application \"Terminal\" to do script \"\$INNER\"" >>"\$LOG" 2>&1 && opened=1
+  fi
 fi
-# Self-clean THIS generation only (label/plist/wrap are GEN-scoped, so a re-hibernation's
+
+# Headless floor: not requested, or no GUI terminal available. The wait STILL fires.
+if [ "\$opened" != "1" ]; then
+  WAKE_HEADLESS=1 bash "\$INNER" >>"\$LOG" 2>&1
+  RC=\$?
+  [ "$WAKE_VISIBLE" = "1" ] && ping "hibernate woke HEADLESS (no GUI terminal) for session $SID — see \$LOG"
+  [ \$RC -ne 0 ] && ping "hibernate wake FAILED for session $SID (rc=\$RC) — see \$LOG"
+fi
+
+# Self-clean THIS generation only (label/plist/wrap/inner are GEN-scoped, so a re-hibernation's
 # newer generation is untouched). Order matters: remove files FIRST, then bootout — bootout
 # kills this very process, so anything after it never runs.
-rm -f "$PLIST" "$WRAP"
+rm -f "$PLIST" "$WRAP" "$INNER"
 launchctl bootout gui/$U/"$LABEL"
 EOF
 chmod +x "$WRAP"
@@ -141,7 +179,9 @@ launchctl bootstrap gui/$U "$PLIST"
 
 Notes:
 - **The `$GEN` nonce is load-bearing — do not key the label on the bare session id.** A re-hibernation is issued *from inside* the resumed `claude` process, which is running *inside the previous wake's wrapper* (the wrapper blocks on that `claude` call). If the new job reused the old label/paths, `launchctl bootstrap` would fail on the still-loaded old label, and the old wrapper's self-clean would then delete the new job's files and boot out the shared label — leaving nothing armed. The session would wake exactly once, ever, while Step 4 falsely reports the stale old job as "armed." A fresh `$GEN` per wake keeps generations independent so the loop survives.
-- Substitute the real `<WAKE_PROMPT>` (Step 2) into the wrapper; keep it in double quotes.
+- Substitute the real `<WAKE_PROMPT>` (Step 2) into the **inner** script — it appears twice (the headless `-p` branch and the interactive `--raw -i` branch); keep both in double quotes.
+- **Visible tab uses an interactive resume** (`--raw -i`) so the TUI stays open for the user; the headless floor uses `-p` (prompt → auto-headless, prints and exits). Same session, same `--mode auto` either way. `--raw` spawns the agent directly in the tab (no tmux re-attach wrapper).
+- **Don't wake a session you're actively sitting in headlessly.** A headless `-p` resume of a session that's also live in a foreground TUI briefly double-attaches one transcript. For short interactive waits prefer `WAKE_VISIBLE=1` (a fresh tab is a clean second surface); the headless floor is for when no one's watching anyway.
 - `--mode auto` lets the woken session act with the **smart permission classifier** — it auto-approves safe ops and still prompts/blocks on risky ones. **Never** `--mode skip` / `--dangerously-skip-permissions`: a persistent, auto-launched job must not carry a blanket permission bypass. The user issuing `/hibernate` is the authorization; `auto` keeps risky operations gated. (If a wake genuinely needs to run something the classifier would block, prefer a narrower allow-list over widening the mode.)
 - `StartCalendarInterval` drops the year, so it fires on the next occurrence of that month/day — the wrapper boots the job out on first fire, so it runs exactly once.
 - `agents run claude --resume` resumes the session natively and manages claude auth itself — no `agents secrets exec` wrapper, no `--dangerously-skip-permissions`, no routines daemon.
@@ -168,6 +208,7 @@ Final message shape:
 ```
 Hibernating until <WAKE_HUMAN> (~<relative>). Waiting on: <reason>.
 Wake job: <label> armed for <wake time> — verified loaded.
+Wake transport: <a visible terminal tab | headless + Telegram> (per the short-vs-long rule in Step 3).
 On wake I resume THIS session with full context and check on it myself — no ping needed.
 [If interactive: safe to close this window.]
 ```
