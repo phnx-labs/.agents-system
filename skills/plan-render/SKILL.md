@@ -86,21 +86,28 @@ an away user finds it waiting.
    online, prefer online+direct; ask once only if genuinely ambiguous.
 
 2. **Make the PDF + drop it in Downloads + open the HTML.** Run this block **on the viewing
-   machine** — directly if you're already on it (`hostname` matches), else `scp $HTML` over
-   and run the same block via `agents ssh <host>`. PDF is generated with the browser stack
-   (`agents browser`, which drives the machine's installed Chromium-family browser via CDP):
+   machine** — directly if you're already on it (`hostname` matches), else copy the HTML there
+   first and run the same block via `agents ssh <host>` with `HTML` pointed at the copy:
 
    ```bash
-   SLUG=<slug>; HTML=<path-you-copied-to>      # e.g. /tmp/plan-$SLUG.html on the viewer
+   scp "$HTML" <host>:/tmp/plan-$SLUG.html        # remote case only; then set HTML=/tmp/plan-$SLUG.html in the block
+   ```
+
+   PDF is generated with the browser stack (`agents browser`, which drives the machine's
+   installed Chromium-family browser via CDP `Page.printToPDF`):
+
+   ```bash
+   SLUG=<kebab-slug>          # the plan topic, kebab-cased — same <slug> used for $HTML above
+   HTML=<$HTML>               # local: the path from "Where to write it". remote: /tmp/plan-$SLUG.html
    agents browser start --task plan-$SLUG >/dev/null 2>&1
    agents browser navigate --task plan-$SLUG --url "file://$HTML" >/dev/null
-   sleep 1
+   sleep 1                                            # let the page finish rendering
    # NOTE: the [output] positional is ignored in current builds — capture the auto-saved path.
    PDF=$(agents browser pdf --task plan-$SLUG 2>&1 | grep -oE '/[^ ]+\.pdf' | tail -1)
    agents browser done --task plan-$SLUG >/dev/null 2>&1
-   if [ -d "$HOME/Downloads" ]; then                 # true on Mac + most Linux desktops
-     cp "$PDF" "$HOME/Downloads/plan-$SLUG.pdf"
-     cp "$HTML" "$HOME/Downloads/plan-$SLUG.html"     # HTML too — interactive, offline
+   if [ -d "$HOME/Downloads" ]; then                  # true on Mac + most Linux desktops
+     cp "$HTML" "$HOME/Downloads/plan-$SLUG.html"     # interactive, offline — always if Downloads exists
+     [ -n "$PDF" ] && cp "$PDF" "$HOME/Downloads/plan-$SLUG.pdf"   # portable; skipped if the browser step produced none
    fi
    open "$HTML" 2>/dev/null || xdg-open "$HTML" 2>/dev/null   # default browser
    ```
