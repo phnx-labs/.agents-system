@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.62] - 2026-07-16
+
+### Changed
+- **`/fleet:sync` now refreshes ALL installed agent types, not just the default.** The refresh step is spelled `agents repos refresh -y` (no agent argument), which re-materializes the pulled skills/commands/plugins into **every** installed agent home on each box (claude, codex, gemini, grok, opencode, kimi, …). A bare `agents repos refresh claude` refreshes only claude and silently leaves the other agents stale — a real gap on any device running more than one agent (e.g. mac-mini has 4 agent homes; s0/s1/m0 have 2). The `-y` also keeps an unattended `bash -lc` run from blocking on a prompt. The Windows branch and the safety rules are updated to match. (The prose already used the no-arg form; this makes it explicit, adds `-y`, and calls out the "not just the default" contract so no one re-introduces `refresh claude`.)
+
 ## [0.1.61] - 2026-07-16
 
 ### Added

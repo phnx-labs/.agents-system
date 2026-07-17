@@ -73,8 +73,11 @@ AFTER=$(git -C "$R" rev-parse --short HEAD)
 #   RC == 0 && BEFORE != AFTER -> synced    (fast-forwarded)
 #   RC == 0 && BEFORE == AFTER -> up-to-date
 ```
-Then **once per device, after all its repos**: `agents repo refresh` (materializes
-the pulled skills/commands/plugins into the installed agent homes).
+Then **once per device, after all its repos**: `agents repos refresh -y` — materializes
+the pulled skills/commands/plugins into **ALL installed agent homes** (every agent type
+on the box: claude, codex, gemini, grok, opencode, …), **not just the default**. Pass no
+agent argument — a bare `agents repos refresh claude` refreshes only claude and leaves the
+other agents stale — and keep `-y` so an unattended run never blocks on a prompt.
 
 **On a Windows device** — PowerShell over `agents ssh <dev>`, and mind the quoting
 that bites (learned the hard way): use `Set-Location` then **plain `git`** (not
@@ -84,7 +87,8 @@ that bites (learned the hard way): use `Set-Location` then **plain `git`** (not
 Set-Location $env:USERPROFILE\.agents\.system; git remote set-head origin --auto 2>$null; $def=(git symbolic-ref --short refs/remotes/origin/HEAD) -replace '^origin/',''; if (-not $def) { $def='main' }; git fetch origin; git merge --ff-only "origin/$def"; $rc=$LASTEXITCODE
 ```
 Classify on `$rc` exactly as POSIX (`$rc -ne 0` → blocked). Repeat per repo path; then
-`agents repo refresh`. (Detect the default branch here too — don't hardcode `main`.)
+`agents repos refresh -y` (all agent types, unattended). (Detect the default branch here
+too — don't hardcode `main`.)
 
 ### 3. Gotchas — bake these in, don't rediscover them
 
@@ -124,7 +128,8 @@ local drift, how many devices were unreachable.
 - Never auto-commit or push a device's local changes in `sync` (that's `--push`, out
   of scope).
 - A repo that won't fast-forward is **reported, not forced**.
-- Refresh agents **after** the repos pull, once per device.
+- Refresh **all** agent types (`agents repos refresh -y`, no agent arg) **after** the
+  repos pull, once per device — never just the default agent.
 - Offline/unreachable device → report it, never block the rest of the fleet.
 - A repo not registered on a device is a `fleet:onboard` job — note it, don't clone it
   here.
