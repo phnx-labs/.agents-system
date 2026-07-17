@@ -18,7 +18,7 @@ in this doc over the live tool.** Your job is to hit the *goal* below using *wha
 the current CLI offers* — so at run time:
 
 - Read the map first: `agents --help`, then `agents <area> --help` for each area you
-  touch (`setup`, `add`, `import`, `repos`, `devices`, `secrets`, `profiles`, `pull`,
+  touch (`setup`, `add`, `import`, `repos`, `repo`, `devices`, `secrets`, `profiles`,
   `doctor`, `inspect`, `view`).
 - **`agents doctor` on the target is your ground truth** for what's present vs missing,
   before and after. **`agents setup`** is the interactive first-time bootstrap — prefer
@@ -34,10 +34,12 @@ Onboarding touches agent auth and the fleet SSH key. **Never `scp`/copy a creden
 file (`~/.claude/.credentials.json`, keychain exports, tokens) host-to-host.** Provision
 only through the sanctioned paths, and only with the user's explicit OK:
 
-- **Agent auth** → `agents secrets` bundles (keychain/file), `agents login` / the
-  per-agent auth flow, or `agents setup`. Two valid models exist on this fleet — OAuth
-  credentials *or* an `agents secrets` API-key bundle (`anthropic.com`/`claude`); pick
-  whichever the reference node uses.
+- **Agent auth** → `agents secrets` bundles (keychain/file), `agents profiles login
+  <provider>` (for API-key providers), the agent's **own native login flow** (e.g. run
+  the `claude` CLI's login → `~/.claude/.credentials.json`), or `agents setup`. Two valid
+  models exist on this fleet — OAuth credentials *or* an `agents secrets` API-key bundle
+  (`anthropic.com`/`claude`); pick whichever the reference node uses. (Confirm the current
+  verb via `--help` — there is no bare `agents login`.)
 - **Fleet SSH key** (the one shared Ed25519 that unlocks git + node-to-node mesh) →
   installed from its `agents secrets` bundle, **with explicit authorization** each time.
   It is a private key; treat distributing it as the sensitive act it is.
@@ -72,7 +74,7 @@ so and stop.
 3. **Agent CLIs** — `agents add <agent>` (or `agents import` to adopt an existing global
    install) for each agent the fleet runs (claude, codex, …).
 4. **Repos** — register + clone the DotAgent repos: `agents repos add` for each (and/or
-   `agents pull` for the system repo). Match the reference's repo set.
+   `agents repo pull system` for the system repo). Match the reference's repo set.
 5. **Fleet SSH key** — install the shared Ed25519 from its `agents secrets` bundle so
    git and node-to-node SSH work (explicit auth — see the hard line).
 6. **Non-interactive PATH** — ensure agents-cli resolves in a *non-login* shell (fleet
