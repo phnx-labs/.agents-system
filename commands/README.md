@@ -59,6 +59,9 @@ The command files in this directory, with optional team augmentation for complex
 **Delegation**
 - `/teams` — Arrange agents into teams for parallel execution. Create, add members, start, monitor, and collect results.
 
+**Observability**
+- `/output` — Fleet-wide token-burn + shipped-output report over a window (default 24h). Runs `agents output --all-hosts`, re-queries relay-only machines that timed out, then renders an HTML dashboard, drops a PDF in `~/Downloads`, and opens it in the browser.
+
 > Capabilities like `/secrets`, `/sessions`, `/audit`, and `/design` are **skills**, not commands — see [`skills/`](../skills/). They're invocable the same way (`/name`) but live in the skills layer with their own tooling and context.
 
 ## Team Augmentation

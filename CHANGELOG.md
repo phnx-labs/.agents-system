@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.63] - 2026-07-17
+
+### Added
+- **`commands/output.md` — `/output [window]`: a fleet-wide token-burn + shipped-output report.** Wraps the built-in **`agents output --all-hosts`** (a productivity rollup that scans raw agent transcripts, not a stale index, across every online device) and productizes the two things that trip people up when they ask "how many tokens did I burn across all my machines and agents." **(1) It re-checks the machines the fleet pass couldn't reach.** `agents output --all-hosts` dials each box's *direct* address, so LAN-only nodes routinely time out (`ssh: connect ... timed out`) even though `agents devices` lists them **online (relayed)** — those are *unmeasured*, not zero. The command re-queries every errored host over the DERP relay (`agents ssh <host> 'agents output --json'`) and folds the result in, so no machine is silently dropped from the total. **(2) It keeps the two token numbers straight** — total **token count** (cache-inflated: input + cache read/write + output) vs **output tokens** (actually generated), which differ by ~100x — and states the pricing caveats: Codex/Kimi tokens are counted but **uncosted**, and Rush/OpenClaw are dispatch layers with **no per-token accounting** (their spend lands under the underlying Claude/Codex session). Then it renders the numbers as an HTML dashboard in the **`visualize`** house style (brand dark+light with a `◐` toggle, stat cards, by-machine bar chart, by-agent + all-machines tables, a Method+Caveats footnote), drops a **PDF in `~/Downloads`** via `weasyprint` (the reliable local HTML→PDF path — Comet's headless `--print-to-pdf` is disabled in the Perplexity fork and the `agents browser` CDP export needs a live debug-port browser), and opens the report in the browser. Filed under a new **Observability** group in the commands README.
+
 ## [0.1.62] - 2026-07-16
 
 ### Changed
