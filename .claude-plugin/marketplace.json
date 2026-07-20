@@ -8,6 +8,16 @@
   },
   "plugins": [
     {
+      "name": "clify",
+      "source": "./plugins/clify",
+      "description": "clify — turn any web service into an installable, verified CLI for humans and agents. `/clify <target>` climbs a reverse-engineering ladder (docs/OpenAPI → authed API → HAR capture → content-script injection), infers a typed command schema, and emits a globally-installable CLI — optionally an MCP server via `--mcp`. No command ships until it has hit the real endpoint and returned real output (the verification gate). Builds on `agents browser` (capture), `agents secrets` (Keychain token persistence), `mcporter`/`agents mcp` (the `--mcp` emit), and `oss` (open-sourcing a generated CLI).",
+      "version": "0.1.0",
+      "author": {
+        "name": "Muqsit Nawaz",
+        "email": "contact@trp.so"
+      }
+    },
+    {
       "name": "cloud",
       "source": "./plugins/cloud",
       "description": "cloud - Rush Cloud dispatch plugin. `/cloud:run` documents the native `rush cloud run` path for Claude Code/Codex harnesses, repo dispatch, execution lifecycle commands, and verification evidence. `/cloud:accounts` covers Rush login plus connected Claude/Codex credentials (`rush cloud accounts add/list/remove`) and distinguishes Rush Cloud access/subscription gates from vendor account capacity.",
