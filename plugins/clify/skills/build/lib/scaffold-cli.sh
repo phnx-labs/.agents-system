@@ -25,8 +25,16 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$NAME" ] && [ -n "$OUT" ] && [ -n "$BASE_URL" ] || usage
 
+# Enforce the slug invariant HERE — npm package names must be lowercase, so this
+# can't depend on the caller passing an already-normalized slug. Lowercase,
+# collapse any non-alnum run to '-', trim leading/trailing '-'.
+NAME=$(printf '%s' "$NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#^-+|-+$##g')
+[ -n "$NAME" ] || { echo "scaffold-cli.sh: --name did not reduce to a usable slug (all non-ascii?) — pass an explicit --name" >&2; exit 2; }
+
 PKG="clify-$NAME"
 TOKEN_ENV="$(printf '%s' "$NAME" | tr '[:lower:]-' '[:upper:]_')_TOKEN"
+# Env-var names may not begin with a digit (slug like '2fa' → '2FA_TOKEN' is invalid).
+case "$TOKEN_ENV" in [0-9]*) TOKEN_ENV="_$TOKEN_ENV";; esac
 mkdir -p "$OUT/src/commands"
 
 cat > "$OUT/package.json" <<JSON
