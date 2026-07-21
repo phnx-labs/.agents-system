@@ -114,7 +114,16 @@ except Exception:
 import json, re, sys
 msg = json.load(sys.stdin).get('last_assistant_message', '').lower()
 pat = r'\b(handed off|hand-off|handoff|handing (this|it) off|will babysit|is babysitting|takes over from here|owns (this|the) pr)\b'
-print('yes' if re.search(pat, msg) else 'no')
+# Structured external-blocker stop — the gate's own option 3. A genuine external
+# blocker (CI/GitHub outage, a pending Touch ID, review only the user can give)
+# is not resolvable by the agent, so re-firing the gate just loops. Let it pass
+# ONLY when the message deliberately names the blocker AND what happens next (a
+# live watcher, or the specific user action it awaits). Both halves are required
+# so ordinary prose can't trip the escape.
+blocked = re.search(r'\bblocked on\b', msg)
+nextstep = re.search(r'\b(watcher|watching|background watch|gh pr checks --watch|will merge on green|resume:|awaiting your|only you can|your review|your merge|your touch ?id|your biometric|waiting on you)\b', msg)
+ok = re.search(pat, msg) or (blocked and nextstep)
+print('yes' if ok else 'no')
 " 2>/dev/null || echo "no")
 
       if [ "$has_handoff" != "yes" ]; then
@@ -128,8 +137,12 @@ stopping you must do ONE of:
    non-author review, and merge on green.
 2. Hand it off EXPLICITLY: name who or what now owns the PR (a person, a
    session, a watcher) in your final message.
-3. If stopping is genuinely correct (e.g. blocked on input only the user can
-   give), state exactly what is blocking and what happens next.
+3. If stopping is genuinely correct (a GENUINE external blocker you cannot
+   resolve — CI/GitHub outage, a pending Touch ID, a review only the user can
+   give), say so with BOTH halves in your final message: "blocked on <what>" AND
+   what happens next (a live "watcher"/"gh pr checks --watch", "will merge on
+   green", or the exact user action like "awaiting your review/merge/Touch ID").
+   Naming both lets this gate pass instead of looping.
 
 Then finish your final message and stop again.
 PRGATE

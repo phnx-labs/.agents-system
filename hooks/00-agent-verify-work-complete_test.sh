@@ -91,6 +91,18 @@ check "open PR with explicit handoff allows stop" "$rc" "0"
 rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "The build handoffs are documented; waiting on review." false)
 check "handoff-substring does not escape the gate" "$rc" "2"
 
+# 4b. Open PR blocked on a genuine external blocker WITH a watcher -> allow
+rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "PR #42 is blocked on a GitHub Actions 503 outage failing CI — watcher: background gh pr checks --watch will merge on green when CI recovers." false)
+check "external blocker + watcher allows stop" "$rc" "0"
+
+# 4c. Open PR blocked on a pending user action (Touch ID / review) -> allow
+rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "PR #42 is blocked on your Touch ID to sign the release; awaiting your merge." false)
+check "external blocker + awaited user action allows stop" "$rc" "0"
+
+# 4d. Bare 'blocked on' with no next-step/watcher -> still blocks (no loophole)
+rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "This is blocked on CI for now." false)
+check "blocked-on without a next-step does not escape" "$rc" "2"
+
 # 5. stop_hook_active -> allow (no loops)
 rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "still waiting" true)
 check "stop_hook_active bypasses gate" "$rc" "0"
