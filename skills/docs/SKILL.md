@@ -34,8 +34,10 @@ Document component boundaries, data flow, integration points. Not how functions 
 **3. High-level, like a principal engineer.**
 Write for someone who understands systems but doesn't know THIS system. Skip basics.
 
-**4. Diagrams over prose.**
-One ASCII diagram or mermaid chart replaces paragraphs. Show structure visually.
+**4. Visuals over prose.**
+One diagram or chart replaces paragraphs. For rendered/HTML outputs, use
+dither-kit by default for charts and quantitative dataviz; use ASCII or inline
+SVG for structural diagrams.
 
 **5. Reference the code, don't duplicate it.**
 `See src/agent/execution.go:306-500` beats copying code into docs.

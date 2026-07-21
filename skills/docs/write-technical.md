@@ -15,7 +15,7 @@ One paragraph: what this system does, why it exists.
 
 ## Architecture
 
-[ASCII or mermaid diagram showing components and flow]
+[ASCII or inline SVG diagram showing components and flow; dither-kit chart when the figure encodes quantitative data]
 
 ## Data Flow
 
@@ -48,11 +48,9 @@ ASCII boxes for architecture:
 └─────────────┘     └─────────────┘
 ```
 
-Mermaid for flows:
-```mermaid
-flowchart LR
-    A[Input] --> B[Process] --> C[Output]
-```
+Use dither-kit charts for rendered/HTML technical docs when the visual encodes
+quantitative data: trends, distributions, rankings, proportions, or metric
+panels. Use ASCII or inline SVG for component topology and control flow.
 
 ## Anti-Patterns
 

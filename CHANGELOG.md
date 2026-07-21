@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.70] - 2026-07-21
+
+### Added
+- **`skills/dither-kit/` — dither-kit is now the default charting guidance for agents.** The always-on `tech-stack` rule points chart-producing output to the new skill, and the docs / plan / visualize surfaces now distinguish quantitative charts from structural diagrams: dither-kit for charts and dataviz, hand-authored inline SVG or ASCII for architecture, flow, timelines, and mockups. This standardizes generated HTML plans, QA/quality reports, dashboards, blog visuals, and app UI around one dithered canvas charting style instead of one-off inline SVG/canvas chart code.
+
 ## [0.1.69] - 2026-07-17
 
 ### Fixed

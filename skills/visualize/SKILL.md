@@ -14,15 +14,16 @@ plus a poster PDF in their Downloads so it's shareable/postable.
 
 This is the **general-purpose sibling of `plan-render`**. It shares that skill's
 engine verbatim — the brand-probe theming, the light/dark `◐` toggle, the
-"hand-authored inline-SVG, never mermaid" rule, the self-contained constraint, and
-the open-on-the-user's-Mac transport. Start from **`template.html`** here;
+self-contained constraint, the dither-kit default for charting, and the
+open-on-the-user's-Mac transport. Start from **`template.html`** here;
 **`example.html`** is the gold reference (a fleet-status "arcade map" — a fully
 themed, delightful instance showing the range).
 
 ## When to use this vs. its neighbors
 
 - **`visualize` (this)** — arbitrary context → an *interactive, information-dense
-  HTML* you open and share. Precise layout, real data, hand-drawn diagrams.
+  HTML* you open and share. Precise layout, real data, dither-kit charts, and
+  hand-drawn structural diagrams.
 - **`plan-render`** — same engine, but *implementation plans* specifically (plan
   mode, `/plan`, `/swarm:plan`). Use it for plans; use this for everything else.
 - **`visual-styles` / `image` / `image-craft`** — *raster PNGs* (AI-generated or
@@ -55,9 +56,11 @@ constant:
   phrase, a ~3-line `.sub` framing (**the single takeaway**), `.chip` metadata
   (data points, "as of DATE", source), a `.toc`.
 - **Numbered `<h2>` sections** ordered by the story, not by "context→design→files".
-- **≥1 hand-authored inline `<svg>` figure** in a `.fig` — the diagram/chart/map/timeline
-  **is the point.** Never mermaid, never a CDN chart lib; draw it. A visualize page whose
-  only visual is a table has failed its one job.
+- **≥1 visual figure** in a `.fig` — the chart/diagram/map/timeline **is the point.**
+  Use dither-kit by default for charts and quantitative dataviz. Use hand-authored
+  inline SVG for non-chart diagrams, maps, timelines, and before/after layouts. Never
+  mermaid, never a CDN chart lib. A visualize page whose only visual is a table has
+  failed its one job.
 - **`.stat` tiles** for headline numbers, **`.callout`** for the load-bearing takeaway,
   **tagged tables** where rows need status pills.
 - **`.foot`** — one mono line; provenance / "as of" / a link, not a decision CTA.
@@ -133,7 +136,8 @@ Fleet** context — never hardcode a host; `scp` + `agents ssh` if you're remote
 - [ ] One self-contained HTML at `$HTML` (`.agents/viz/` if the project has `.agents/`, else
       `/tmp`) — opens offline, no CDN.
 - [ ] A **shape** chosen; sections ordered by the story.
-- [ ] ≥1 hand-authored inline-SVG figure carrying the insight; no mermaid.
+- [ ] ≥1 visual figure carrying the insight: dither-kit for charts/dataviz, inline SVG
+      for structural diagrams; no mermaid.
 - [ ] Skinned in the relevant brand (or house fallback); light/dark toggle present.
 - [ ] Animations guarded for print (`navigator.webdriver`); numbers baked in.
 - [ ] **You looked at the rendered result** (screenshot both themes) and it's delightful.
