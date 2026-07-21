@@ -103,6 +103,20 @@ check "external blocker + awaited user action allows stop" "$rc" "0"
 rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "This is blocked on CI for now." false)
 check "blocked-on without a next-step does not escape" "$rc" "2"
 
+# 4e. Abandonment prose: 'blocked on ...' + 'your review is needed' -> still blocks.
+#     Wanting a human review is not an external blocker the agent can't resolve.
+rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "The PR is blocked on failing tests; your review is needed once they pass." false)
+check "blocked-on + 'your review' still blocks (not an external blocker)" "$rc" "2"
+
+# 4f. Abandonment prose: 'blocked on ...' + 'awaiting your approval' -> still blocks.
+rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "Blocked on the dependency bump — awaiting your approval." false)
+check "blocked-on + 'awaiting your' still blocks" "$rc" "2"
+
+# 4g. Abandonment prose: 'blocked on ...' + bare 'watching' -> still blocks
+#     ('watching' alone does not imply a live gh pr checks --watch process).
+rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "Blocked on flaky tests; I'm watching to see if they stabilize." false)
+check "blocked-on + bare 'watching' still blocks" "$rc" "2"
+
 # 5. stop_hook_active -> allow (no loops)
 rc=$(FAKE_GH_STATE=OPEN run_hook "$T" "still waiting" true)
 check "stop_hook_active bypasses gate" "$rc" "0"
