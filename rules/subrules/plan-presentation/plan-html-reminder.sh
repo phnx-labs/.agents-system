@@ -56,7 +56,8 @@ Present this plan as browser-ready HTML before finishing (plan-presentation rule
 
 Load the `plan-render` skill and:
   1. Render a self-contained HTML plan to /tmp/plan-<slug>.html — house structure
-     (hero, TOC, >=1 hand-authored inline-SVG diagram, callouts, tagged tables),
+     (hero, TOC, >=1 visual figure: Dither Kit chart or inline-SVG diagram,
+     callouts, tagged tables),
      skinned in the target product's brand (dark+light editorial fallback + toggle).
      Start from the skill's template.html; example.html is the gold reference.
   2. Open it on the user's default browser on the online macOS device (Host & Fleet):
