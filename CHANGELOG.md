@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.70] - 2026-07-21
+
+### Added
+- **New `/swarm:spec` command + skill in the `swarm` plugin (bumped to 0.4.0).** The durable-specification sibling to `/swarm:plan`: where `plan` drafts a change *delta* (`## ADDED / MODIFIED / REMOVED Requirements` + tasks to build it), `spec` reverse-engineers the **source-of-truth spec** of a capability from the **real code** — `## Purpose` + `## Requirements`, each a testable `### Requirement:` with an RFC 2119 keyword (SHALL/SHOULD/MAY) and `#### Scenario:` Given/When/Then blocks, in the [OpenSpec](https://openspec.dev/) `specs/` shape. The swarm value is two-fold: **blind independent specs** (agents on different providers spec the same capability from the code alone, and divergence exposes ambiguous/missing requirements) and a **spec-vs-code drift check** (every stated requirement confirmed against actual behavior at its cited file:line — a requirement the code doesn't satisfy is surfaced as drift, a bug or a wrong requirement, never quietly rewritten to match a buggy implementation). Anchors every requirement to file:line, web-searches external contracts it must conform to, and renders the spec via `plan-render`. Registered in `plugins/swarm/.claude-plugin/plugin.json`, the marketplace seed (`.claude-plugin/marketplace.json`, synced + bumped to 0.4.0 — its description had drifted, predating even `/swarm:run`), the plugin README command table, and the root README plugin row.
+
 ## [0.1.69] - 2026-07-17
 
 ### Fixed
